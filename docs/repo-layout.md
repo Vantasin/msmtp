@@ -7,7 +7,8 @@
 - [CHANGELOG.md](../CHANGELOG.md): auditable summary of meaningful repository
   changes
 - [`.env.example`](../.env.example): generic starter configuration
-- [Makefile](../Makefile): common setup, render, install, and test commands
+- [Makefile](../Makefile): common setup, generate, install, preview, link, and
+  check commands
 
 ## Canonical Guidance
 

@@ -21,3 +21,5 @@
   in repo documents
 - added an interactive setup script, optional symlink install mode, and manual
   `msmtprc` fallback documentation
+- renamed the primary `make` targets to cleaner user-facing commands while
+  keeping compatibility aliases

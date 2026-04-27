@@ -10,5 +10,5 @@ Current file:
 Run them with:
 
 ```bash
-make test
+make check
 ```

@@ -189,7 +189,7 @@ if command -v make >/dev/null 2>&1; then
   make -C "${repo_root}" \
     ENV_FILE="${tmp_dir}/command.env" \
     OUTPUT="${tmp_dir}/make.msmtprc" \
-    render >/dev/null
+    generate >/dev/null
   assert_contains "${tmp_dir}/make.msmtprc" "account cli"
 fi
 

@@ -84,7 +84,7 @@ If you still want a repo-centralized local config without hand-copying files,
 the automated path can install a symlink for you:
 
 ```bash
-make install INSTALL_MODE=symlink
+make link
 ```
 
 That keeps the canonical generated file in the repo while `msmtp` continues to

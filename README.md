@@ -10,8 +10,8 @@ It ships with:
 - an optional interactive setup guide that writes `.env` step by step
 - `passwordeval` support for macOS Keychain, Linux GPG, secure password files,
   and custom commands
-- [`Makefile`](./Makefile) targets for quickstart, render, install, update,
-  and test
+- cleaner [`Makefile`](./Makefile) commands for setup, generate, install,
+  link, preview, and check
 - copy-based install by default, with optional symlink install for centralized
   repo-managed configs
 - smoke tests that validate rendered config without needing a live SMTP account
@@ -22,24 +22,24 @@ It ships with:
 2. Choose a setup path:
 
 ```bash
-make quickstart EXAMPLE=macos-keychain
+make setup-example EXAMPLE=macos-keychain
 make setup
 ```
 
-`make quickstart` is the non-interactive bootstrap path. `make setup` is the
-interactive prompt-driven path. Both produce a local `.env` file.
+`make setup-example` is the non-interactive bootstrap path. `make setup` is
+the interactive prompt-driven path. Both produce a local `.env` file.
 
 3. Review `.env` and adjust any values that need to change.
 4. Validate the repo behavior:
 
 ```bash
-make test
+make check
 ```
 
 5. Render or install the config:
 
 ```bash
-make render
+make generate
 make install
 ```
 
@@ -48,7 +48,7 @@ By default, `make install` writes to `~/.msmtprc` and keeps a rendered copy in
 symlink instead:
 
 ```bash
-make install INSTALL_MODE=symlink
+make link
 ```
 
 The env/template layer is intentional. `msmtp` reads `~/.msmtprc`, but keeping

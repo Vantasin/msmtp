@@ -21,7 +21,7 @@ reproducible and scriptable.
 Pick the closest starter example:
 
 ```bash
-make quickstart EXAMPLE=macos-keychain
+make setup-example EXAMPLE=macos-keychain
 ```
 
 Available examples:
@@ -60,19 +60,19 @@ Only one `MSMTP_SECRET_METHOD` should be active at a time.
 Run the smoke tests before installing:
 
 ```bash
-make test
+make check
 ```
 
 Render the config locally:
 
 ```bash
-make render
+make generate
 ```
 
 Print the rendered config without writing a file:
 
 ```bash
-make print-config
+make preview
 ```
 
 ## Install Modes
@@ -86,7 +86,7 @@ make install
 Install a symlink instead of copying the file:
 
 ```bash
-make install INSTALL_MODE=symlink
+make link
 ```
 
 `copy` is the default and is the safer choice. `symlink` is an advanced mode
@@ -96,7 +96,7 @@ file.
 Override paths when needed:
 
 ```bash
-make install ENV_FILE=.env.work OUTPUT=.msmtprc.work INSTALL_PATH=$HOME/.msmtprc INSTALL_MODE=copy
+make install ENV_FILE=.env.work OUTPUT=.msmtprc.work INSTALL_PATH=$HOME/.msmtprc
 ```
 
 ## Manual Fallback
