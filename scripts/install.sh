@@ -7,7 +7,11 @@ script_dir="$(cd "$(dirname "$0")" && pwd)"
 
 usage() {
   cat <<'EOF'
-Usage: scripts/install.sh [--env-file PATH] [--output PATH] [--target PATH] [--mode copy|symlink]
+Usage: scripts/install.sh [--env-file PATH | --accounts-dir PATH]
+                          [--default-account NAME]
+                          [--output PATH]
+                          [--target PATH]
+                          [--mode copy|symlink]
 
 Render a config and install it to the desired msmtp target path.
 
@@ -17,7 +21,9 @@ Modes:
 EOF
 }
 
-env_file="${repo_root}/.env"
+env_file=""
+accounts_dir=""
+default_account=""
 output_file="${repo_root}/.msmtprc.generated"
 target_path="${HOME}/.msmtprc"
 install_mode="copy"
@@ -27,6 +33,16 @@ while [ $# -gt 0 ]; do
     --env-file)
       [ $# -ge 2 ] || die "--env-file requires a value"
       env_file="$2"
+      shift 2
+      ;;
+    --accounts-dir)
+      [ $# -ge 2 ] || die "--accounts-dir requires a value"
+      accounts_dir="$2"
+      shift 2
+      ;;
+    --default-account)
+      [ $# -ge 2 ] || die "--default-account requires a value"
+      default_account="$2"
       shift 2
       ;;
     --output)
@@ -62,6 +78,25 @@ case "$install_mode" in
     ;;
 esac
 
+if [ -n "$env_file" ] && [ -n "$accounts_dir" ]; then
+  die "Use either --env-file or --accounts-dir, not both"
+fi
+
+if [ -z "$env_file" ] && [ -z "$accounts_dir" ]; then
+  env_file="${repo_root}/.env"
+fi
+
+render_args=()
+if [ -n "$accounts_dir" ]; then
+  render_args+=(--accounts-dir "$accounts_dir")
+else
+  render_args+=(--env-file "$env_file")
+fi
+
+if [ -n "$default_account" ]; then
+  render_args+=(--default-account "$default_account")
+fi
+
 tmp_output="$(mktemp "${TMPDIR:-/tmp}/msmtprc-install.XXXXXX")"
 
 cleanup() {
@@ -94,7 +129,7 @@ install_symlink() {
 trap cleanup EXIT
 
 if [ "$install_mode" = "copy" ]; then
-  "${repo_root}/scripts/render-config.sh" --env-file "$env_file" --output "$tmp_output" >/dev/null
+  "${repo_root}/scripts/render-config.sh" "${render_args[@]}" --output "$tmp_output" >/dev/null
 
   if [ "$output_file" != "$target_path" ]; then
     install_file "$tmp_output" "$output_file"
@@ -112,7 +147,7 @@ fi
 [ "$output_file" != "$target_path" ] || die "In symlink mode, --output and --target must be different paths"
 
 mkdir -p "$(dirname "$output_file")"
-"${repo_root}/scripts/render-config.sh" --env-file "$env_file" --output "$output_file" >/dev/null
+"${repo_root}/scripts/render-config.sh" "${render_args[@]}" --output "$output_file" >/dev/null
 install_symlink "$(absolute_path "$output_file")" "$target_path"
 
 printf 'Installed %s from %s using symlink mode\n' "$target_path" "$env_file"

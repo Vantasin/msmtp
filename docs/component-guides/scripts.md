@@ -9,9 +9,9 @@ Current files:
 - [`quickstart.sh`](../../scripts/quickstart.sh): create a local env file from
   a chosen example
 - [`render-config.sh`](../../scripts/render-config.sh): render the canonical
-  `msmtprc` template
+  `msmtprc` template from one env file or an account directory
 - [`install.sh`](../../scripts/install.sh): render and install the generated
-  config
+  config from one env file or an account directory
 - [`lib/common.sh`](../../scripts/lib/common.sh): shared helper functions
 
 The scripts assume `bash` and standard Unix utilities available on macOS and

@@ -12,5 +12,5 @@ Its goals are:
 
 The repository now includes a first implementation slice built around an env
 file, a canonical `msmtprc` template, an optional interactive setup flow,
-executable render and install scripts, and smoke tests for the supported
-credential modes.
+executable render and install scripts, multi-account support via local account
+env files, and smoke tests for the supported credential modes.

@@ -9,7 +9,7 @@ Files:
   chosen example
 - [`render-config.sh`](./render-config.sh): render
   [`templates/msmtprc.template`](../templates/msmtprc.template) into a
-  concrete `msmtprc`
+  concrete `msmtprc` from one env file or an account directory
 - [`install.sh`](./install.sh): render and install the generated config to a
   target path using copy or symlink mode
 - [`lib/common.sh`](./lib/common.sh): shared helpers used by the executable

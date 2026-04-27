@@ -2,3 +2,5 @@
 .env.*
 !.env.example
 .msmtprc*
+accounts/*.env
+!accounts/README.md

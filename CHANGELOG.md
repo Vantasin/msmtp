@@ -23,3 +23,5 @@
   `msmtprc` fallback documentation
 - renamed the primary `make` targets to cleaner user-facing commands while
   keeping compatibility aliases
+- added multi-account rendering via `accounts/*.env` files and shared
+  generate/install flows

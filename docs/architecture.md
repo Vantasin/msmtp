@@ -8,8 +8,11 @@ The repository is organized around three distinct layers:
 
 Implementation-oriented directories provide the working repository surface:
 
+- [`accounts/`](../accounts/) for local per-account env files in multi-account
+  setups
 - [`templates/`](../templates/) for env examples and `msmtprc` generation
-- [`scripts/`](../scripts/) for bootstrap, render, and install automation
+- [`scripts/`](../scripts/) for bootstrap, render, multi-account generation,
+  and install automation
 - [`tests/`](../tests/) for shell-based smoke tests
 - the root [`Makefile`](../Makefile) as a stable human entrypoint
 

@@ -164,6 +164,50 @@ MSMTP_SECRET_METHOD=command
 MSMTP_PASSWORDEVAL_COMMAND='pass show mail/msmtp'
 EOF
 
+mkdir -p "${tmp_dir}/accounts"
+
+cat > "${tmp_dir}/accounts/work.env" <<'EOF'
+MSMTP_ACCOUNT_NAME=work
+MSMTP_HOST=smtp.work.example
+MSMTP_PORT=587
+MSMTP_FROM=work@example.com
+MSMTP_USER=work@example.com
+MSMTP_AUTH=on
+MSMTP_TLS=on
+MSMTP_TLS_STARTTLS=on
+MSMTP_TLS_CERTCHECK=on
+MSMTP_SET_DEFAULT=false
+MSMTP_SECRET_METHOD=keychain
+MSMTP_KEYCHAIN_SERVICE=smtp.work.example
+MSMTP_KEYCHAIN_ACCOUNT=work@example.com
+EOF
+
+cat > "${tmp_dir}/accounts/personal.env" <<'EOF'
+MSMTP_ACCOUNT_NAME=personal
+MSMTP_HOST=smtp.personal.example
+MSMTP_PORT=465
+MSMTP_FROM=me@example.net
+MSMTP_USER=me@example.net
+MSMTP_AUTH=on
+MSMTP_TLS=on
+MSMTP_TLS_STARTTLS=off
+MSMTP_TLS_CERTCHECK=on
+MSMTP_SET_DEFAULT=false
+MSMTP_SECRET_METHOD=command
+MSMTP_PASSWORDEVAL_COMMAND='pass show mail/personal'
+EOF
+
+"${repo_root}/scripts/render-config.sh" \
+  --accounts-dir "${tmp_dir}/accounts" \
+  --default-account personal \
+  --output "${tmp_dir}/multi.msmtprc" >/dev/null
+
+assert_contains "${tmp_dir}/multi.msmtprc" "account work"
+assert_contains "${tmp_dir}/multi.msmtprc" "account personal"
+assert_contains "${tmp_dir}/multi.msmtprc" "passwordeval security find-generic-password -w -s 'smtp.work.example' -a 'work@example.com'"
+assert_contains "${tmp_dir}/multi.msmtprc" "passwordeval pass show mail/personal"
+assert_contains "${tmp_dir}/multi.msmtprc" "account default : personal"
+
 "${repo_root}/scripts/install.sh" \
   --env-file "${tmp_dir}/command.env" \
   --output "${tmp_dir}/command.msmtprc" \
@@ -185,12 +229,28 @@ expected_link_target="$(cd "${tmp_dir}/central" && pwd -P)/generated.msmtprc"
 [ "$link_target" = "$expected_link_target" ] || fail "Unexpected symlink target: $link_target"
 assert_contains "${tmp_dir}/central/generated.msmtprc" "account cli"
 
+"${repo_root}/scripts/install.sh" \
+  --accounts-dir "${tmp_dir}/accounts" \
+  --default-account personal \
+  --output "${tmp_dir}/multi-install.msmtprc" \
+  --target "${tmp_dir}/multi-home/.msmtprc" >/dev/null
+
+assert_contains "${tmp_dir}/multi-install.msmtprc" "account work"
+assert_contains "${tmp_dir}/multi-home/.msmtprc" "account personal"
+
 if command -v make >/dev/null 2>&1; then
   make -C "${repo_root}" \
     ENV_FILE="${tmp_dir}/command.env" \
     OUTPUT="${tmp_dir}/make.msmtprc" \
     generate >/dev/null
   assert_contains "${tmp_dir}/make.msmtprc" "account cli"
+
+  make -C "${repo_root}" \
+    ACCOUNTS_DIR="${tmp_dir}/accounts" \
+    DEFAULT_ACCOUNT=personal \
+    OUTPUT="${tmp_dir}/make-multi.msmtprc" \
+    generate >/dev/null
+  assert_contains "${tmp_dir}/make-multi.msmtprc" "account default : personal"
 fi
 
 printf 'All tests passed.\n'

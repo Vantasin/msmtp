@@ -7,6 +7,7 @@
 - [CHANGELOG.md](../CHANGELOG.md): auditable summary of meaningful repository
   changes
 - [`.env.example`](../.env.example): generic starter configuration
+- [`accounts/README.md`](../accounts/README.md): multi-account env-file model
 - [Makefile](../Makefile): common setup, generate, install, preview, link, and
   check commands
 
@@ -23,7 +24,8 @@
 
 ## Implementation Areas
 
+- [`accounts/`](../accounts/): local multi-account env files
 - [`templates/`](../templates/): config templates and env examples
 - [`scripts/`](../scripts/): repeatable automation for quickstart, interactive
-  setup, render, and install
+  setup, multi-account render, and install
 - [`tests/`](../tests/): repository verification assets

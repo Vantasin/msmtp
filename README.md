@@ -5,7 +5,8 @@ reproducible `msmtp` configuration on Linux and macOS.
 
 It ships with:
 
-- `.env`-driven configuration as the primary source of truth
+- `.env`-driven configuration as the primary source of truth, with support for
+  either one account or multiple account env files
 - a template-based `msmtprc` renderer
 - an optional interactive setup guide that writes `.env` step by step
 - `passwordeval` support for macOS Keychain, Linux GPG, secure password files,
@@ -55,6 +56,27 @@ The env/template layer is intentional. `msmtp` reads `~/.msmtprc`, but keeping
 structured inputs in `.env` plus a template makes setup reproducible, testable,
 and easier to document.
 
+## Multiple Mailing Addresses
+
+The repo now supports multi-account `msmtprc` generation.
+
+Create one env file per account under [`accounts/`](./accounts/):
+
+```bash
+make setup-account ACCOUNT_NAME=work
+make setup-account ACCOUNT_NAME=personal
+```
+
+Then render or install a combined config:
+
+```bash
+make generate ACCOUNTS_DIR=accounts DEFAULT_ACCOUNT=work
+make install ACCOUNTS_DIR=accounts DEFAULT_ACCOUNT=work
+```
+
+If you prefer, you can set `MSMTP_SET_DEFAULT=true` on exactly one account file
+instead of passing `DEFAULT_ACCOUNT=...`.
+
 ## Credential Modes
 
 Choose one `MSMTP_SECRET_METHOD` in `.env`:
@@ -69,12 +91,14 @@ Starter examples live in [`templates/examples/`](./templates/examples/).
 ## Tracking and Safety
 
 Generated or personalized `msmtprc` files should stay untracked. The repo
-ignores local `.env.*` files and `.msmtprc*` outputs so private account details
-and local secret paths do not get committed accidentally.
+ignores local `.env.*` files, `accounts/*.env`, and `.msmtprc*` outputs so
+private account details and local secret paths do not get committed
+accidentally.
 
 ## Main Files
 
 - [`.env.example`](./.env.example): generic starter env file
+- [`accounts/README.md`](./accounts/README.md): multi-account env-file model
 - [`Makefile`](./Makefile): common repo entrypoints
 - [`templates/msmtprc.template`](./templates/msmtprc.template): canonical
   config template
@@ -96,6 +120,7 @@ and local secret paths do not get committed accidentally.
 ├── AGENTS.md
 ├── CHANGELOG.md
 ├── README.md
+├── accounts/
 ├── agents/
 ├── docs/
 ├── scripts/

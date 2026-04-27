@@ -9,7 +9,7 @@
 
 The primary workflow in this repository is:
 
-1. create a local `.env`
+1. create a local `.env` or one env file per account under `accounts/`
 2. render [`templates/msmtprc.template`](../templates/msmtprc.template)
 3. install the generated config to `~/.msmtprc`
 
@@ -43,6 +43,37 @@ make setup
 ```
 
 This writes `.env` and can optionally install `~/.msmtprc` immediately.
+
+## Option 3: Multiple Accounts
+
+Use one env file per account when you want multiple mailing addresses in the
+same generated `msmtprc`:
+
+```bash
+make setup-account ACCOUNT_NAME=work
+make setup-account ACCOUNT_NAME=personal
+```
+
+You can also copy starter examples instead of using the interactive wizard:
+
+```bash
+make setup-account-example ACCOUNT_NAME=work EXAMPLE=macos-keychain
+```
+
+Render the combined config from the account directory:
+
+```bash
+make generate ACCOUNTS_DIR=accounts DEFAULT_ACCOUNT=work
+```
+
+Install the combined config:
+
+```bash
+make install ACCOUNTS_DIR=accounts DEFAULT_ACCOUNT=work
+```
+
+If you do not pass `DEFAULT_ACCOUNT=...`, set `MSMTP_SET_DEFAULT=true` on
+exactly one account file.
 
 ## Configure Your Account
 
