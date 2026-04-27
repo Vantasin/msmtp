@@ -1,5 +1,8 @@
 # Tests
 
-This directory is reserved for repository verification assets.
+This directory contains repository smoke tests.
 
-No tests have been added yet.
+Files:
+
+- `test.sh`: validates shell syntax plus rendering and install flows for the
+  supported credential modes

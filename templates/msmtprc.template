@@ -1,0 +1,19 @@
+# Managed by the msmtp repo. Edit your env file and rerender instead of editing
+# this file directly.
+
+defaults
+auth {{AUTH}}
+tls {{TLS}}
+tls_starttls {{TLS_STARTTLS}}
+tls_certcheck {{TLS_CERTCHECK}}
+{{LOGFILE_LINE}}
+{{TLS_TRUST_FILE_LINE}}
+{{TLS_FINGERPRINT_LINE}}
+
+account {{ACCOUNT_NAME}}
+host {{HOST}}
+port {{PORT}}
+from {{FROM}}
+user {{USER}}
+passwordeval {{PASSWORDEVAL_COMMAND}}
+{{DEFAULT_ACCOUNT_LINE}}

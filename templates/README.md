@@ -1,5 +1,12 @@
 # Templates
 
-This directory is reserved for configuration templates and example assets.
+This directory contains the reusable assets that drive generated `msmtp`
+configuration.
 
-No templates have been added yet.
+Files:
+
+- `msmtprc.template`: the canonical config template used by the renderer
+- `examples/macos-keychain.env.example`: starter env file for macOS Keychain
+- `examples/linux-gpg.env.example`: starter env file for Linux GPG decryption
+- `examples/password-file.env.example`: starter env file for secure password
+  files

@@ -5,6 +5,8 @@
 - `README.md`: quick-start overview for humans
 - `AGENTS.md`: thin entrypoint for agent platforms
 - `CHANGELOG.md`: auditable summary of meaningful repository changes
+- `.env.example`: generic starter configuration
+- `Makefile`: common render, install, and test commands
 
 ## Canonical Guidance
 
@@ -18,6 +20,6 @@
 
 ## Implementation Areas
 
-- `templates/`: expected home for config templates and examples
-- `scripts/`: expected home for repeatable automation
-- `tests/`: expected home for repository verification assets
+- `templates/`: config templates and env examples
+- `scripts/`: repeatable automation for quickstart, render, and install
+- `tests/`: repository verification assets

@@ -6,6 +6,7 @@ Start here when you want explanations rather than canonical instruction files.
 
 Documents:
 
+- `getting-started.md`: setup and day-one usage
 - `architecture.md`: how the repository is structured
 - `operating-model.md`: how humans and agents should operate in the repo
 - `repo-layout.md`: what each major directory is for

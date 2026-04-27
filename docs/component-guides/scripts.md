@@ -1,14 +1,13 @@
 # Scripts Directory Guide
 
-`scripts/` is reserved for repeatable automation such as setup, validation, or
-maintenance tasks.
+`scripts/` contains the repo's repeatable shell automation.
 
-Current status:
+Current files:
 
-- no implementation scripts are present yet
+- `quickstart.sh`: create a local env file from a chosen example
+- `render-config.sh`: render the canonical `msmtprc` template
+- `install.sh`: render and install the generated config
+- `lib/common.sh`: shared helper functions
 
-When scripts are added, document:
-
-- what each script does
-- required inputs or environment variables
-- platform assumptions
+The scripts assume `bash` and standard Unix utilities available on macOS and
+Linux.

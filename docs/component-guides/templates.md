@@ -1,13 +1,16 @@
 # Templates Directory Guide
 
-`templates/` is reserved for configuration examples, `.env` samples, or other
-portable starter assets.
+`templates/` contains the canonical config template plus env examples for the
+supported secret modes.
 
-Current status:
+Current files:
 
-- no template files are present yet
+- `msmtprc.template`
+- `examples/macos-keychain.env.example`
+- `examples/linux-gpg.env.example`
+- `examples/password-file.env.example`
 
-When templates are added, ensure they:
+Template rules:
 
 - avoid real secrets
 - document placeholder values clearly

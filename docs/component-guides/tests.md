@@ -1,13 +1,13 @@
 # Tests Directory Guide
 
-`tests/` is reserved for repository verification assets.
+`tests/` contains repository verification assets.
 
-Current status:
+Current file:
 
-- no automated tests are present yet
+- `test.sh`: shell smoke tests for render and install behavior
 
-When tests are added, document:
+Run them with:
 
-- what behavior they verify
-- how they are executed
-- any platform-specific prerequisites
+```bash
+make test
+```

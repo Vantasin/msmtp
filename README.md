@@ -1,67 +1,84 @@
 # msmtp
 
-`msmtp` is a cross-platform repository for managing reproducible `msmtp`
-configuration assets for Linux and macOS.
+`msmtp` is a cross-platform repository for generating, testing, and installing
+reproducible `msmtp` configuration on Linux and macOS.
 
-This repository now follows a thin-wrapper agent model:
+It ships with:
 
-- root platform wrapper in `AGENTS.md`
-- canonical agent guidance in `agents/`
-- human-oriented documentation in `docs/`
-- auditable change tracking in `CHANGELOG.md`
+- `.env`-driven configuration
+- a template-based `msmtprc` renderer
+- `passwordeval` support for macOS Keychain, Linux GPG, secure password files,
+  and custom commands
+- `Makefile` targets for quickstart, render, install, update, and test
+- smoke tests that validate rendered config without needing a live SMTP account
 
-## Who This Repo Is For
+## Quick Start
 
-This repo is for:
+1. Install `msmtp` on your machine using your platform package manager.
+2. Initialize a local env file:
 
-- maintainers building out portable `msmtp` configuration assets
-- humans onboarding into the repository structure
-- AI agents operating against a documented, auditable repository contract
+```bash
+make quickstart EXAMPLE=macos-keychain
+```
 
-## Current Status
+3. Edit `.env` and replace the placeholder values.
+4. Validate the repo behavior:
 
-The repository currently contains the operating scaffold and documentation
-baseline. Implementation assets such as templates, scripts, tests, or a
-`Makefile` have not been added yet and should not be assumed to exist.
+```bash
+make test
+```
 
-## Agent Platform Adapter
+5. Render or install the config:
 
-The current platform-facing adapter is:
+```bash
+make render
+make install
+```
 
-- `AGENTS.md`
+By default, `make install` writes to `~/.msmtprc` and keeps a rendered copy in
+`.msmtprc.generated`.
 
-That file is intentionally thin and routes into the canonical instruction set
-under `agents/`.
+## Credential Modes
 
-## Directory Layout
+Choose one `MSMTP_SECRET_METHOD` in `.env`:
+
+- `keychain`: macOS Keychain lookup via `security find-generic-password`
+- `gpg`: decrypt a GPG-encrypted password file
+- `password_file`: read from a secure root-owned plaintext file
+- `command`: run a custom `passwordeval` command directly
+
+Starter examples live in `templates/examples/`.
+
+## Main Files
+
+- `.env.example`: generic starter env file
+- `Makefile`: common repo entrypoints
+- `templates/msmtprc.template`: canonical config template
+- `scripts/render-config.sh`: generate a concrete config file
+- `scripts/install.sh`: render and install the config
+- `scripts/quickstart.sh`: bootstrap `.env` from a chosen example
+- `tests/test.sh`: repo smoke tests
+
+## Repo Layout
 
 ```text
 .
+├── .env.example
+├── Makefile
 ├── AGENTS.md
 ├── CHANGELOG.md
 ├── README.md
 ├── agents/
-│   ├── context/
-│   ├── rules/
-│   └── workflows/
 ├── docs/
-│   └── component-guides/
 ├── scripts/
 ├── templates/
 └── tests/
 ```
 
-## Start Here
+## Documentation
 
-1. Read `README.md` for the quick-start repository overview.
-2. Read `docs/README.md` for the human documentation index.
-3. Read `agents/README.md` for the canonical agent operating model.
-4. Use `agents/context/current-state.md` before planning implementation work.
-
-## Documentation Map
-
+- `docs/getting-started.md`: setup and usage walkthrough
 - `docs/architecture.md`: repository architecture and boundaries
-- `docs/operating-model.md`: how humans and agents should work in this repo
 - `docs/repo-layout.md`: what each major directory is for
 - `docs/agent-governance.md`: source-of-truth and drift-review expectations
-- `docs/component-guides/README.md`: focused notes on major repository areas
+- `agents/README.md`: canonical agent operating guidance

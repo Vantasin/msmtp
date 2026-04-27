@@ -6,12 +6,12 @@ The repository is organized around three distinct layers:
 2. `agents/` as the canonical operating core for agent guidance
 3. `docs/` as the human-readable explanation layer
 
-Implementation-oriented directories exist as placeholders so future work lands
-in predictable locations:
+Implementation-oriented directories provide the working repository surface:
 
-- `templates/`
-- `scripts/`
-- `tests/`
+- `templates/` for env examples and `msmtprc` generation
+- `scripts/` for bootstrap, render, and install automation
+- `tests/` for shell-based smoke tests
+- the root `Makefile` as a stable human entrypoint
 
 This keeps repository policy, documentation, and implementation concerns
 separated from each other.

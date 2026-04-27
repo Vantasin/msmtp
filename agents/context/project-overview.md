@@ -10,5 +10,6 @@ Its goals are:
 - support repeatable maintenance through scripts and tests
 - remain understandable to both human maintainers and AI agents
 
-The repository currently emphasizes its operating scaffold and documentation
-contract so future implementation work has a clean structure to land in.
+The repository now includes a first implementation slice built around an env
+file, a canonical `msmtprc` template, executable render and install scripts,
+and smoke tests for the supported credential modes.

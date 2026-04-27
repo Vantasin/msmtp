@@ -8,3 +8,10 @@
   `agents/workflows/` directories with baseline repository operating documents
 - added human-oriented `docs/` content and major directory `README.md` files
 - rewrote the root `README.md` to reflect the repository's actual current state
+- added `.env.example`, credential-mode example env files, and the canonical
+  `templates/msmtprc.template`
+- added shell automation for quickstart, rendering, and install flows plus a
+  `Makefile` entrypoint
+- added smoke tests covering the supported `passwordeval` modes and install path
+- updated docs and agent context to reflect the repo's first implementation
+  slice
