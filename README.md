@@ -11,6 +11,7 @@ It ships with:
 - an optional interactive setup guide that writes `.env` step by step
 - `passwordeval` support for macOS Keychain, Linux GPG, secure password files,
   and custom commands
+- helper commands for secret-backend setup and validation
 - cleaner [`Makefile`](./Makefile) commands for setup, generate, install,
   link, preview, and check
 - copy-based install by default, with optional symlink install for centralized
@@ -31,13 +32,20 @@ make setup
 the interactive prompt-driven path. Both produce a local `.env` file.
 
 3. Review `.env` and adjust any values that need to change.
-4. Validate the repo behavior:
+4. Set up or verify your secret backend:
+
+```bash
+make secrets-help
+make secret-check
+```
+
+5. Validate the repo behavior:
 
 ```bash
 make check
 ```
 
-5. Render or install the config:
+6. Render or install the config:
 
 ```bash
 make generate
@@ -132,6 +140,8 @@ accidentally.
 
 - [`docs/getting-started.md`](./docs/getting-started.md): setup and usage
   walkthrough
+- [`docs/secrets.md`](./docs/secrets.md): secure secret-backend setup and
+  validation
 - [`docs/manual-setup.md`](./docs/manual-setup.md): raw `msmtprc` fallback
   guide
 - [`docs/architecture.md`](./docs/architecture.md): repository architecture

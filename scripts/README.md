@@ -4,6 +4,15 @@ This directory contains the repository's executable automation.
 
 Files:
 
+- [`secrets-help.sh`](./secrets-help.sh): print the supported secret backends
+  and helper commands
+- [`secret-check.sh`](./secret-check.sh): validate configured `passwordeval`
+  commands without printing the secret
+- [`keychain-add.sh`](./keychain-add.sh): add or update a macOS Keychain secret
+- [`password-file-init.sh`](./password-file-init.sh): create a strict
+  permission password file
+- [`gpg-file-init.sh`](./gpg-file-init.sh): create a GPG-encrypted password
+  file
 - [`setup.sh`](./setup.sh): interactive setup that writes a local `.env`
 - [`quickstart.sh`](./quickstart.sh): initialize a local `.env` file from a
   chosen example

@@ -21,6 +21,11 @@ assert_contains() {
 }
 
 run_syntax_checks() {
+  bash -n "${repo_root}/scripts/secrets-help.sh"
+  bash -n "${repo_root}/scripts/secret-check.sh"
+  bash -n "${repo_root}/scripts/keychain-add.sh"
+  bash -n "${repo_root}/scripts/password-file-init.sh"
+  bash -n "${repo_root}/scripts/gpg-file-init.sh"
   bash -n "${repo_root}/scripts/render-config.sh"
   bash -n "${repo_root}/scripts/install.sh"
   bash -n "${repo_root}/scripts/setup.sh"
@@ -44,6 +49,10 @@ run_syntax_checks
   --env-file "${tmp_dir}/bootstrap.env" >/dev/null
 
 assert_contains "${tmp_dir}/bootstrap.env" "MSMTP_SECRET_METHOD=password_file"
+
+"${repo_root}/scripts/secrets-help.sh" > "${tmp_dir}/secrets-help.txt"
+assert_contains "${tmp_dir}/secrets-help.txt" "make secret-check"
+assert_contains "${tmp_dir}/secrets-help.txt" "docs/secrets.md"
 
 if "${repo_root}/scripts/quickstart.sh" \
   --example default \
@@ -164,7 +173,23 @@ MSMTP_SECRET_METHOD=command
 MSMTP_PASSWORDEVAL_COMMAND='pass show mail/msmtp'
 EOF
 
+cat > "${tmp_dir}/secret-check.env" <<'EOF'
+MSMTP_ACCOUNT_NAME=check
+MSMTP_HOST=smtp.check.example
+MSMTP_PORT=587
+MSMTP_FROM=check@example.com
+MSMTP_USER=check@example.com
+MSMTP_AUTH=on
+MSMTP_TLS=on
+MSMTP_TLS_STARTTLS=on
+MSMTP_TLS_CERTCHECK=on
+MSMTP_SET_DEFAULT=true
+MSMTP_SECRET_METHOD=command
+MSMTP_PASSWORDEVAL_COMMAND='printf check-secret'
+EOF
+
 mkdir -p "${tmp_dir}/accounts"
+mkdir -p "${tmp_dir}/accounts-check"
 
 cat > "${tmp_dir}/accounts/work.env" <<'EOF'
 MSMTP_ACCOUNT_NAME=work
@@ -197,6 +222,47 @@ MSMTP_SECRET_METHOD=command
 MSMTP_PASSWORDEVAL_COMMAND='pass show mail/personal'
 EOF
 
+cat > "${tmp_dir}/accounts-check/work.env" <<'EOF'
+MSMTP_ACCOUNT_NAME=work
+MSMTP_HOST=smtp.work.example
+MSMTP_PORT=587
+MSMTP_FROM=work@example.com
+MSMTP_USER=work@example.com
+MSMTP_AUTH=on
+MSMTP_TLS=on
+MSMTP_TLS_STARTTLS=on
+MSMTP_TLS_CERTCHECK=on
+MSMTP_SET_DEFAULT=true
+MSMTP_SECRET_METHOD=command
+MSMTP_PASSWORDEVAL_COMMAND='printf work-secret'
+EOF
+
+cat > "${tmp_dir}/accounts-check/personal.env" <<'EOF'
+MSMTP_ACCOUNT_NAME=personal
+MSMTP_HOST=smtp.personal.example
+MSMTP_PORT=465
+MSMTP_FROM=me@example.net
+MSMTP_USER=me@example.net
+MSMTP_AUTH=on
+MSMTP_TLS=on
+MSMTP_TLS_STARTTLS=off
+MSMTP_TLS_CERTCHECK=on
+MSMTP_SET_DEFAULT=false
+MSMTP_SECRET_METHOD=command
+MSMTP_PASSWORDEVAL_COMMAND='printf personal-secret'
+EOF
+
+"${repo_root}/scripts/secret-check.sh" \
+  --env-file "${tmp_dir}/secret-check.env" > "${tmp_dir}/secret-check-single.txt"
+
+assert_contains "${tmp_dir}/secret-check-single.txt" "ok: check"
+
+"${repo_root}/scripts/secret-check.sh" \
+  --accounts-dir "${tmp_dir}/accounts-check" > "${tmp_dir}/secret-check-accounts.txt"
+
+assert_contains "${tmp_dir}/secret-check-accounts.txt" "ok: work"
+assert_contains "${tmp_dir}/secret-check-accounts.txt" "ok: personal"
+
 "${repo_root}/scripts/render-config.sh" \
   --accounts-dir "${tmp_dir}/accounts" \
   --default-account personal \
@@ -207,6 +273,13 @@ assert_contains "${tmp_dir}/multi.msmtprc" "account personal"
 assert_contains "${tmp_dir}/multi.msmtprc" "passwordeval security find-generic-password -w -s 'smtp.work.example' -a 'work@example.com'"
 assert_contains "${tmp_dir}/multi.msmtprc" "passwordeval pass show mail/personal"
 assert_contains "${tmp_dir}/multi.msmtprc" "account default : personal"
+
+printf 'mail-secret\nmail-secret\n' | "${repo_root}/scripts/password-file-init.sh" \
+  --env-file "${tmp_dir}/password-file.env" \
+  --password-file "${tmp_dir}/password-store/secret.txt" >/dev/null 2>&1
+
+password_file_contents="$(cat "${tmp_dir}/password-store/secret.txt")"
+[ "$password_file_contents" = "mail-secret" ] || fail "Unexpected password-file contents"
 
 "${repo_root}/scripts/install.sh" \
   --env-file "${tmp_dir}/command.env" \

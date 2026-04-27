@@ -25,3 +25,5 @@
   keeping compatibility aliases
 - added multi-account rendering via `accounts/*.env` files and shared
   generate/install flows
+- added secret-backend setup docs plus safe helper commands for validation,
+  Keychain, password files, and GPG files

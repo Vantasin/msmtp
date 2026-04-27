@@ -4,6 +4,16 @@
 
 Current files:
 
+- [`secrets-help.sh`](../../scripts/secrets-help.sh): print the supported
+  secret helpers and docs
+- [`secret-check.sh`](../../scripts/secret-check.sh): validate configured
+  `passwordeval` commands without printing secrets
+- [`keychain-add.sh`](../../scripts/keychain-add.sh): add or update a macOS
+  Keychain secret
+- [`password-file-init.sh`](../../scripts/password-file-init.sh): create a
+  strict-permission password file
+- [`gpg-file-init.sh`](../../scripts/gpg-file-init.sh): create a GPG-encrypted
+  password file
 - [`setup.sh`](../../scripts/setup.sh): interactive setup that writes a local
   `.env`
 - [`quickstart.sh`](../../scripts/quickstart.sh): create a local env file from

@@ -10,11 +10,12 @@ Present today:
 - canonical [`agents/`](../) guidance
 - human-readable [`docs/README.md`](../../docs/README.md)
 - multi-account guidance in [accounts/README.md](../../accounts/README.md)
+- secret-backend docs in [docs/secrets.md](../../docs/secrets.md)
 - manual fallback docs in [docs/manual-setup.md](../../docs/manual-setup.md)
 - [`.env.example`](../../.env.example) and mode-specific example env files
 - [`templates/msmtprc.template`](../../templates/msmtprc.template)
 - implementation scripts in [`scripts/`](../../scripts/) for quickstart,
-  interactive setup, multi-account render, and install flows
+  secret setup, interactive setup, multi-account render, and install flows
 - a [`Makefile`](../../Makefile) with common repo commands
 - shell-based smoke tests in [`tests/test.sh`](../../tests/test.sh)
 

@@ -9,7 +9,7 @@
 - [`.env.example`](../.env.example): generic starter configuration
 - [`accounts/README.md`](../accounts/README.md): multi-account env-file model
 - [Makefile](../Makefile): common setup, generate, install, preview, link, and
-  check commands
+  check commands plus secret helper commands
 
 ## Canonical Guidance
 

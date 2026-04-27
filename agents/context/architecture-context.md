@@ -14,7 +14,7 @@ Operational project assets live in focused directories:
 - [`templates/`](../../templates/) for `msmtp` config generation assets and
   env examples
 - [`scripts/`](../../scripts/) for repeatable automation such as bootstrap,
-  interactive setup, multi-account render, and install
+  secret setup, interactive setup, multi-account render, and install
 - [`tests/`](../../tests/) for shell-based verification logic
 
 The current implementation flow is:
@@ -22,11 +22,12 @@ The current implementation flow is:
 1. initialize a local `.env` from [`.env.example`](../../.env.example), a
    mode-specific example, the interactive setup script, or one env file per
    account in [`accounts/`](../../accounts/)
-2. render [`templates/msmtprc.template`](../../templates/msmtprc.template)
-3. install the generated output to the desired `msmtp` config path, using copy
+2. provision or verify the chosen secret backend using [docs/secrets.md](../../docs/secrets.md)
+3. render [`templates/msmtprc.template`](../../templates/msmtprc.template)
+4. install the generated output to the desired `msmtp` config path, using copy
    mode by default or symlink mode as an advanced option
-4. validate behavior through repository smoke tests
-5. fall back to [manual docs](../../docs/manual-setup.md) when direct
+5. validate behavior through repository smoke tests
+6. fall back to [manual docs](../../docs/manual-setup.md) when direct
    `msmtprc` setup is needed
 
 This separation keeps policy, explanation, and implementation distinct.

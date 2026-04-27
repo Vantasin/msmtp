@@ -86,6 +86,18 @@ Review `.env` and confirm the values for:
 
 Only one `MSMTP_SECRET_METHOD` should be active at a time.
 
+## Set Up Secret Storage
+
+After choosing a secret backend, use the dedicated secret helpers or follow the
+backend docs:
+
+```bash
+make secrets-help
+make secret-check
+```
+
+See [secrets.md](./secrets.md) for backend-specific setup commands.
+
 ## Verify and Render
 
 Run the smoke tests before installing:

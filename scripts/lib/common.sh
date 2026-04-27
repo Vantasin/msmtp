@@ -79,6 +79,19 @@ absolute_path() {
   printf '%s/%s\n' "$dir_path" "$base_name"
 }
 
+require_tty() {
+  [ -t 0 ] || die "This command requires an interactive terminal"
+}
+
+passwordeval_command_from_env_file() {
+  local env_file="$1"
+
+  (
+    load_env_file "$env_file"
+    passwordeval_command
+  )
+}
+
 passwordeval_command() {
   local method="${MSMTP_SECRET_METHOD:-command}"
 

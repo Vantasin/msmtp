@@ -9,22 +9,32 @@ EXAMPLE ?= default
 ACCOUNTS_DIR ?=
 DEFAULT_ACCOUNT ?=
 ACCOUNT_NAME ?= account
+SECRET_ENV_FILE ?= $(ENV_FILE)
+PASSWORD_FILE ?=
+GPG_FILE ?=
+GPG_RECIPIENT ?=
+KEYCHAIN_SERVICE ?=
+KEYCHAIN_ACCOUNT ?=
 
 INPUT_ARGS = $(if $(strip $(ACCOUNTS_DIR)),--accounts-dir $(ACCOUNTS_DIR),--env-file $(ENV_FILE))
 DEFAULT_ACCOUNT_ARGS = $(if $(strip $(DEFAULT_ACCOUNT)),--default-account $(DEFAULT_ACCOUNT),)
 ACCOUNT_ENV_FILE = accounts/$(ACCOUNT_NAME).env
 
-.PHONY: help setup setup-example setup-account setup-account-example generate preview install link check clean quickstart init-env render print-config update test
+.PHONY: help setup setup-example setup-account setup-account-example generate preview install link check clean secrets-help secret-check keychain-add password-file-init gpg-file-init quickstart init-env render print-config update test
 
 help: ## Show the common repo commands
 	@printf "Common commands:\n"
-	@awk 'BEGIN {FS = ":.*## "}; /^[a-zA-Z0-9_.-]+:.*## / {printf "  make %-14s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*## "}; /^[a-zA-Z0-9_.-]+:.*## / {printf "  make %-22s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@printf "\nVariables:\n"
 	@printf "  EXAMPLE      default | macos-keychain | linux-gpg | password-file\n"
 	@printf "  ENV_FILE     %s\n" "$(ENV_FILE)"
 	@printf "  ACCOUNTS_DIR %s\n" "$(ACCOUNTS_DIR)"
 	@printf "  DEFAULT_ACCOUNT %s\n" "$(DEFAULT_ACCOUNT)"
 	@printf "  ACCOUNT_NAME %s\n" "$(ACCOUNT_NAME)"
+	@printf "  SECRET_ENV_FILE %s\n" "$(SECRET_ENV_FILE)"
+	@printf "  PASSWORD_FILE %s\n" "$(PASSWORD_FILE)"
+	@printf "  GPG_FILE %s\n" "$(GPG_FILE)"
+	@printf "  GPG_RECIPIENT %s\n" "$(GPG_RECIPIENT)"
 	@printf "  OUTPUT       %s\n" "$(OUTPUT)"
 	@printf "  INSTALL_PATH %s\n" "$(INSTALL_PATH)"
 
@@ -54,6 +64,21 @@ link: ## Symlink your active msmtp path to the repo-managed output file
 
 check: ## Run the repo smoke tests
 	./tests/test.sh
+
+secrets-help: ## Show the supported secret backends and helper commands
+	./scripts/secrets-help.sh
+
+secret-check: ## Validate that the configured passwordeval command works
+	./scripts/secret-check.sh $(INPUT_ARGS)
+
+keychain-add: ## Add or update a macOS Keychain secret for one env file
+	./scripts/keychain-add.sh --env-file $(SECRET_ENV_FILE) $(if $(strip $(KEYCHAIN_SERVICE)),--service $(KEYCHAIN_SERVICE),) $(if $(strip $(KEYCHAIN_ACCOUNT)),--account $(KEYCHAIN_ACCOUNT),)
+
+password-file-init: ## Create a password file with strict permissions
+	./scripts/password-file-init.sh --env-file $(SECRET_ENV_FILE) $(if $(strip $(PASSWORD_FILE)),--password-file $(PASSWORD_FILE),)
+
+gpg-file-init: ## Create a GPG-encrypted password file without plaintext args
+	./scripts/gpg-file-init.sh --env-file $(SECRET_ENV_FILE) $(if $(strip $(GPG_FILE)),--gpg-file $(GPG_FILE),) $(if $(strip $(GPG_RECIPIENT)),--recipient $(GPG_RECIPIENT),)
 
 clean: ## Remove generated files from the repo root
 	rm -f $(OUTPUT)
