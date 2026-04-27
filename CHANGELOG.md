@@ -15,3 +15,5 @@
 - added smoke tests covering the supported `passwordeval` modes and install path
 - updated docs and agent context to reflect the repo's first implementation
   slice
+- converted Markdown file references to relative links for better repo
+  navigation

@@ -2,7 +2,7 @@
 
 ## Changelog
 
-- Record meaningful repository changes in `CHANGELOG.md`.
+- Record meaningful repository changes in [CHANGELOG.md](../../CHANGELOG.md).
 - Focus on structural, operational, documentation, or workflow changes rather
   than mirroring every commit.
 
@@ -17,9 +17,9 @@ Run a drift review after significant changes, including:
 
 The review should check:
 
-- `AGENTS.md`
-- `agents/rules/`
-- `agents/context/`
-- `agents/workflows/`
-- `docs/`
+- [AGENTS.md](../../AGENTS.md)
+- [`agents/rules/`](./)
+- [`agents/context/`](../context/)
+- [`agents/workflows/`](../workflows/)
+- [`docs/README.md`](../../docs/README.md)
 - major directory `README.md` files

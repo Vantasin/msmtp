@@ -1,10 +1,11 @@
 # Tests Directory Guide
 
-`tests/` contains repository verification assets.
+[`tests/`](../../tests/) contains repository verification assets.
 
 Current file:
 
-- `test.sh`: shell smoke tests for render and install behavior
+- [`test.sh`](../../tests/test.sh): shell smoke tests for render and install
+  behavior
 
 Run them with:
 

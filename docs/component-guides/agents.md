@@ -1,6 +1,6 @@
 # Agents Directory Guide
 
-`agents/` is the canonical operating core for agent behavior in this
+[`agents/`](../../agents/) is the canonical operating core for agent behavior in this
 repository.
 
 Use it for:

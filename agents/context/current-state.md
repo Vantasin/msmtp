@@ -5,14 +5,16 @@ first-pass implementation for managing `msmtp` configuration.
 
 Present today:
 
-- root `README.md`, `AGENTS.md`, and `CHANGELOG.md`
-- canonical `agents/` guidance
-- human-readable `docs/`
-- `.env.example` and mode-specific example env files
-- `templates/msmtprc.template`
-- implementation scripts for quickstart, render, and install flows
-- a `Makefile` with common repo commands
-- shell-based smoke tests
+- root [README.md](../../README.md), [AGENTS.md](../../AGENTS.md), and
+  [CHANGELOG.md](../../CHANGELOG.md)
+- canonical [`agents/`](../) guidance
+- human-readable [`docs/README.md`](../../docs/README.md)
+- [`.env.example`](../../.env.example) and mode-specific example env files
+- [`templates/msmtprc.template`](../../templates/msmtprc.template)
+- implementation scripts in [`scripts/`](../../scripts/) for quickstart,
+  render, and install flows
+- a [`Makefile`](../../Makefile) with common repo commands
+- shell-based smoke tests in [`tests/test.sh`](../../tests/test.sh)
 
 Not present today:
 
