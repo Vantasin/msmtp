@@ -8,6 +8,7 @@ Use this workflow after significant repository changes.
 3. Review [`agents/rules/`](../rules/), [`agents/context/`](../context/), and
    [`agents/workflows/`](./) for outdated assumptions.
 4. Review [`docs/README.md`](../../docs/README.md) and major directory
-   `README.md` files for mismatches.
+   `README.md` files for mismatches and non-navigable repo references that
+   should be relative Markdown links.
 5. Update documents that drifted and note meaningful changes in
    [CHANGELOG.md](../../CHANGELOG.md).

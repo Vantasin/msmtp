@@ -17,3 +17,5 @@
   slice
 - converted Markdown file references to relative links for better repo
   navigation
+- added canonical rule and workflow guidance for using relative Markdown links
+  in repo documents
