@@ -7,6 +7,7 @@ Start here when you want explanations rather than canonical instruction files.
 Documents:
 
 - [getting-started.md](./getting-started.md): setup and day-one usage
+- [manual-setup.md](./manual-setup.md): raw `msmtprc` fallback setup guide
 - [architecture.md](./architecture.md): how the repository is structured
 - [operating-model.md](./operating-model.md): how humans and agents should
   operate in the repo

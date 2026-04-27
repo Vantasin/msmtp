@@ -19,3 +19,5 @@
   navigation
 - added canonical rule and workflow guidance for using relative Markdown links
   in repo documents
+- added an interactive setup script, optional symlink install mode, and manual
+  `msmtprc` fallback documentation

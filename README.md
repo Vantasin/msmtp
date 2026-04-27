@@ -5,24 +5,31 @@ reproducible `msmtp` configuration on Linux and macOS.
 
 It ships with:
 
-- `.env`-driven configuration
+- `.env`-driven configuration as the primary source of truth
 - a template-based `msmtprc` renderer
+- an optional interactive setup guide that writes `.env` step by step
 - `passwordeval` support for macOS Keychain, Linux GPG, secure password files,
   and custom commands
 - [`Makefile`](./Makefile) targets for quickstart, render, install, update,
   and test
+- copy-based install by default, with optional symlink install for centralized
+  repo-managed configs
 - smoke tests that validate rendered config without needing a live SMTP account
 
 ## Quick Start
 
 1. Install `msmtp` on your machine using your platform package manager.
-2. Initialize a local env file:
+2. Choose a setup path:
 
 ```bash
 make quickstart EXAMPLE=macos-keychain
+make setup
 ```
 
-3. Edit `.env` and replace the placeholder values.
+`make quickstart` is the non-interactive bootstrap path. `make setup` is the
+interactive prompt-driven path. Both produce a local `.env` file.
+
+3. Review `.env` and adjust any values that need to change.
 4. Validate the repo behavior:
 
 ```bash
@@ -37,7 +44,16 @@ make install
 ```
 
 By default, `make install` writes to `~/.msmtprc` and keeps a rendered copy in
-`.msmtprc.generated`.
+`.msmtprc.generated`. For a repo-centralized advanced setup, you can install a
+symlink instead:
+
+```bash
+make install INSTALL_MODE=symlink
+```
+
+The env/template layer is intentional. `msmtp` reads `~/.msmtprc`, but keeping
+structured inputs in `.env` plus a template makes setup reproducible, testable,
+and easier to document.
 
 ## Credential Modes
 
@@ -50,12 +66,20 @@ Choose one `MSMTP_SECRET_METHOD` in `.env`:
 
 Starter examples live in [`templates/examples/`](./templates/examples/).
 
+## Tracking and Safety
+
+Generated or personalized `msmtprc` files should stay untracked. The repo
+ignores local `.env.*` files and `.msmtprc*` outputs so private account details
+and local secret paths do not get committed accidentally.
+
 ## Main Files
 
 - [`.env.example`](./.env.example): generic starter env file
 - [`Makefile`](./Makefile): common repo entrypoints
 - [`templates/msmtprc.template`](./templates/msmtprc.template): canonical
   config template
+- [`scripts/setup.sh`](./scripts/setup.sh): interactive setup that writes a
+  local `.env`
 - [`scripts/render-config.sh`](./scripts/render-config.sh): generate a
   concrete config file
 - [`scripts/install.sh`](./scripts/install.sh): render and install the config
@@ -83,6 +107,8 @@ Starter examples live in [`templates/examples/`](./templates/examples/).
 
 - [`docs/getting-started.md`](./docs/getting-started.md): setup and usage
   walkthrough
+- [`docs/manual-setup.md`](./docs/manual-setup.md): raw `msmtprc` fallback
+  guide
 - [`docs/architecture.md`](./docs/architecture.md): repository architecture
   and boundaries
 - [`docs/repo-layout.md`](./docs/repo-layout.md): what each major directory is

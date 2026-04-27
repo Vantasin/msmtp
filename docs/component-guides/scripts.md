@@ -4,6 +4,8 @@
 
 Current files:
 
+- [`setup.sh`](../../scripts/setup.sh): interactive setup that writes a local
+  `.env`
 - [`quickstart.sh`](../../scripts/quickstart.sh): create a local env file from
   a chosen example
 - [`render-config.sh`](../../scripts/render-config.sh): render the canonical

@@ -58,6 +58,7 @@ if [ "$stdout_mode" = "true" ]; then
   exit 0
 fi
 
+mkdir -p "$(dirname "$output_file")"
 umask 077
 render_msmtprc_template "${repo_root}/templates/msmtprc.template" > "$output_file"
 chmod 600 "$output_file"

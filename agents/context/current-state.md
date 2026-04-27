@@ -9,10 +9,11 @@ Present today:
   [CHANGELOG.md](../../CHANGELOG.md)
 - canonical [`agents/`](../) guidance
 - human-readable [`docs/README.md`](../../docs/README.md)
+- manual fallback docs in [docs/manual-setup.md](../../docs/manual-setup.md)
 - [`.env.example`](../../.env.example) and mode-specific example env files
 - [`templates/msmtprc.template`](../../templates/msmtprc.template)
 - implementation scripts in [`scripts/`](../../scripts/) for quickstart,
-  render, and install flows
+  interactive setup, render, and install flows
 - a [`Makefile`](../../Makefile) with common repo commands
 - shell-based smoke tests in [`tests/test.sh`](../../tests/test.sh)
 

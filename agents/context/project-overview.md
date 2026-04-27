@@ -11,5 +11,6 @@ Its goals are:
 - remain understandable to both human maintainers and AI agents
 
 The repository now includes a first implementation slice built around an env
-file, a canonical `msmtprc` template, executable render and install scripts,
-and smoke tests for the supported credential modes.
+file, a canonical `msmtprc` template, an optional interactive setup flow,
+executable render and install scripts, and smoke tests for the supported
+credential modes.

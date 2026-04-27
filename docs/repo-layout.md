@@ -7,7 +7,7 @@
 - [CHANGELOG.md](../CHANGELOG.md): auditable summary of meaningful repository
   changes
 - [`.env.example`](../.env.example): generic starter configuration
-- [Makefile](../Makefile): common render, install, and test commands
+- [Makefile](../Makefile): common setup, render, install, and test commands
 
 ## Canonical Guidance
 
@@ -23,6 +23,6 @@
 ## Implementation Areas
 
 - [`templates/`](../templates/): config templates and env examples
-- [`scripts/`](../scripts/): repeatable automation for quickstart, render, and
-  install
+- [`scripts/`](../scripts/): repeatable automation for quickstart, interactive
+  setup, render, and install
 - [`tests/`](../tests/): repository verification assets

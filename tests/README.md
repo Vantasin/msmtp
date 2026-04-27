@@ -4,5 +4,6 @@ This directory contains repository smoke tests.
 
 Files:
 
-- [`test.sh`](./test.sh): validates shell syntax plus rendering and install
-  flows for the supported credential modes
+- [`test.sh`](./test.sh): validates shell syntax plus quickstart, interactive
+  setup, rendering, copy install, symlink install, and supported credential
+  modes

@@ -4,8 +4,8 @@
 
 Current file:
 
-- [`test.sh`](../../tests/test.sh): shell smoke tests for render and install
-  behavior
+- [`test.sh`](../../tests/test.sh): shell smoke tests for quickstart,
+  interactive setup, render, copy install, and symlink install behavior
 
 Run them with:
 

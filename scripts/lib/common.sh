@@ -61,6 +61,24 @@ shell_quote() {
   printf "'%s'" "$(printf '%s' "$1" | sed "s/'/'\\\\''/g")"
 }
 
+write_env_assignment() {
+  local key="$1"
+  local value="${2:-}"
+
+  printf '%s=%s\n' "$key" "$(shell_quote "$value")"
+}
+
+absolute_path() {
+  local path="$1"
+  local dir_path base_name
+
+  dir_path="$(dirname "$path")"
+  base_name="$(basename "$path")"
+  dir_path="$(cd "$dir_path" && pwd -P)"
+
+  printf '%s/%s\n' "$dir_path" "$base_name"
+}
+
 passwordeval_command() {
   local method="${MSMTP_SECRET_METHOD:-command}"
 

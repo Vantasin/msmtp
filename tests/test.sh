@@ -23,6 +23,7 @@ assert_contains() {
 run_syntax_checks() {
   bash -n "${repo_root}/scripts/render-config.sh"
   bash -n "${repo_root}/scripts/install.sh"
+  bash -n "${repo_root}/scripts/setup.sh"
   bash -n "${repo_root}/scripts/quickstart.sh"
   bash -n "${repo_root}/scripts/lib/common.sh"
   bash -n "${repo_root}/tests/test.sh"
@@ -49,6 +50,34 @@ if "${repo_root}/scripts/quickstart.sh" \
   --env-file "${tmp_dir}/bootstrap.env" >/dev/null 2>&1; then
   fail "quickstart.sh should refuse to overwrite an existing env file"
 fi
+
+printf '%s\n' \
+  "guided" \
+  "smtp.guided.example" \
+  "587" \
+  "guided@example.com" \
+  "" \
+  "command" \
+  "pass show mail/guided" \
+  "" \
+  "" \
+  "" \
+  "" \
+  "" \
+  "" \
+  "" \
+  "no" | "${repo_root}/scripts/setup.sh" \
+    --env-file "${tmp_dir}/guided.env" \
+    --output "${tmp_dir}/guided.msmtprc" \
+    --target "${tmp_dir}/home-guided/.msmtprc" >/dev/null 2>&1
+
+"${repo_root}/scripts/render-config.sh" \
+  --env-file "${tmp_dir}/guided.env" \
+  --output "${tmp_dir}/guided.msmtprc" >/dev/null
+
+assert_contains "${tmp_dir}/guided.env" "MSMTP_SECRET_METHOD='command'"
+assert_contains "${tmp_dir}/guided.msmtprc" "account guided"
+assert_contains "${tmp_dir}/guided.msmtprc" "passwordeval pass show mail/guided"
 
 cat > "${tmp_dir}/keychain.env" <<'EOF'
 MSMTP_ACCOUNT_NAME=work
@@ -143,6 +172,18 @@ EOF
 assert_contains "${tmp_dir}/command.msmtprc" "logfile /tmp/msmtp.log"
 assert_contains "${tmp_dir}/command.msmtprc" "passwordeval pass show mail/msmtp"
 assert_contains "${tmp_dir}/home/.msmtprc" "account cli"
+
+"${repo_root}/scripts/install.sh" \
+  --env-file "${tmp_dir}/command.env" \
+  --output "${tmp_dir}/central/generated.msmtprc" \
+  --target "${tmp_dir}/home-link/.msmtprc" \
+  --mode symlink >/dev/null
+
+[ -L "${tmp_dir}/home-link/.msmtprc" ] || fail "Expected symlink install target"
+link_target="$(readlink "${tmp_dir}/home-link/.msmtprc")"
+expected_link_target="$(cd "${tmp_dir}/central" && pwd -P)/generated.msmtprc"
+[ "$link_target" = "$expected_link_target" ] || fail "Unexpected symlink target: $link_target"
+assert_contains "${tmp_dir}/central/generated.msmtprc" "account cli"
 
 if command -v make >/dev/null 2>&1; then
   make -C "${repo_root}" \
