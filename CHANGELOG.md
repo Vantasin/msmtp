@@ -27,3 +27,5 @@
   generate/install flows
 - added secret-backend setup docs plus safe helper commands for validation,
   Keychain, password files, and GPG files
+- tightened agent context/workflow guidance for current repo maturity and
+  account/secret drift review

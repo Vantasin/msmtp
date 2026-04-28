@@ -1,7 +1,7 @@
 # Current State
 
 As of 2026-04-27, this repository contains both the governance scaffold and a
-first-pass implementation for managing `msmtp` configuration.
+working implementation for managing `msmtp` configuration.
 
 Present today:
 

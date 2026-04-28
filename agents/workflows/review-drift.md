@@ -10,5 +10,8 @@ Use this workflow after significant repository changes.
 4. Review [`docs/README.md`](../../docs/README.md) and major directory
    `README.md` files for mismatches and non-navigable repo references that
    should be relative Markdown links.
-5. Update documents that drifted and note meaningful changes in
+5. If the change affects accounts or secret handling, explicitly review
+   [accounts/README.md](../../accounts/README.md) and
+   [docs/secrets.md](../../docs/secrets.md).
+6. Update documents that drifted and note meaningful changes in
    [CHANGELOG.md](../../CHANGELOG.md).
