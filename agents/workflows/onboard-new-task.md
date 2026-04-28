@@ -12,6 +12,10 @@
 5. If the task touches account layouts or secret backends, also review
    [accounts/README.md](../../accounts/README.md) and
    [docs/secrets.md](../../docs/secrets.md).
-6. Check for stale assumptions before proposing or making changes.
-7. If the task changes repository structure or operating behavior, plan the
+6. If the task touches repo-owned file writes, install/restore behavior, or
+   interruption handling, also review
+   [scripts/lib/common.sh](../../scripts/lib/common.sh) and
+   [tests/test.sh](../../tests/test.sh).
+7. Check for stale assumptions before proposing or making changes.
+8. If the task changes repository structure or operating behavior, plan the
    required documentation and changelog updates alongside the code changes.

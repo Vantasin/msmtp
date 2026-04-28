@@ -31,6 +31,12 @@ Do not silently merge contradictory instructions.
 - Keep SMTP account definition in `accounts/*.env`, and keep deployment choices
   such as user vs system install targets in command-level configuration rather
   than tracked account files.
+- When modifying repo-owned file-writing or deployment scripts, preserve the
+  shared atomic-replacement patterns in [`scripts/lib/common.sh`](../../scripts/lib/common.sh)
+  instead of introducing ad hoc in-place mutation.
+- When changing install, restore, or file-backed secret rotation flows,
+  preserve recoverable `.bak.*` behavior unless the user explicitly requests a
+  different model.
 
 ## Repository Truthfulness
 

@@ -14,6 +14,6 @@ The repository now includes a working implementation built around canonical
 account files under `accounts/`, a canonical `msmtprc` template, an optional
 interactive setup flow, executable render, account-only management, a separate
 guided human configure flow, password/install/restore helpers, safer install,
-and backup-restore scripts, linear human quick-start docs, secret-helper
-scripts for supported backends, and smoke tests for the supported credential
-modes.
+backup-restore scripts, linear human quick-start docs, secret-helper scripts
+for supported backends, interruption-aware workflows, and smoke tests for the
+supported credential modes.

@@ -31,4 +31,13 @@ The current implementation flow is:
 6. fall back to [manual docs](../../docs/manual-setup.md) when direct
    `msmtprc` setup is needed
 
+Implementation safety expectations now include:
+
+- repo-owned file writes should prefer same-directory temp-and-rename
+  replacement
+- install, restore, and file-backed secret rotation should preserve adjacent
+  backup files rather than leaving a missing live target window
+- interactive interruption handling should distinguish between prompt-only
+  cancellation and cancellation after state-changing steps
+
 This separation keeps policy, explanation, and implementation distinct.

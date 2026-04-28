@@ -32,7 +32,16 @@ Operational convention today:
 - User vs system install scope is selected through `make` targets and
   variables, not through account-file data.
 - The preferred human-facing commands are `make configure`, `make password`,
-  `make install`, and `make restore`.
+  `make install`, and `make restore`; `make account` remains the account-only
+  CRUD entrypoint.
+- Repo-owned file writes now prefer same-directory atomic replacement semantics
+  rather than in-place mutation.
+- Install, restore, and file-backed secret rotation preserve adjacent
+  `.bak.*` recovery points and aim to leave either the old or new live file in
+  place if interrupted.
+- Interactive workflows emit clearer cancellation messaging, but external tools
+  such as macOS Keychain and GPG still define part of the interruption
+  behavior.
 
 Not present today:
 
