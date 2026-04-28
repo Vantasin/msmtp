@@ -123,6 +123,7 @@ else
 fi
 
 account_file_hint
+show_prompt_help
 account_file_name="$(basename "$env_file" .env)"
 
 printf 'Basic account settings:\n' >&2
@@ -130,7 +131,7 @@ MSMTP_ACCOUNT_NAME="$(prompt_required "msmtp account name (examples: default, wo
 MSMTP_HOST="$(prompt_required "SMTP host (example: smtp.example.com)" "${MSMTP_HOST:-}")"
 MSMTP_PORT="$(prompt_required "SMTP port (common values: 587 or 465)" "${MSMTP_PORT:-587}")"
 MSMTP_FROM="$(prompt_required "From address (example: you@example.com)" "${MSMTP_FROM:-}")"
-MSMTP_USER="$(prompt_required "Username (press Enter to reuse the From address)" "${MSMTP_USER:-$MSMTP_FROM}")"
+MSMTP_USER="$(prompt_required "Username (press Enter to accept the bracketed value, often the From address)" "${MSMTP_USER:-$MSMTP_FROM}")"
 
 printf '\nSecret settings:\n' >&2
 MSMTP_SECRET_METHOD="$(prompt_secret_method "${MSMTP_SECRET_METHOD:-$(default_secret_method)}")"

@@ -228,6 +228,7 @@ choose_action() {
 $(list_account_env_files "$accounts_dir")
 EOF
 
+  show_prompt_help
   if [ "$env_count" -eq 0 ]; then
     printf 'No account files exist yet in %s.\n' "$accounts_dir" >&2
     printf 'This workflow only creates or edits account files. It does not install the live msmtp config.\n' >&2

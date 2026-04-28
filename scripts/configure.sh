@@ -50,9 +50,9 @@ account_label_for_env_file() {
   default_label="$(default_account_name_from_env_file "$env_path")"
 
   if [ -n "$default_label" ]; then
-    printf '%s (%s, default)\n' "$file_label" "$account_label"
+    printf '%s (msmtp account: %s, default)\n' "$file_label" "$account_label"
   else
-    printf '%s (%s)\n' "$file_label" "$account_label"
+    printf '%s (msmtp account: %s)\n' "$file_label" "$account_label"
   fi
 }
 
@@ -93,6 +93,7 @@ choose_workflow_action() {
 $(list_account_env_files "$accounts_dir")
 EOF
 
+  show_prompt_help
   printf 'Guided msmtp configuration\n' >&2
   printf 'This flow can create or edit an account, set up or rotate its secret, validate it, and install the live config.\n' >&2
   printf 'The install step applies the full account set in %s.\n\n' "$accounts_dir" >&2

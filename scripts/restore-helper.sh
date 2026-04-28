@@ -87,6 +87,7 @@ done
 
 if [ -z "$target_path" ]; then
   if [ -t 0 ]; then
+    show_prompt_help
     choose_target_path
   else
     target_path="${HOME}/.msmtprc"
@@ -95,6 +96,7 @@ fi
 
 if [ -z "$backup_path" ]; then
   require_tty
+  show_prompt_help
   backup_path="$(choose_backup_for_target)"
 fi
 

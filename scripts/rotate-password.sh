@@ -39,7 +39,7 @@ choose_env_file() {
   while IFS= read -r env_path; do
     [ -n "$env_path" ] || continue
     env_files+=("$env_path")
-    labels+=("$(basename "$env_path") ($(account_name_from_env_file "$env_path"))")
+    labels+=("$(basename "$env_path") (msmtp account: $(account_name_from_env_file "$env_path"))")
   done <<EOF
 $(list_account_env_files "$accounts_dir")
 EOF
@@ -51,6 +51,7 @@ EOF
     return 0
   fi
 
+  show_prompt_help
   printf 'Choose the account whose secret you want to rotate.\n' >&2
   printf 'This replaces the existing secret for the configured backend and validates it afterward when supported.\n' >&2
   label="$(choose_from_menu "Choose an account file for password rotation:" "${labels[@]}")"

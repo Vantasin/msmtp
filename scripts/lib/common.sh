@@ -83,6 +83,19 @@ require_tty() {
   [ -t 0 ] || die "This command requires an interactive terminal"
 }
 
+show_prompt_help() {
+  if [ "${PROMPT_HELP_PRINTED:-false}" = "true" ]; then
+    return 0
+  fi
+
+  printf 'Prompt help:\n' >&2
+  printf '  - Values in [brackets] are the current saved values or suggested defaults.\n' >&2
+  printf '  - Press Enter to accept the bracketed value.\n' >&2
+  printf '  - [Y/n] means yes is the default. [y/N] means no is the default.\n' >&2
+  printf '  - Menu prompts like Enter a number [1] use the bracketed number as the default.\n\n' >&2
+  PROMPT_HELP_PRINTED="true"
+}
+
 prompt_value() {
   local prompt_text="$1"
   local default_value="${2:-}"

@@ -172,11 +172,13 @@ fi
 
 if [ -z "$target_path" ]; then
   require_tty
+  show_prompt_help
   choose_target_path
 fi
 
 if [ -z "$install_mode" ]; then
   require_tty
+  show_prompt_help
   choose_install_mode
 fi
 
@@ -185,6 +187,7 @@ if [ -z "$default_account" ]; then
   if [ -n "$detected_default" ]; then
     default_account="$detected_default"
   elif [ -t 0 ] && [ "$(account_count "$accounts_dir")" -gt 1 ]; then
+    show_prompt_help
     printf 'No default account is marked in %s.\n' "$accounts_dir" >&2
     printf 'Choose which account msmtp should use when no explicit account name is supplied.\n' >&2
     default_account="$(choose_from_menu "Choose the default account for this install:" $(account_names_in_dir "$accounts_dir"))"
