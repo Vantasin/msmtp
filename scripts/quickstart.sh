@@ -75,9 +75,11 @@ fi
 mkdir -p "$(dirname "$env_file")"
 cp "$source_file" "$env_file"
 chmod 600 "$env_file"
+sync_persistent_default_account_after_write "$(dirname "$env_file")" "" "$(account_name_from_env_file "$env_file")"
 
 printf 'Created %s from %s\n' "$env_file" "$source_file"
 printf 'Next steps:\n'
 printf '  1. Edit %s and replace placeholders.\n' "$env_file"
 printf '  2. Run make check.\n'
-printf '  3. Run make configure for the full guided flow, or run make password / make install directly.\n'
+printf '  3. Run make account if you need to review or change the persistent default account.\n'
+printf '  4. Run make configure for the full guided flow, or run make password / make install directly.\n'

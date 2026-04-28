@@ -15,8 +15,9 @@ Usage: scripts/install-helper.sh [--accounts-dir PATH]
                                  [--force]
 
 Interactive wrapper around scripts/install.sh. When run in a terminal without
-an explicit target or install mode, it prompts for the missing choices and
-explains the deployment tradeoffs.
+an explicit target or install mode, it prompts for the missing choices and can
+resolve default-account ambiguity for the current install without rewriting
+account files.
 EOF
 }
 
@@ -27,56 +28,36 @@ target_path=""
 install_mode=""
 force_replace="false"
 
-account_names_in_dir() {
-  local directory="$1"
-  local env_path
+account_choice_label_for_env_file() {
+  local env_path="$1"
+  local suffix="${2:-}"
+  local file_label account_label
 
-  while IFS= read -r env_path; do
-    [ -n "$env_path" ] || continue
-    account_name_from_env_file "$env_path"
-  done <<EOF
-$(list_account_env_files "$directory")
-EOF
-}
+  file_label="$(basename "$env_path")"
+  account_label="$(account_name_from_env_file "$env_path")"
 
-detect_default_account() {
-  local directory="$1"
-  local env_path default_name found_default=""
-
-  while IFS= read -r env_path; do
-    [ -n "$env_path" ] || continue
-    default_name="$(default_account_name_from_env_file "$env_path")"
-    if [ -n "$default_name" ]; then
-      if [ -n "$found_default" ] && [ "$found_default" != "$default_name" ]; then
-        printf '\n'
-        return 1
-      fi
-      found_default="$default_name"
-    fi
-  done <<EOF
-$(list_account_env_files "$directory")
-EOF
-
-  printf '%s\n' "$found_default"
+  if [ -n "$suffix" ]; then
+    printf '%s -> %s (%s)\n' "$file_label" "$account_label" "$suffix"
+  else
+    printf '%s -> %s\n' "$file_label" "$account_label"
+  fi
 }
 
 choose_target_path() {
   local choice custom_target
 
-  printf 'Install target guidance:\n' >&2
-  printf '  1. User config    Recommended for desktop or single-user setups.\n' >&2
-  printf '  2. System config  Recommended for root-managed server installs.\n' >&2
-  printf '  3. Custom path    Use when another tool or user will consume the rendered file.\n' >&2
-  choice="$(choose_from_menu "Choose where the live msmtp config should be installed:" \
-    "User config (~/.msmtprc)" \
-    "System config (/etc/msmtprc)" \
-    "Custom path")"
+  choice="$(
+    choose_from_menu "Choose where the live msmtp config should be installed:" \
+      "User config ~/.msmtprc (Recommended for desktop or single-user setups)" \
+      "System config /etc/msmtprc (Recommended for root-managed server installs)" \
+      "Custom path"
+  )"
 
   case "$choice" in
-    "User config (~/.msmtprc)")
+    "User config ~/.msmtprc (Recommended for desktop or single-user setups)")
       target_path="${HOME}/.msmtprc"
       ;;
-    "System config (/etc/msmtprc)")
+    "System config /etc/msmtprc (Recommended for root-managed server installs)")
       target_path="/etc/msmtprc"
       ;;
     *)
@@ -89,15 +70,14 @@ choose_target_path() {
 choose_install_mode() {
   local choice
 
-  printf 'Install mode guidance:\n' >&2
-  printf '  1. Copy a real file  Recommended for servers and standalone machine-local installs.\n' >&2
-  printf '  2. Create a symlink  Recommended for desktops when you want the live file to point back into the repo.\n' >&2
-  choice="$(choose_from_menu "Choose how the live config should be installed:" \
-    "Copy a real file" \
-    "Create a symlink")"
+  choice="$(
+    choose_from_menu "Choose how the live config should be installed:" \
+      "Copy a real file (Recommended for servers and standalone machine-local installs)" \
+      "Create a symlink (Recommended for desktops when you want the live file to point back into the repo)"
+  )"
 
   case "$choice" in
-    "Copy a real file")
+    "Copy a real file (Recommended for servers and standalone machine-local installs)")
       install_mode="copy"
       ;;
     *)
@@ -106,19 +86,89 @@ choose_install_mode() {
   esac
 }
 
-account_count() {
+only_account_env_file() {
   local directory="$1"
-  local count=0
+  local found_env_path=""
   local env_path
 
   while IFS= read -r env_path; do
     [ -n "$env_path" ] || continue
-    count=$((count + 1))
+    if [ -n "$found_env_path" ]; then
+      return 1
+    fi
+    found_env_path="$env_path"
   done <<EOF
 $(list_account_env_files "$directory")
 EOF
 
-  printf '%s\n' "$count"
+  [ -n "$found_env_path" ] || return 1
+  printf '%s\n' "$found_env_path"
+}
+
+use_only_account_for_install() {
+  local directory="$1"
+  local reason_text="$2"
+  local only_env_file account_name default_file
+
+  only_env_file="$(only_account_env_file "$directory")" || return 1
+  account_name="$(account_name_from_env_file "$only_env_file")"
+  default_file="$(default_account_file_for_directory "$directory")"
+
+  printf '%s\n' "$reason_text" >&2
+  printf 'Using the only account in %s for this install: %s.\n' "$directory" "$(account_choice_label_for_env_file "$only_env_file")" >&2
+  printf 'Run make account if you want to save that choice persistently in %s.\n' "$default_file" >&2
+
+  printf '%s\n' "$account_name"
+}
+
+print_marked_default_accounts() {
+  local directory="$1"
+  local env_path default_name
+
+  while IFS= read -r env_path; do
+    [ -n "$env_path" ] || continue
+    default_name="$(default_account_name_from_env_file "$env_path")"
+    [ -n "$default_name" ] || continue
+    printf '  - %s\n' "$(account_choice_label_for_env_file "$env_path" "legacy default marker")" >&2
+  done <<EOF
+$(list_account_env_files "$directory")
+EOF
+}
+
+choose_default_account_for_install() {
+  local directory="$1"
+  local intro_text="$2"
+  local env_files=()
+  local labels=()
+  local env_path default_name label
+
+  while IFS= read -r env_path; do
+    [ -n "$env_path" ] || continue
+    env_files+=("$env_path")
+    default_name="$(default_account_name_from_env_file "$env_path")"
+    if [ -n "$default_name" ]; then
+      labels+=("$(account_choice_label_for_env_file "$env_path" "legacy default marker")")
+    else
+      labels+=("$(account_choice_label_for_env_file "$env_path")")
+    fi
+  done <<EOF
+$(list_account_env_files "$directory")
+EOF
+
+  [ "${#env_files[@]}" -gt 0 ] || die "No account env files found in: $directory"
+
+  printf '%s\n' "$intro_text" >&2
+  printf 'This choice applies only to this install. It does not modify the files in %s.\n' "$directory" >&2
+
+  label="$(choose_from_menu "Choose the default account for this install:" "${labels[@]}")"
+  for i in "${!labels[@]}"; do
+    if [ "${labels[$i]}" = "$label" ]; then
+      account_name_from_env_file "${env_files[$i]}"
+      return 0
+    fi
+  done
+
+  die "Selected default account could not be resolved"
 }
 
 while [ $# -gt 0 ]; do
@@ -185,14 +235,44 @@ if [ -z "$install_mode" ]; then
 fi
 
 if [ -z "$default_account" ]; then
-  detected_default="$(detect_default_account "$accounts_dir" || true)"
-  if [ -n "$detected_default" ]; then
-    default_account="$detected_default"
-  elif [ -t 0 ] && [ "$(account_count "$accounts_dir")" -gt 1 ]; then
-    printf 'No default account is marked in %s.\n' "$accounts_dir" >&2
-    printf 'Choose which account msmtp should use when no explicit account name is supplied.\n' >&2
-    default_account="$(choose_from_menu "Choose the default account for this install:" $(account_names_in_dir "$accounts_dir"))"
-  fi
+  detected_default_state="$(detect_default_account_state_from_directory "$accounts_dir")"
+  case "$detected_default_state" in
+    single:*)
+      default_account="${detected_default_state#single:}"
+      ;;
+    none)
+      if [ "$(account_count_in_directory "$accounts_dir")" -eq 1 ]; then
+        default_account="$(use_only_account_for_install \
+          "$accounts_dir" \
+          "No persistent default account is configured.")"
+      elif [ -t 0 ] && [ "$(account_count_in_directory "$accounts_dir")" -gt 1 ]; then
+        default_account="$(choose_default_account_for_install \
+          "$accounts_dir" \
+          "No persistent default account is configured in $(default_account_file_for_directory "$accounts_dir"). msmtp still needs one default account when no explicit account name is supplied.")"
+      fi
+      ;;
+    stale:*)
+      if [ "$(account_count_in_directory "$accounts_dir")" -eq 1 ]; then
+        default_account="$(use_only_account_for_install \
+          "$accounts_dir" \
+          "The persistent default file $(default_account_file_for_directory "$accounts_dir") points to missing account ${detected_default_state#stale:}.")"
+      elif [ -t 0 ]; then
+        printf 'The persistent default file %s points to missing account %s.\n' "$(default_account_file_for_directory "$accounts_dir")" "${detected_default_state#stale:}" >&2
+        default_account="$(choose_default_account_for_install \
+          "$accounts_dir" \
+          "Choose which account msmtp should use for this install while you decide whether to update the persistent default.")"
+      fi
+      ;;
+    multiple)
+      if [ -t 0 ]; then
+        printf 'Multiple account files in %s still contain legacy default markers:\n' "$accounts_dir" >&2
+        print_marked_default_accounts "$accounts_dir"
+        default_account="$(choose_default_account_for_install \
+          "$accounts_dir" \
+          "Choose which account msmtp should use for this install when no explicit account name is supplied.")"
+      fi
+      ;;
+  esac
 fi
 
 if [ -z "$output_file" ]; then

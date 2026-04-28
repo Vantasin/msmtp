@@ -9,7 +9,8 @@
    onboarding, or verification flows, also review
    [docs/getting-started.md](../../docs/getting-started.md) and
    [docs/secrets.md](../../docs/secrets.md).
-5. If the task touches account layouts or secret backends, also review
+5. If the task touches account layouts, persistent default-account behavior, or
+   secret backends, also review
    [accounts/README.md](../../accounts/README.md) and
    [docs/secrets.md](../../docs/secrets.md).
 6. If the task touches repo-owned file writes, install/restore behavior, or

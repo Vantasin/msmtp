@@ -403,6 +403,165 @@ list_account_env_files() {
   find "$accounts_dir" -maxdepth 1 -type f -name '*.env' | sort
 }
 
+account_count_in_directory() {
+  local accounts_dir="$1"
+  local count=0
+  local env_path
+
+  while IFS= read -r env_path; do
+    [ -n "$env_path" ] || continue
+    count=$((count + 1))
+  done <<EOF
+$(list_account_env_files "$accounts_dir")
+EOF
+
+  printf '%s\n' "$count"
+}
+
+default_account_file_for_directory() {
+  local accounts_dir="$1"
+
+  printf '%s/.default-account\n' "$accounts_dir"
+}
+
+persistent_default_account_name_from_directory() {
+  local accounts_dir="$1"
+  local default_file default_account_name=""
+
+  default_file="$(default_account_file_for_directory "$accounts_dir")"
+  [ -f "$default_file" ] || return 1
+
+  IFS= read -r default_account_name < "$default_file" || true
+  default_account_name="${default_account_name%$'\r'}"
+  [ -n "$default_account_name" ] || return 1
+
+  printf '%s\n' "$default_account_name"
+}
+
+write_default_account_name_for_directory() {
+  local accounts_dir="$1"
+  local account_name="$2"
+  local default_file
+
+  default_file="$(default_account_file_for_directory "$accounts_dir")"
+  mkdir -p "$accounts_dir"
+  umask 077
+  atomic_write_text_file "$default_file" 600 "$account_name"
+}
+
+clear_default_account_name_for_directory() {
+  local accounts_dir="$1"
+  local default_file
+
+  default_file="$(default_account_file_for_directory "$accounts_dir")"
+  if path_exists "$default_file"; then
+    mark_interrupt_dirty
+    rm -f "$default_file"
+  fi
+}
+
+account_name_exists_in_directory() {
+  local accounts_dir="$1"
+  local target_account_name="$2"
+  local env_path account_name
+
+  while IFS= read -r env_path; do
+    [ -n "$env_path" ] || continue
+    account_name="$(account_name_from_env_file "$env_path")"
+    if [ "$account_name" = "$target_account_name" ]; then
+      return 0
+    fi
+  done <<EOF
+$(list_account_env_files "$accounts_dir")
+EOF
+
+  return 1
+}
+
+detect_legacy_default_account_state_from_directory() {
+  local accounts_dir="$1"
+  local env_path default_name found_default="" marked_count=0
+
+  while IFS= read -r env_path; do
+    [ -n "$env_path" ] || continue
+    default_name="$(default_account_name_from_env_file "$env_path")"
+    if [ -n "$default_name" ]; then
+      marked_count=$((marked_count + 1))
+      if [ -z "$found_default" ]; then
+        found_default="$default_name"
+      fi
+    fi
+  done <<EOF
+$(list_account_env_files "$accounts_dir")
+EOF
+
+  case "$marked_count" in
+    0)
+      printf 'none\n'
+      ;;
+    1)
+      printf 'single:%s\n' "$found_default"
+      ;;
+    *)
+      printf 'multiple\n'
+      ;;
+  esac
+}
+
+detect_default_account_state_from_directory() {
+  local accounts_dir="$1"
+  local persistent_default_account legacy_state
+
+  persistent_default_account="$(persistent_default_account_name_from_directory "$accounts_dir" || true)"
+  if [ -n "$persistent_default_account" ]; then
+    if account_name_exists_in_directory "$accounts_dir" "$persistent_default_account"; then
+      printf 'single:%s\n' "$persistent_default_account"
+    else
+      printf 'stale:%s\n' "$persistent_default_account"
+    fi
+    return 0
+  fi
+
+  legacy_state="$(detect_legacy_default_account_state_from_directory "$accounts_dir")"
+  printf '%s\n' "$legacy_state"
+}
+
+current_default_account_name_from_directory() {
+  local accounts_dir="$1"
+  local state
+
+  state="$(detect_default_account_state_from_directory "$accounts_dir")"
+  case "$state" in
+    single:*)
+      printf '%s\n' "${state#single:}"
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+sync_persistent_default_account_after_write() {
+  local accounts_dir="$1"
+  local old_account_name="${2:-}"
+  local new_account_name="$3"
+  local current_default_account default_file
+
+  default_file="$(default_account_file_for_directory "$accounts_dir")"
+  current_default_account="$(persistent_default_account_name_from_directory "$accounts_dir" || true)"
+
+  if [ -n "$current_default_account" ] && [ -n "$old_account_name" ] && [ "$current_default_account" = "$old_account_name" ] && [ "$new_account_name" != "$old_account_name" ]; then
+    write_default_account_name_for_directory "$accounts_dir" "$new_account_name"
+    printf 'Updated %s to keep %s as the persistent default account.\n' "$default_file" "$new_account_name" >&2
+    return 0
+  fi
+
+  if [ -z "$current_default_account" ] && [ "$(account_count_in_directory "$accounts_dir")" -eq 1 ]; then
+    write_default_account_name_for_directory "$accounts_dir" "$new_account_name"
+    printf 'Set %s as the persistent default account in %s.\n' "$new_account_name" "$default_file" >&2
+  fi
+}
+
 secret_method_from_env_file() {
   local env_file="$1"
 
@@ -428,7 +587,6 @@ write_msmtp_env_file() {
     write_env_assignment MSMTP_TLS "${MSMTP_TLS:-}"
     write_env_assignment MSMTP_TLS_STARTTLS "${MSMTP_TLS_STARTTLS:-}"
     write_env_assignment MSMTP_TLS_CERTCHECK "${MSMTP_TLS_CERTCHECK:-}"
-    write_env_assignment MSMTP_SET_DEFAULT "${MSMTP_SET_DEFAULT:-}"
     write_env_assignment MSMTP_LOGFILE "${MSMTP_LOGFILE:-}"
     write_env_assignment MSMTP_TLS_TRUST_FILE "${MSMTP_TLS_TRUST_FILE:-}"
     write_env_assignment MSMTP_TLS_FINGERPRINT "${MSMTP_TLS_FINGERPRINT:-}"
@@ -582,7 +740,10 @@ render_config_from_accounts_dir() {
   local explicit_default_account="$2"
   local env_files env_file account_blocks account_block default_candidate
   local implicit_default_account default_account_name default_line account_name
+  local persistent_default_account default_file
+  local default_marker_count=0
   local found_explicit_default="false"
+  declare -A seen_account_names=()
 
   [ -d "$accounts_dir" ] || die "Accounts directory not found: $accounts_dir"
 
@@ -591,6 +752,8 @@ render_config_from_accounts_dir() {
 
   account_blocks=""
   implicit_default_account=""
+  persistent_default_account="$(persistent_default_account_name_from_directory "$accounts_dir" || true)"
+  default_file="$(default_account_file_for_directory "$accounts_dir")"
 
   while IFS= read -r env_file; do
     [ -n "$env_file" ] || continue
@@ -598,6 +761,11 @@ render_config_from_accounts_dir() {
     account_block="$(render_account_block_from_env_file "$env_file")"
     account_name="$(account_name_from_env_file "$env_file")"
     default_candidate="$(default_account_name_from_env_file "$env_file")"
+
+    if [ -n "${seen_account_names[$account_name]+x}" ]; then
+      die "Duplicate MSMTP_ACCOUNT_NAME '$account_name' found in $accounts_dir. Each account file must use a unique msmtp account name."
+    fi
+    seen_account_names["$account_name"]=1
 
     if [ -n "$account_blocks" ]; then
       account_blocks="${account_blocks}
@@ -612,20 +780,30 @@ ${account_block}"
     fi
 
     if [ -n "$default_candidate" ]; then
-      if [ -n "$implicit_default_account" ] && [ "$implicit_default_account" != "$default_candidate" ]; then
-        die "Multiple account files are marked as default in $accounts_dir. Set only one MSMTP_SET_DEFAULT=true or pass --default-account."
+      default_marker_count=$((default_marker_count + 1))
+      if [ -z "$implicit_default_account" ]; then
+        implicit_default_account="$default_candidate"
       fi
-      implicit_default_account="$default_candidate"
     fi
   done <<EOF
 $env_files
 EOF
 
   default_account_name="$explicit_default_account"
-  if [ -z "$default_account_name" ]; then
+  if [ -n "$default_account_name" ]; then
+    if [ "$found_explicit_default" != "true" ]; then
+      die "Default account '$explicit_default_account' was not found in $accounts_dir"
+    fi
+  elif [ -n "$persistent_default_account" ]; then
+    if ! account_name_exists_in_directory "$accounts_dir" "$persistent_default_account"; then
+      die "Default account '$persistent_default_account' from $default_file was not found in $accounts_dir"
+    fi
+    default_account_name="$persistent_default_account"
+  else
+    if [ "$default_marker_count" -gt 1 ]; then
+      die "Multiple account files still contain legacy MSMTP_SET_DEFAULT=true markers in $accounts_dir. Use make account to set one persistent default or pass --default-account."
+    fi
     default_account_name="$implicit_default_account"
-  elif [ "$found_explicit_default" != "true" ]; then
-    die "Default account '$explicit_default_account' was not found in $accounts_dir"
   fi
 
   if [ -n "$default_account_name" ]; then

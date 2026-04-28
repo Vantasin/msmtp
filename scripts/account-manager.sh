@@ -41,14 +41,14 @@ account_env_path_for_name() {
 
 account_label_for_env_file() {
   local env_path="$1"
-  local file_label account_label default_label
+  local file_label account_label current_default_account
 
   file_label="$(basename "$env_path")"
   account_label="$(account_name_from_env_file "$env_path")"
-  default_label="$(default_account_name_from_env_file "$env_path")"
+  current_default_account="$(current_default_account_name_from_directory "$accounts_dir" || true)"
 
-  if [ -n "$default_label" ]; then
-    printf '%s (msmtp account: %s, default)\n' "$file_label" "$account_label"
+  if [ -n "$current_default_account" ] && [ "$account_label" = "$current_default_account" ]; then
+    printf '%s (msmtp account: %s, persistent default)\n' "$file_label" "$account_label"
   else
     printf '%s (msmtp account: %s)\n' "$file_label" "$account_label"
   fi
@@ -82,29 +82,24 @@ EOF
 
 set_default_account() {
   local selected_env_file="$1"
-  local env_path
+  local account_name default_file
 
-  while IFS= read -r env_path; do
-    [ -n "$env_path" ] || continue
-    load_env_file "$env_path"
-    if [ "$env_path" = "$selected_env_file" ]; then
-      MSMTP_SET_DEFAULT="true"
-    else
-      MSMTP_SET_DEFAULT="false"
-    fi
-    write_msmtp_env_file "$env_path"
-  done <<EOF
-$(list_account_env_files "$accounts_dir")
-EOF
+  account_name="$(account_name_from_env_file "$selected_env_file")"
+  default_file="$(default_account_file_for_directory "$accounts_dir")"
+  write_default_account_name_for_directory "$accounts_dir" "$account_name"
 
-  printf 'Set %s as the default account.\n' "$(account_name_from_env_file "$selected_env_file")"
+  printf 'Set %s as the persistent default account in %s.\n' "$account_name" "$default_file"
 }
 
 delete_account_file() {
   local env_path="$1"
   local backup_path
+  local deleted_account_name current_default_account default_file
 
   [ -f "$env_path" ] || die "Account file not found: $env_path"
+  deleted_account_name="$(account_name_from_env_file "$env_path")"
+  current_default_account="$(persistent_default_account_name_from_directory "$accounts_dir" || true)"
+  default_file="$(default_account_file_for_directory "$accounts_dir")"
   backup_path="$(backup_path_for "$env_path")"
 
   if [ "$force_replace" != "true" ]; then
@@ -116,6 +111,11 @@ delete_account_file() {
   mark_interrupt_dirty
   mv "$env_path" "$backup_path"
   printf 'Moved %s to %s\n' "$env_path" "$backup_path"
+
+  if [ -n "$current_default_account" ] && [ "$current_default_account" = "$deleted_account_name" ]; then
+    clear_default_account_name_for_directory "$accounts_dir"
+    printf 'Cleared %s because it pointed to the deleted account %s.\n' "$default_file" "$deleted_account_name"
+  fi
 }
 
 create_account() {
@@ -163,7 +163,7 @@ set_default_from_arg_or_prompt() {
   mark_interrupt_dirty
   set_default_account "$env_path"
   printf 'Next steps:\n' >&2
-  printf '  1. Run make install to deploy the updated default account selection.\n' >&2
+  printf '  1. Run make install to deploy the updated persistent default account selection.\n' >&2
   printf '  2. Run make configure if you also need secret or install guidance.\n' >&2
 }
 
@@ -245,7 +245,7 @@ EOF
       "Add an account - create a new accounts/<name>.env file" \
       "Edit an account - update SMTP settings for an existing account file" \
       "Delete an account - move one account file aside into a backup" \
-      "Set the default account - choose which account msmtp uses by default" \
+      "Set the persistent default account - choose which account msmtp uses by default" \
       "List accounts - review the current account inventory" \
       "Done")"
   fi
@@ -260,7 +260,7 @@ EOF
     "Delete an account - move one account file aside into a backup")
       printf 'delete\n'
       ;;
-    "Set the default account - choose which account msmtp uses by default")
+    "Set the persistent default account - choose which account msmtp uses by default")
       printf 'set-default\n'
       ;;
     "List accounts - review the current account inventory")

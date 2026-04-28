@@ -31,6 +31,18 @@ Do not silently merge contradictory instructions.
 - Keep SMTP account definition in `accounts/*.env`, and keep deployment choices
   such as user vs system install targets in command-level configuration rather
   than tracked account files.
+- Keep the persistent default account in `accounts/.default-account`, and keep
+  one-off render/install overrides in command-level configuration rather than
+  rewriting account env files.
+- Keep `MSMTP_ACCOUNT_NAME` unique across `accounts/*.env`, because generated
+  `msmtprc` account blocks and the persistent default pointer both depend on
+  that identity being unambiguous.
+- Keep deployment-time default-account resolution in install/configure flows,
+  and do not silently rewrite `accounts/*.env` or `accounts/.default-account`
+  just to satisfy one deploy.
+- Keep interactive CLI prompts concise. Prefer one focused prompt or menu with
+  recommendation text inline over separate guidance blocks that restate the
+  same choices.
 - When modifying repo-owned file-writing or deployment scripts, preserve the
   shared atomic-replacement patterns in [`scripts/lib/common.sh`](../../scripts/lib/common.sh)
   instead of introducing ad hoc in-place mutation.

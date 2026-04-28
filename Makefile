@@ -40,7 +40,7 @@ help: ## Show the common repo commands
 	@printf "  ACCOUNTS_DIR %s\n" "$(ACCOUNTS_DIR)"
 	@printf "  ACCOUNT_NAME %s\n" "$(ACCOUNT_NAME)"
 	@printf "  ACCOUNT_FILE %s\n" "$(ACCOUNT_FILE)"
-	@printf "  DEFAULT_ACCOUNT %s\n" "$(DEFAULT_ACCOUNT)"
+	@printf "  DEFAULT_ACCOUNT %s  # one-off render/install override; otherwise use accounts/.default-account\n" "$(DEFAULT_ACCOUNT)"
 	@printf "  PASSWORD_FILE %s\n" "$(PASSWORD_FILE)"
 	@printf "  GPG_FILE %s\n" "$(GPG_FILE)"
 	@printf "  GPG_RECIPIENT %s\n" "$(GPG_RECIPIENT)"

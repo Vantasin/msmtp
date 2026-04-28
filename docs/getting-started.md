@@ -79,7 +79,7 @@ That flow can:
 - add an account
 - edit an account
 - delete an account
-- set the default account
+- set the persistent default account
 - list accounts
 
 It does not render or install the live config.
@@ -165,7 +165,8 @@ Use the account-only manager:
 make account
 ```
 
-From there, you can add, edit, delete, list, and set the default account.
+From there, you can add, edit, delete, list, and set the persistent default
+account.
 
 Explicit combined render:
 
@@ -179,8 +180,14 @@ Explicit combined install:
 make install-user ACCOUNTS_DIR=accounts DEFAULT_ACCOUNT=work
 ```
 
-If you do not pass `DEFAULT_ACCOUNT=...`, set `MSMTP_SET_DEFAULT=true` on
-exactly one account file.
+If you do not pass `DEFAULT_ACCOUNT=...`, keep the persistent default account
+in `accounts/.default-account`.
+
+The guided setup flows create `accounts/.default-account` automatically when
+you create the first account. Use `make account` to change it later.
+
+If the persistent default is missing or stale, guided `make install` can
+choose one for the current deploy without rewriting the stored account data.
 
 ## Secret Storage Details
 
@@ -227,6 +234,11 @@ make install
 
 `make configure` can hand you into this install flow automatically. The direct
 install commands remain useful for repeatable re-deploys.
+
+The guided install prompts are intentionally concise. They only ask for target,
+mode, or default-account choices when the install is ambiguous. When no single
+default account is available, the guided flow can choose one for the current
+deploy without editing `accounts/*.env` or `accounts/.default-account`.
 
 Use the explicit user install command:
 

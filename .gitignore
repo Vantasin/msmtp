@@ -3,4 +3,5 @@
 !.env.example
 .msmtprc*
 accounts/*.env
+accounts/.default-account
 !accounts/README.md

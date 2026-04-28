@@ -26,7 +26,9 @@ The current implementation flow is:
    [docs/secrets.md](../../docs/secrets.md)
 3. render [`templates/msmtprc.template`](../../templates/msmtprc.template)
 4. install the generated output to the desired `msmtp` config path, using copy
-   mode by default or symlink mode as an advanced option
+   mode by default or symlink mode as an advanced option, while resolving the
+   effective default account from `accounts/.default-account` or an explicit
+   install-time override when needed
 5. validate behavior through repository smoke tests
 6. fall back to [manual docs](../../docs/manual-setup.md) when direct
    `msmtprc` setup is needed
@@ -39,5 +41,7 @@ Implementation safety expectations now include:
   backup files rather than leaving a missing live target window
 - interactive interruption handling should distinguish between prompt-only
   cancellation and cancellation after state-changing steps
+- deployment-time default-account choices should resolve install ambiguity
+  without silently rewriting account files or the persistent default pointer
 
 This separation keeps policy, explanation, and implementation distinct.

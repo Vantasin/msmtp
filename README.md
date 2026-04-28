@@ -84,6 +84,7 @@ make check
 5. Send a test email. Replace `you@example.com` with the mailbox that should
 receive the message.
 
+```bash
 printf 'Subject: msmtp test\nTo: you@example.com\n\nmsmtp is working.\n' | msmtp you@example.com
 ```
 
@@ -99,9 +100,16 @@ This repo intentionally uses `accounts/` as the only source of account truth.
 - `accounts/work.env` and `accounts/personal.env` are typical multi-account files
 - `make generate` and `make install` operate on the whole directory
 - `make secret-check` can validate the whole directory or one account when you pass `ACCOUNT_NAME=...`
+- `accounts/.default-account` stores the persistent default account when you do not pass `DEFAULT_ACCOUNT=...`
+- each account file must use a unique `MSMTP_ACCOUNT_NAME`
 
-If you do not pass `DEFAULT_ACCOUNT=...`, set `MSMTP_SET_DEFAULT=true` on
-exactly one account file.
+When you create the first account through the guided setup flows, the repo
+initializes [`accounts/.default-account`](./accounts/) automatically. Use
+`make account` to review or change that persistent default later, or pass
+`DEFAULT_ACCOUNT=...` for a one-off render or install override.
+
+If the persistent default is missing or stale, guided `make install` can choose
+one for the current deploy without rewriting the stored account data.
 
 ## Credential Modes
 

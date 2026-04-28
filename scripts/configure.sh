@@ -43,14 +43,14 @@ account_env_path_for_name() {
 
 account_label_for_env_file() {
   local env_path="$1"
-  local file_label account_label default_label
+  local file_label account_label current_default_account
 
   file_label="$(basename "$env_path")"
   account_label="$(account_name_from_env_file "$env_path")"
-  default_label="$(default_account_name_from_env_file "$env_path")"
+  current_default_account="$(current_default_account_name_from_directory "$accounts_dir" || true)"
 
-  if [ -n "$default_label" ]; then
-    printf '%s (msmtp account: %s, default)\n' "$file_label" "$account_label"
+  if [ -n "$current_default_account" ] && [ "$account_label" = "$current_default_account" ]; then
+    printf '%s (msmtp account: %s, persistent default)\n' "$file_label" "$account_label"
   else
     printf '%s (msmtp account: %s)\n' "$file_label" "$account_label"
   fi

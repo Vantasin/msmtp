@@ -62,6 +62,27 @@ yes_no_default_from_truthy() {
   fi
 }
 
+validate_unique_msmtp_account_name() {
+  local desired_account_name="$1"
+  local accounts_dir existing_env_path existing_account_name
+
+  accounts_dir="$(dirname "$env_file")"
+
+  while IFS= read -r existing_env_path; do
+    [ -n "$existing_env_path" ] || continue
+    if [ "$existing_env_path" = "$env_file" ]; then
+      continue
+    fi
+
+    existing_account_name="$(account_name_from_env_file "$existing_env_path")"
+    if [ "$existing_account_name" = "$desired_account_name" ]; then
+      die "MSMTP_ACCOUNT_NAME '$desired_account_name' is already used in ${existing_env_path}. Each account file must use a unique msmtp account name."
+    fi
+  done <<EOF
+$(list_account_env_files "$accounts_dir")
+EOF
+}
+
 account_file_hint() {
   local file_name
 
@@ -69,6 +90,7 @@ account_file_hint() {
   printf 'Account file: %s\n' "$env_file" >&2
   printf 'This step only updates account data. Use make configure for the full guided flow, or run make password / make install afterward.\n' >&2
   printf 'The account file name and the msmtp account name are separate. The file name selects a file under accounts/, and the msmtp account name is written into msmtprc.\n' >&2
+  printf 'The persistent default account is managed separately in %s. Use make account to change it.\n' "$(default_account_file_for_directory "$(dirname "$env_file")")" >&2
   printf 'Keeping them aligned is usually clearer, but it is not required.\n' >&2
   if [ "$file_name" = "default.env" ]; then
     printf 'Examples for named accounts: work.env, personal.env, server-alerts.env.\n\n' >&2
@@ -119,8 +141,10 @@ if [ -e "$env_file" ] && [ "$allow_overwrite" != "true" ]; then
 fi
 
 printf 'Interactive msmtp account setup\n' >&2
+existing_account_name=""
 if [ -e "$env_file" ]; then
   load_env_file "$env_file"
+  existing_account_name="${MSMTP_ACCOUNT_NAME:-}"
   printf 'Editing %s in place.\n\n' "$env_file" >&2
 else
   printf 'Creating %s.\n\n' "$env_file" >&2
@@ -194,21 +218,18 @@ else
   MSMTP_TLS_CERTCHECK="off"
 fi
 
-if [ "$(prompt_yes_no "Set this as the default account when msmtp does not receive an explicit account" "$(yes_no_default_from_truthy "${MSMTP_SET_DEFAULT:-true}")")" = "yes" ]; then
-  MSMTP_SET_DEFAULT="true"
-else
-  MSMTP_SET_DEFAULT="false"
-fi
-
 printf '\nOptional advanced settings:\n' >&2
 MSMTP_LOGFILE="$(prompt_optional_value "Log file path (optional, example: ~/.local/state/msmtp.log)" "${MSMTP_LOGFILE:-}")"
 MSMTP_TLS_TRUST_FILE="$(prompt_optional_value "TLS trust file path (optional, example: /etc/ssl/certs/ca-certificates.crt)" "${MSMTP_TLS_TRUST_FILE:-}")"
 MSMTP_TLS_FINGERPRINT="$(prompt_optional_value "TLS fingerprint (optional, example: AA:BB:CC:DD...)" "${MSMTP_TLS_FINGERPRINT:-}")"
 
+validate_unique_msmtp_account_name "$MSMTP_ACCOUNT_NAME"
 write_msmtp_env_file "$env_file"
+sync_persistent_default_account_after_write "$(dirname "$env_file")" "$existing_account_name" "$MSMTP_ACCOUNT_NAME"
 
 printf 'Saved %s\n' "$env_file"
 printf 'Next steps:\n' >&2
 printf '  1. Run make password ACCOUNT_NAME=%s to provision the secret.\n' "$account_file_name" >&2
 printf '  2. Run make secret-check ACCOUNT_NAME=%s to validate the secret lookup.\n' "$account_file_name" >&2
-printf '  3. Run make configure for the full guided flow, or make install when you are ready to deploy.\n' >&2
+printf '  3. Run make account if you need to review or change the persistent default account.\n' >&2
+printf '  4. Run make configure for the full guided flow, or make install when you are ready to deploy.\n' >&2

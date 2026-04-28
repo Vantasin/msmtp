@@ -8,6 +8,13 @@
 - clarified interactive defaults, optional-field behavior, and cancellation
   messaging, and moved the remaining write/install/restore paths toward
   same-directory atomic replacement semantics
+- simplified guided install prompts, made explicit default-account choices win
+  over conflicting `MSMTP_SET_DEFAULT=true` markers for the current deploy,
+  and documented that install-time default resolution does not rewrite account
+  files
+- moved the persistent default account out of `accounts/*.env` and into
+  `accounts/.default-account`, updated the guided flows to manage that file,
+  and kept `DEFAULT_ACCOUNT=...` as a one-off render/install override
 
 ## 2026-04-27
 

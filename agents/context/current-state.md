@@ -27,6 +27,7 @@ Present today:
 Operational convention today:
 
 - SMTP account values live in `accounts/*.env`.
+- The persistent default account lives in `accounts/.default-account`.
 - The simplest setup is `accounts/default.env`; multiple addresses add more
   files in the same directory.
 - User vs system install scope is selected through `make` targets and
@@ -34,6 +35,11 @@ Operational convention today:
 - The preferred human-facing commands are `make configure`, `make password`,
   `make install`, and `make restore`; `make account` remains the account-only
   CRUD entrypoint.
+- Guided install prompts stay concise and only ask for target, mode, or
+  default-account choices when the deployment is ambiguous.
+- Install-time default-account choices can override a missing or stale
+  `accounts/.default-account` entry for the current deploy without mutating the
+  stored account data.
 - Repo-owned file writes now prefer same-directory atomic replacement semantics
   rather than in-place mutation.
 - Install, restore, and file-backed secret rotation preserve adjacent

@@ -67,6 +67,7 @@ mkdir -p "${tmp_dir}/bootstrap-accounts"
   --example password-file \
   --env-file "${tmp_dir}/bootstrap-accounts/default.env" >/dev/null
 assert_contains "${tmp_dir}/bootstrap-accounts/default.env" "MSMTP_SECRET_METHOD=password_file"
+[ "$(cat "${tmp_dir}/bootstrap-accounts/.default-account")" = "default" ] || fail "Expected quickstart to initialize the persistent default account"
 
 if "${repo_root}/scripts/quickstart.sh" \
   --example default \
@@ -91,7 +92,6 @@ printf '%s\n' \
   "" \
   "" \
   "" \
-  "" \
   "~/.msmtp.log" \
   "" \
   "" | "${repo_root}/scripts/setup.sh" \
@@ -99,12 +99,12 @@ printf '%s\n' \
 
 assert_contains "${tmp_dir}/guided-accounts/guided.env" "MSMTP_SECRET_METHOD='command'"
 assert_contains "${tmp_dir}/guided-accounts/guided.env" "MSMTP_LOGFILE='~/.msmtp.log'"
+[ "$(cat "${tmp_dir}/guided-accounts/.default-account")" = "guided" ] || fail "Expected setup.sh to initialize the persistent default account"
 [ ! -e "${tmp_dir}/guided-home/.msmtprc" ] || fail "setup.sh should not install a live config"
 
 printf '%s\n' \
   "" \
   "smtp.edited.example" \
-  "" \
   "" \
   "" \
   "" \
@@ -122,6 +122,7 @@ printf '%s\n' \
 
 assert_contains "${tmp_dir}/guided-accounts/guided.env" "MSMTP_HOST='smtp.edited.example'"
 assert_contains "${tmp_dir}/guided-accounts/guided.env" "MSMTP_LOGFILE=''"
+[ "$(cat "${tmp_dir}/guided-accounts/.default-account")" = "guided" ] || fail "Expected setup.sh edit to preserve the persistent default account"
 
 mkdir -p "${tmp_dir}/single-account"
 cat > "${tmp_dir}/single-account/default.env" <<'EOF'
@@ -134,11 +135,12 @@ MSMTP_AUTH=on
 MSMTP_TLS=on
 MSMTP_TLS_STARTTLS=on
 MSMTP_TLS_CERTCHECK=on
-MSMTP_SET_DEFAULT=true
 MSMTP_SECRET_METHOD=keychain
 MSMTP_KEYCHAIN_SERVICE=smtp.example.com
 MSMTP_KEYCHAIN_ACCOUNT=alice@example.com
 EOF
+
+printf 'work\n' > "${tmp_dir}/single-account/.default-account"
 
 "${repo_root}/scripts/render-config.sh" \
   --accounts-dir "${tmp_dir}/single-account" \
@@ -159,7 +161,6 @@ MSMTP_AUTH=on
 MSMTP_TLS=on
 MSMTP_TLS_STARTTLS=on
 MSMTP_TLS_CERTCHECK=on
-MSMTP_SET_DEFAULT=false
 MSMTP_SECRET_METHOD=keychain
 MSMTP_KEYCHAIN_SERVICE=smtp.work.example
 MSMTP_KEYCHAIN_ACCOUNT=work@example.com
@@ -175,7 +176,6 @@ MSMTP_AUTH=on
 MSMTP_TLS=on
 MSMTP_TLS_STARTTLS=off
 MSMTP_TLS_CERTCHECK=on
-MSMTP_SET_DEFAULT=false
 MSMTP_LOGFILE=/tmp/msmtp-personal.log
 MSMTP_TLS_TRUST_FILE=/etc/ssl/certs/ca-certificates.crt
 MSMTP_TLS_FINGERPRINT=AA:BB:CC:DD
@@ -197,6 +197,102 @@ assert_line "${tmp_dir}/multi.msmtprc" "tls_trust_file /etc/ssl/certs/ca-certifi
 assert_line "${tmp_dir}/multi.msmtprc" "tls_fingerprint AA:BB:CC:DD"
 assert_line "${tmp_dir}/multi.msmtprc" "host smtp.personal.example"
 
+mkdir -p "${tmp_dir}/persistent-defaults"
+cat > "${tmp_dir}/persistent-defaults/default.env" <<'EOF'
+MSMTP_ACCOUNT_NAME=server
+MSMTP_HOST=smtp.server.example
+MSMTP_PORT=587
+MSMTP_FROM=server@example.com
+MSMTP_USER=server@example.com
+MSMTP_AUTH=on
+MSMTP_TLS=on
+MSMTP_TLS_STARTTLS=on
+MSMTP_TLS_CERTCHECK=on
+MSMTP_SECRET_METHOD=command
+MSMTP_PASSWORDEVAL_COMMAND='printf server-secret'
+EOF
+
+cat > "${tmp_dir}/persistent-defaults/test.env" <<'EOF'
+MSMTP_ACCOUNT_NAME=test
+MSMTP_HOST=smtp.test.example
+MSMTP_PORT=587
+MSMTP_FROM=test@example.com
+MSMTP_USER=test@example.com
+MSMTP_AUTH=on
+MSMTP_TLS=on
+MSMTP_TLS_STARTTLS=on
+MSMTP_TLS_CERTCHECK=on
+MSMTP_SECRET_METHOD=command
+MSMTP_PASSWORDEVAL_COMMAND='printf test-secret'
+EOF
+
+printf 'test\n' > "${tmp_dir}/persistent-defaults/.default-account"
+
+"${repo_root}/scripts/render-config.sh" \
+  --accounts-dir "${tmp_dir}/persistent-defaults" \
+  --output "${tmp_dir}/persistent-defaults.msmtprc" >/dev/null
+
+assert_line "${tmp_dir}/persistent-defaults.msmtprc" "account default : test"
+
+if "${repo_root}/scripts/render-config.sh" \
+  --accounts-dir "${tmp_dir}/persistent-defaults" \
+  --default-account missing \
+  --output "${tmp_dir}/persistent-defaults-fail.msmtprc" \
+  >"${tmp_dir}/persistent-defaults.stdout" 2>"${tmp_dir}/persistent-defaults.stderr"; then
+  fail "render-config.sh should refuse an explicit default account that is missing"
+fi
+
+assert_contains "${tmp_dir}/persistent-defaults.stderr" "Default account 'missing' was not found"
+
+printf 'missing\n' > "${tmp_dir}/persistent-defaults/.default-account"
+if "${repo_root}/scripts/render-config.sh" \
+  --accounts-dir "${tmp_dir}/persistent-defaults" \
+  --output "${tmp_dir}/persistent-defaults-stale.msmtprc" \
+  >"${tmp_dir}/persistent-defaults-stale.stdout" 2>"${tmp_dir}/persistent-defaults-stale.stderr"; then
+  fail "render-config.sh should refuse a stale persistent default account file"
+fi
+
+assert_contains "${tmp_dir}/persistent-defaults-stale.stderr" ".default-account"
+assert_contains "${tmp_dir}/persistent-defaults-stale.stderr" "was not found"
+
+mkdir -p "${tmp_dir}/duplicate-account-names"
+cat > "${tmp_dir}/duplicate-account-names/work.env" <<'EOF'
+MSMTP_ACCOUNT_NAME=shared
+MSMTP_HOST=smtp.work.example
+MSMTP_PORT=587
+MSMTP_FROM=work@example.com
+MSMTP_USER=work@example.com
+MSMTP_AUTH=on
+MSMTP_TLS=on
+MSMTP_TLS_STARTTLS=on
+MSMTP_TLS_CERTCHECK=on
+MSMTP_SECRET_METHOD=command
+MSMTP_PASSWORDEVAL_COMMAND='printf work-secret'
+EOF
+
+cat > "${tmp_dir}/duplicate-account-names/personal.env" <<'EOF'
+MSMTP_ACCOUNT_NAME=shared
+MSMTP_HOST=smtp.personal.example
+MSMTP_PORT=587
+MSMTP_FROM=personal@example.com
+MSMTP_USER=personal@example.com
+MSMTP_AUTH=on
+MSMTP_TLS=on
+MSMTP_TLS_STARTTLS=on
+MSMTP_TLS_CERTCHECK=on
+MSMTP_SECRET_METHOD=command
+MSMTP_PASSWORDEVAL_COMMAND='printf personal-secret'
+EOF
+
+if "${repo_root}/scripts/render-config.sh" \
+  --accounts-dir "${tmp_dir}/duplicate-account-names" \
+  --output "${tmp_dir}/duplicate-account-names.msmtprc" \
+  >"${tmp_dir}/duplicate-account-names.stdout" 2>"${tmp_dir}/duplicate-account-names.stderr"; then
+  fail "render-config.sh should refuse duplicate MSMTP_ACCOUNT_NAME values"
+fi
+
+assert_contains "${tmp_dir}/duplicate-account-names.stderr" "Duplicate MSMTP_ACCOUNT_NAME 'shared'"
+
 cat > "${tmp_dir}/multi-accounts/password.env" <<EOF
 MSMTP_ACCOUNT_NAME=passwordfile
 MSMTP_HOST=smtp.example.net
@@ -207,7 +303,6 @@ MSMTP_AUTH=on
 MSMTP_TLS=on
 MSMTP_TLS_STARTTLS=on
 MSMTP_TLS_CERTCHECK=on
-MSMTP_SET_DEFAULT=false
 MSMTP_SECRET_METHOD=password_file
 MSMTP_PASSWORD_FILE=${tmp_dir}/password-store/secret.txt
 EOF
@@ -229,7 +324,6 @@ MSMTP_AUTH=on
 MSMTP_TLS=on
 MSMTP_TLS_STARTTLS=on
 MSMTP_TLS_CERTCHECK=on
-MSMTP_SET_DEFAULT=true
 MSMTP_SECRET_METHOD=command
 MSMTP_PASSWORDEVAL_COMMAND='printf work-secret'
 EOF
@@ -244,7 +338,6 @@ MSMTP_AUTH=on
 MSMTP_TLS=on
 MSMTP_TLS_STARTTLS=off
 MSMTP_TLS_CERTCHECK=on
-MSMTP_SET_DEFAULT=false
 MSMTP_SECRET_METHOD=command
 MSMTP_PASSWORDEVAL_COMMAND='printf personal-secret'
 EOF
@@ -269,7 +362,6 @@ MSMTP_AUTH=on
 MSMTP_TLS=on
 MSMTP_TLS_STARTTLS=on
 MSMTP_TLS_CERTCHECK=on
-MSMTP_SET_DEFAULT=true
 MSMTP_SECRET_METHOD=password_file
 MSMTP_PASSWORD_FILE=${tmp_dir}/password-helper-secret
 EOF
@@ -292,7 +384,6 @@ MSMTP_AUTH=on
 MSMTP_TLS=on
 MSMTP_TLS_STARTTLS=on
 MSMTP_TLS_CERTCHECK=on
-MSMTP_SET_DEFAULT=true
 MSMTP_SECRET_METHOD=password_file
 MSMTP_PASSWORD_FILE=${tmp_dir}/rotate-password-secret
 EOF
@@ -408,14 +499,13 @@ cp "${tmp_dir}/multi-accounts/personal.env" "${tmp_dir}/managed-accounts/persona
   --action set-default \
   --account personal >/dev/null
 
-assert_contains "${tmp_dir}/managed-accounts/personal.env" "MSMTP_SET_DEFAULT='true'"
-assert_contains "${tmp_dir}/managed-accounts/work.env" "MSMTP_SET_DEFAULT='false'"
+[ "$(cat "${tmp_dir}/managed-accounts/.default-account")" = "personal" ] || fail "Expected account-manager set-default to write the persistent default account file"
 
 "${repo_root}/scripts/account-manager.sh" \
   --accounts-dir "${tmp_dir}/managed-accounts" \
   --action list > "${tmp_dir}/managed-accounts-list.txt"
 
-assert_contains "${tmp_dir}/managed-accounts-list.txt" "personal.env (msmtp account: personal, default)"
+assert_contains "${tmp_dir}/managed-accounts-list.txt" "personal.env (msmtp account: personal, persistent default)"
 
 "${repo_root}/scripts/account-manager.sh" \
   --accounts-dir "${tmp_dir}/managed-accounts" \
@@ -466,7 +556,6 @@ MSMTP_AUTH=on
 MSMTP_TLS=on
 MSMTP_TLS_STARTTLS=on
 MSMTP_TLS_CERTCHECK=on
-MSMTP_SET_DEFAULT=true
 MSMTP_SECRET_METHOD=password_file
 MSMTP_PASSWORD_FILE=${tmp_dir}/make-password-secret
 EOF
@@ -488,7 +577,6 @@ MSMTP_AUTH=on
 MSMTP_TLS=on
 MSMTP_TLS_STARTTLS=on
 MSMTP_TLS_CERTCHECK=on
-MSMTP_SET_DEFAULT=true
 MSMTP_SECRET_METHOD=password_file
 MSMTP_PASSWORD_FILE=${tmp_dir}/make-rotate-secret
 EOF

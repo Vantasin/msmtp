@@ -15,3 +15,6 @@ Files:
   account file for Linux GPG decryption
 - [`examples/password-file.env.example`](./examples/password-file.env.example):
   starter account file for secure password files
+
+Persistent default-account state now lives in `accounts/.default-account`, not
+inside the example account files.

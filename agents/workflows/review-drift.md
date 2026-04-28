@@ -18,11 +18,16 @@ Use this workflow after significant repository changes.
 6. If the change affects accounts or secret handling, explicitly review
    [accounts/README.md](../../accounts/README.md) and
    [docs/secrets.md](../../docs/secrets.md).
-7. If the change affects file-writing semantics, install/restore safety, or
+7. If the change affects guided install or default-account selection, confirm
+   the docs and prompts still describe install-time default resolution
+   accurately, keep the account-management vs deployment boundary clear, and
+   account for `accounts/.default-account` when persistent default behavior
+   changes.
+8. If the change affects file-writing semantics, install/restore safety, or
    interruption handling, explicitly review
    [agents/context/current-state.md](../context/current-state.md),
    [agents/context/architecture-context.md](../context/architecture-context.md),
    [agents/rules/repo-rules.md](../rules/repo-rules.md), and
    [agents/rules/safety-rules.md](../rules/safety-rules.md).
-8. Update documents that drifted and note meaningful changes in
+9. Update documents that drifted and note meaningful changes in
    [CHANGELOG.md](../../CHANGELOG.md).
