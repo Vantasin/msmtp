@@ -20,45 +20,93 @@ It ships with:
 
 ## Quick Start
 
-1. Install `msmtp` on your machine using your platform package manager.
-2. Choose a setup path:
+This path uses one account and the interactive setup flow.
+
+1. Clone the repo.
 
 ```bash
-make setup-example EXAMPLE=macos-keychain
+git clone ssh://git@gitea.vantasin.duckdns.org:2222/Vantasin/msmtp.git
+cd msmtp
+```
+
+2. Install `msmtp`.
+
+macOS with Homebrew:
+
+```bash
+brew install msmtp
+```
+
+Debian or Ubuntu:
+
+```bash
+sudo apt update
+sudo apt install msmtp
+```
+
+Fedora:
+
+```bash
+sudo dnf install msmtp
+```
+
+3. Create your local `.env` file and answer the prompts for your SMTP host,
+sender address, username, and secret method.
+
+```bash
 make setup
 ```
 
-`make setup-example` is the non-interactive bootstrap path. `make setup` is
-the interactive prompt-driven path. Both produce a local `.env` file.
+4. Set up the SMTP password using the secret backend you selected during
+`make setup`.
 
-3. Review `.env` and adjust any values that need to change.
-4. Set up or verify your secret backend:
+macOS Keychain:
 
 ```bash
-make secrets-help
+make keychain-add SECRET_ENV_FILE=.env
+```
+
+GPG-encrypted password file:
+
+```bash
+make gpg-file-init SECRET_ENV_FILE=.env
+```
+
+Password file:
+
+```bash
+make password-file-init SECRET_ENV_FILE=.env
+```
+
+5. Verify that `msmtp` can read the configured secret.
+
+```bash
 make secret-check
 ```
 
-5. Validate the repo behavior:
+6. Run the repo smoke tests.
 
 ```bash
 make check
 ```
 
-6. Render or install the config:
+7. Install the generated config to `~/.msmtprc`.
 
 ```bash
-make generate
 make install
 ```
 
-By default, `make install` writes to `~/.msmtprc` and keeps a rendered copy in
-`.msmtprc.generated`. For a repo-centralized advanced setup, you can install a
-symlink instead:
+8. Send a test email. Replace `you@example.com` with the mailbox that should
+receive the message.
 
 ```bash
-make link
+printf 'Subject: msmtp test\nTo: you@example.com\n\nmsmtp is working.\n' | msmtp you@example.com
 ```
+
+If you want non-interactive bootstrap examples, multi-account setup, or an
+advanced secret backend such as `pass`, continue with
+[`docs/getting-started.md`](./docs/getting-started.md) and
+[`docs/secrets.md`](./docs/secrets.md).
 
 The env/template layer is intentional. `msmtp` reads `~/.msmtprc`, but keeping
 structured inputs in `.env` plus a template makes setup reproducible, testable,
@@ -66,7 +114,7 @@ and easier to document.
 
 ## Multiple Mailing Addresses
 
-The repo now supports multi-account `msmtprc` generation.
+The repo also supports multi-account `msmtprc` generation.
 
 Create one env file per account under [`accounts/`](./accounts/):
 

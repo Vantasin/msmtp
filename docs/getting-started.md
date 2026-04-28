@@ -5,6 +5,111 @@
 - install `msmtp` using your platform package manager
 - ensure `bash` and `make` are available
 
+## Single-Account Quick Start
+
+Use this path if you want one mailing address and want the repo to prompt you
+for the account details.
+
+### 1. Clone the Repo
+
+```bash
+git clone ssh://git@gitea.vantasin.duckdns.org:2222/Vantasin/msmtp.git
+cd msmtp
+```
+
+### 2. Install `msmtp`
+
+macOS with Homebrew:
+
+```bash
+brew install msmtp
+```
+
+Debian or Ubuntu:
+
+```bash
+sudo apt update
+sudo apt install msmtp
+```
+
+Fedora:
+
+```bash
+sudo dnf install msmtp
+```
+
+### 3. Create `.env` with the Guided Setup
+
+```bash
+make setup
+```
+
+This writes a local `.env` and prompts for:
+
+- account name
+- SMTP host and port
+- sender address
+- username
+- TLS settings
+- secret method
+
+### 4. Store the SMTP Password Securely
+
+Choose the block that matches the `MSMTP_SECRET_METHOD` you selected during
+`make setup`.
+
+macOS Keychain:
+
+```bash
+make keychain-add SECRET_ENV_FILE=.env
+```
+
+GPG-encrypted password file:
+
+```bash
+make gpg-file-init SECRET_ENV_FILE=.env
+```
+
+Password file:
+
+```bash
+make password-file-init SECRET_ENV_FILE=.env
+```
+
+For a custom command backend such as `pass`, configure that command outside the
+repo and then continue with the validation step below. See
+[secrets.md](./secrets.md) for the supported command patterns.
+
+### 5. Verify the Secret Lookup
+
+```bash
+make secret-check
+```
+
+### 6. Run the Repo Smoke Tests
+
+```bash
+make check
+```
+
+### 7. Install `~/.msmtprc`
+
+```bash
+make install
+```
+
+By default, `make install` writes to `~/.msmtprc` and keeps a rendered copy in
+`.msmtprc.generated`.
+
+### 8. Send a Test Email
+
+Replace `you@example.com` with the mailbox that should receive the test
+message.
+
+```bash
+printf 'Subject: msmtp test\nTo: you@example.com\n\nmsmtp is working.\n' | msmtp you@example.com
+```
+
 ## Setup Model
 
 The primary workflow in this repository is:
@@ -16,35 +121,37 @@ The primary workflow in this repository is:
 `msmtp` still consumes `~/.msmtprc`, but the env/template layer keeps the setup
 reproducible and scriptable.
 
-## Option 1: Non-Interactive Bootstrap
+## Non-Interactive Bootstrap
 
 Pick the closest starter example:
+
+Default example:
+
+```bash
+make setup-example EXAMPLE=default
+```
+
+macOS Keychain example:
 
 ```bash
 make setup-example EXAMPLE=macos-keychain
 ```
 
-Available examples:
-
-- `default`
-- `macos-keychain`
-- `linux-gpg`
-- `password-file`
-
-The command creates `.env` and refuses to overwrite an existing file.
-
-## Option 2: Interactive Setup
-
-Use the prompt-driven setup flow when you want the repo to ask for values one
-step at a time:
+Linux GPG example:
 
 ```bash
-make setup
+make setup-example EXAMPLE=linux-gpg
 ```
 
-This writes `.env` and can optionally install `~/.msmtprc` immediately.
+Password-file example:
 
-## Option 3: Multiple Accounts
+```bash
+make setup-example EXAMPLE=password-file
+```
+
+Each command creates `.env` and refuses to overwrite an existing file.
+
+## Multiple Accounts
 
 Use one env file per account when you want multiple mailing addresses in the
 same generated `msmtprc`:
@@ -54,7 +161,7 @@ make setup-account ACCOUNT_NAME=work
 make setup-account ACCOUNT_NAME=personal
 ```
 
-You can also copy starter examples instead of using the interactive wizard:
+Create one account from a starter example:
 
 ```bash
 make setup-account-example ACCOUNT_NAME=work EXAMPLE=macos-keychain
@@ -75,18 +182,7 @@ make install ACCOUNTS_DIR=accounts DEFAULT_ACCOUNT=work
 If you do not pass `DEFAULT_ACCOUNT=...`, set `MSMTP_SET_DEFAULT=true` on
 exactly one account file.
 
-## Configure Your Account
-
-Review `.env` and confirm the values for:
-
-- SMTP host and port
-- sender address
-- username
-- secret method inputs
-
-Only one `MSMTP_SECRET_METHOD` should be active at a time.
-
-## Set Up Secret Storage
+## Secret Storage Details
 
 After choosing a secret backend, use the dedicated secret helpers or follow the
 backend docs:
@@ -100,12 +196,6 @@ See [secrets.md](./secrets.md) for backend-specific setup commands.
 
 ## Verify and Render
 
-Run the smoke tests before installing:
-
-```bash
-make check
-```
-
 Render the config locally:
 
 ```bash
@@ -116,6 +206,12 @@ Print the rendered config without writing a file:
 
 ```bash
 make preview
+```
+
+Run the smoke tests before installing:
+
+```bash
+make check
 ```
 
 ## Install Modes

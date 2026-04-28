@@ -29,3 +29,5 @@
   Keychain, password files, and GPG files
 - tightened agent context/workflow guidance for current repo maturity and
   account/secret drift review
+- rewrote the quick-start docs into a linear clone-to-test-email flow with
+  single-purpose copy/paste command blocks
