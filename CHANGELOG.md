@@ -35,3 +35,5 @@
   and aligned agent guidance for quick-start/install drift
 - added backup restore commands and documented that install scope lives in
   `make` targets and variables rather than account env files
+- added guided `make account`, `make password`, `make install`, and
+  `make restore` flows on top of the explicit low-level commands

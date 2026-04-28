@@ -5,10 +5,10 @@
 - install `msmtp` using your platform package manager
 - ensure `bash` and `make` are available
 
-## Single-Account Quick Start
+## Guided Quick Start
 
-Use this path if you want one mailing address and want the repo to prompt you
-for the account details.
+Use this path when you want the repo to guide you through account setup,
+password setup, install, and restore choices.
 
 ### 1. Clone the Repo
 
@@ -38,47 +38,30 @@ Fedora:
 sudo dnf install msmtp
 ```
 
-### 3. Create `.env` with the Guided Setup
+### 3. Create or Edit Your Account Config
 
 ```bash
-make setup
+make account
 ```
 
-This writes a local `.env` and prompts for:
+For a single account, this manages `.env`. For multiple accounts, it can:
 
-- account name
-- SMTP host and port
-- sender address
-- username
-- TLS settings
-- secret method
+- add an account
+- edit an account
+- delete an account
+- set the default account
+- list existing accounts
 
 ### 4. Store the SMTP Password Securely
 
-Choose the block that matches the `MSMTP_SECRET_METHOD` you selected during
-`make setup`.
-
-macOS Keychain:
-
 ```bash
-make keychain-add SECRET_ENV_FILE=.env
+make password
 ```
 
-GPG-encrypted password file:
-
-```bash
-make gpg-file-init SECRET_ENV_FILE=.env
-```
-
-Password file:
-
-```bash
-make password-file-init SECRET_ENV_FILE=.env
-```
-
-For a custom command backend such as `pass`, configure that command outside the
-repo and then continue with the validation step below. See
-[secrets.md](./secrets.md) for the supported command patterns.
+`make password` lets you choose the env file and then dispatches to the
+matching helper based on `MSMTP_SECRET_METHOD`. For a custom command backend
+such as `pass`, it shows the configured command and can validate it. See
+[secrets.md](./secrets.md) for the supported backends.
 
 ### 5. Verify the Secret Lookup
 
@@ -101,11 +84,17 @@ make install
 By default, `make install` writes to `~/.msmtprc` and keeps a rendered copy in
 `.msmtprc.generated`.
 
-If `~/.msmtprc` already exists, `make install` backs it up and asks before
-replacing it. For non-interactive replacement, use:
+`make install` guides you through:
+
+- choosing `.env` or `accounts/` when both exist
+- choosing user, system, or custom install targets
+- choosing copy vs symlink install mode
+
+If the live target already exists, `make install` backs it up and asks before
+replacing it. For non-interactive replacement, use an explicit install command:
 
 ```bash
-make install INSTALL_FORCE=yes
+make install-user INSTALL_FORCE=yes
 ```
 
 Backups are stored next to the target as `TARGET.bak.<UTC timestamp>`.
@@ -165,15 +154,17 @@ Each command creates `.env` and refuses to overwrite an existing file.
 
 ## Multiple Accounts
 
-Use one env file per account when you want multiple mailing addresses in the
-same generated `msmtprc`:
+Use the guided account manager:
 
 ```bash
-make setup-account ACCOUNT_NAME=work
-make setup-account ACCOUNT_NAME=personal
+make account
 ```
 
-Create one account from a starter example:
+From there, choose the multi-account workflow to add, edit, delete, or set the
+default account.
+
+If you want the older explicit commands, they still exist. Create one account
+from a starter example:
 
 ```bash
 make setup-account-example ACCOUNT_NAME=work EXAMPLE=macos-keychain
@@ -200,6 +191,7 @@ After choosing a secret backend, use the dedicated secret helpers or follow the
 backend docs:
 
 ```bash
+make password
 make secrets-help
 make secret-check
 ```
@@ -234,19 +226,19 @@ Install the rendered config to the default `msmtp` location:
 make install
 ```
 
-Install explicitly to the user config path:
+Use the explicit user install command:
 
 ```bash
 make install-user
 ```
 
-Install directly to `/etc/msmtprc`:
+Use the explicit system install command:
 
 ```bash
 sudo make install-system INSTALL_FORCE=yes
 ```
 
-Install a symlink instead of copying the file:
+Use the explicit symlink command:
 
 ```bash
 make link
@@ -269,22 +261,17 @@ make install ENV_FILE=.env.work OUTPUT=.msmtprc.work INSTALL_PATH=$HOME/.msmtprc
 List user-config backups:
 
 ```bash
-ls -1 "$HOME"/.msmtprc.bak.*
+make restore
 ```
 
-Restore one user-config backup:
+`make restore` lists matching backups for the chosen target and lets you pick
+one by number.
+
+Use the explicit restore commands when you already know the backup path:
 
 ```bash
 make restore-user BACKUP="$HOME/.msmtprc.bak.20260427T153000Z"
 ```
-
-List system-config backups:
-
-```bash
-sudo ls -1 /etc/msmtprc.bak.*
-```
-
-Restore one system-config backup:
 
 ```bash
 sudo make restore-system BACKUP=/etc/msmtprc.bak.20260427T153000Z INSTALL_FORCE=yes

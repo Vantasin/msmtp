@@ -8,7 +8,8 @@ It ships with:
 - `.env`-driven configuration as the primary source of truth, with support for
   either one account or multiple account env files
 - a template-based `msmtprc` renderer
-- an optional interactive setup guide that writes `.env` step by step
+- interactive account, password, install, and restore workflows for day-to-day
+  use
 - `passwordeval` support for macOS Keychain, Linux GPG, secure password files,
   and custom commands
 - helper commands for secret-backend setup and validation
@@ -22,7 +23,7 @@ It ships with:
 
 ## Quick Start
 
-This path uses one account and the interactive setup flow.
+This path uses the guided interactive workflow.
 
 1. Clone the repo.
 
@@ -52,32 +53,20 @@ Fedora:
 sudo dnf install msmtp
 ```
 
-3. Create your local `.env` file and answer the prompts for your SMTP host,
-sender address, username, and secret method.
+3. Create or edit your account config.
 
 ```bash
-make setup
+make account
 ```
 
-4. Set up the SMTP password using the secret backend you selected during
-`make setup`.
+For a single account, this manages `.env`. If you want multiple addresses, the
+same command can add, edit, delete, and set the default account under
+[`accounts/`](./accounts/).
 
-macOS Keychain:
-
-```bash
-make keychain-add SECRET_ENV_FILE=.env
-```
-
-GPG-encrypted password file:
+4. Set up the SMTP password for the chosen account.
 
 ```bash
-make gpg-file-init SECRET_ENV_FILE=.env
-```
-
-Password file:
-
-```bash
-make password-file-init SECRET_ENV_FILE=.env
+make password
 ```
 
 5. Verify that `msmtp` can read the configured secret.
@@ -98,8 +87,14 @@ make check
 make install
 ```
 
-If `~/.msmtprc` already exists, `make install` will back it up and ask before
-replacing it. For non-interactive replacement, rerun with
+`make install` guides you through:
+
+- choosing `.env` or `accounts/` when both exist
+- choosing user, system, or custom install targets
+- choosing copy vs symlink install mode
+
+If the live target already exists, the install flow backs it up and asks before
+replacing it. For non-interactive replacement, rerun an explicit command with
 `INSTALL_FORCE=yes`.
 
 Backups are stored next to the target as `TARGET.bak.<UTC timestamp>`, for
@@ -114,14 +109,12 @@ sudo make install-system INSTALL_FORCE=yes
 Restore a user backup:
 
 ```bash
-make restore-user BACKUP="$HOME/.msmtprc.bak.20260427T153000Z"
+make restore
 ```
 
-Restore a system backup:
-
-```bash
-sudo make restore-system BACKUP=/etc/msmtprc.bak.20260427T153000Z INSTALL_FORCE=yes
-```
+`make restore` lists matching backups and lets you choose one by number. The
+explicit commands `make restore-user` and `make restore-system` are still
+available when you want to pass a `BACKUP=...` path directly.
 
 8. Send a test email. Replace `you@example.com` with the mailbox that should
 receive the message.
@@ -146,14 +139,16 @@ install scope with `make` targets and variables, not in `.env`.
 
 The repo also supports multi-account `msmtprc` generation.
 
-Create one env file per account under [`accounts/`](./accounts/):
+Use the guided account manager:
 
 ```bash
-make setup-account ACCOUNT_NAME=work
-make setup-account ACCOUNT_NAME=personal
+make account
 ```
 
-Then render or install a combined config:
+From there, choose the multi-account workflow to add, edit, delete, list, or
+set the default account under [`accounts/`](./accounts/).
+
+You can still use explicit commands when you want direct control:
 
 ```bash
 make generate ACCOUNTS_DIR=accounts DEFAULT_ACCOUNT=work
@@ -186,13 +181,21 @@ accidentally.
 - [`.env.example`](./.env.example): generic starter env file
 - [`accounts/README.md`](./accounts/README.md): multi-account env-file model
 - [`Makefile`](./Makefile): common repo entrypoints
+- [`scripts/account-manager.sh`](./scripts/account-manager.sh): guided single
+  and multi-account management
+- [`scripts/password-helper.sh`](./scripts/password-helper.sh): choose an env
+  file and dispatch to the correct password helper
 - [`templates/msmtprc.template`](./templates/msmtprc.template): canonical
   config template
 - [`scripts/setup.sh`](./scripts/setup.sh): interactive setup that writes a
   local `.env`
 - [`scripts/render-config.sh`](./scripts/render-config.sh): generate a
   concrete config file
+- [`scripts/install-helper.sh`](./scripts/install-helper.sh): guided install
+  flow for choosing source, target, and install mode
 - [`scripts/install.sh`](./scripts/install.sh): render and install the config
+- [`scripts/restore-helper.sh`](./scripts/restore-helper.sh): guided backup
+  restore flow
 - [`scripts/restore-backup.sh`](./scripts/restore-backup.sh): restore a
   backed-up live config target
 - [`scripts/quickstart.sh`](./scripts/quickstart.sh): bootstrap `.env` from a

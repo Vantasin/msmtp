@@ -11,7 +11,8 @@ These files are ignored by Git because they contain private account details.
 
 Recommended workflows:
 
-- create them interactively with `make setup-account ACCOUNT_NAME=work`
+- manage them interactively with `make account`
+- create them directly with `make setup-account ACCOUNT_NAME=work`
 - create them from an example with
   `make setup-account-example ACCOUNT_NAME=work EXAMPLE=macos-keychain`
 - render all accounts together with

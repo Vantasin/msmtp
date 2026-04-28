@@ -28,7 +28,11 @@ run_syntax_checks() {
   bash -n "${repo_root}/scripts/gpg-file-init.sh"
   bash -n "${repo_root}/scripts/render-config.sh"
   bash -n "${repo_root}/scripts/install.sh"
+  bash -n "${repo_root}/scripts/install-helper.sh"
   bash -n "${repo_root}/scripts/restore-backup.sh"
+  bash -n "${repo_root}/scripts/restore-helper.sh"
+  bash -n "${repo_root}/scripts/account-manager.sh"
+  bash -n "${repo_root}/scripts/password-helper.sh"
   bash -n "${repo_root}/scripts/setup.sh"
   bash -n "${repo_root}/scripts/quickstart.sh"
   bash -n "${repo_root}/scripts/lib/common.sh"
@@ -88,6 +92,30 @@ printf '%s\n' \
 assert_contains "${tmp_dir}/guided.env" "MSMTP_SECRET_METHOD='command'"
 assert_contains "${tmp_dir}/guided.msmtprc" "account guided"
 assert_contains "${tmp_dir}/guided.msmtprc" "passwordeval pass show mail/guided"
+
+printf '%s\n' \
+  "" \
+  "smtp.edited.example" \
+  "" \
+  "" \
+  "" \
+  "" \
+  "" \
+  "" \
+  "" \
+  "" \
+  "" \
+  "" \
+  "" \
+  "" \
+  "" \
+  "no" | "${repo_root}/scripts/setup.sh" \
+    --env-file "${tmp_dir}/guided.env" \
+    --overwrite \
+    --output "${tmp_dir}/guided.msmtprc" \
+    --target "${tmp_dir}/home-guided/.msmtprc" >/dev/null 2>&1
+
+assert_contains "${tmp_dir}/guided.env" "MSMTP_HOST='smtp.edited.example'"
 
 cat > "${tmp_dir}/keychain.env" <<'EOF'
 MSMTP_ACCOUNT_NAME=work
@@ -282,6 +310,28 @@ printf 'mail-secret\nmail-secret\n' | "${repo_root}/scripts/password-file-init.s
 password_file_contents="$(cat "${tmp_dir}/password-store/secret.txt")"
 [ "$password_file_contents" = "mail-secret" ] || fail "Unexpected password-file contents"
 
+cat > "${tmp_dir}/password-helper.env" <<EOF
+MSMTP_ACCOUNT_NAME=helper
+MSMTP_HOST=smtp.helper.example
+MSMTP_PORT=587
+MSMTP_FROM=helper@example.com
+MSMTP_USER=helper@example.com
+MSMTP_AUTH=on
+MSMTP_TLS=on
+MSMTP_TLS_STARTTLS=on
+MSMTP_TLS_CERTCHECK=on
+MSMTP_SET_DEFAULT=true
+MSMTP_SECRET_METHOD=password_file
+MSMTP_PASSWORD_FILE=${tmp_dir}/password-helper-secret
+EOF
+
+printf 'helper-secret\nhelper-secret\n' | "${repo_root}/scripts/password-helper.sh" \
+  --env-file "${tmp_dir}/password-helper.env" >/dev/null 2>&1
+
+password_helper_contents="$(cat "${tmp_dir}/password-helper-secret")"
+[ "$password_helper_contents" = "helper-secret" ] || fail "Unexpected password-helper output"
+rm -f "${tmp_dir}/password-helper-secret"
+
 "${repo_root}/scripts/install.sh" \
   --env-file "${tmp_dir}/command.env" \
   --output "${tmp_dir}/command.msmtprc" \
@@ -290,6 +340,14 @@ password_file_contents="$(cat "${tmp_dir}/password-store/secret.txt")"
 assert_contains "${tmp_dir}/command.msmtprc" "logfile /tmp/msmtp.log"
 assert_contains "${tmp_dir}/command.msmtprc" "passwordeval pass show mail/msmtp"
 assert_contains "${tmp_dir}/home/.msmtprc" "account cli"
+
+"${repo_root}/scripts/install-helper.sh" \
+  --env-file "${tmp_dir}/command.env" \
+  --output "${tmp_dir}/helper-install.msmtprc" \
+  --target "${tmp_dir}/helper-home/.msmtprc" \
+  --mode copy >/dev/null
+
+assert_contains "${tmp_dir}/helper-home/.msmtprc" "account cli"
 
 mkdir -p "${tmp_dir}/existing-home"
 printf 'old-config\n' > "${tmp_dir}/existing-home/.msmtprc"
@@ -333,6 +391,12 @@ assert_contains "$restore_backup_path" "current-config"
 assert_contains "${tmp_dir}/restore-home/.msmtprc" "restored-config"
 [ -f "${tmp_dir}/restore-home/.msmtprc.bak.saved" ] || fail "Expected chosen restore backup to remain in place"
 
+printf 'restore-helper-config\n' > "${tmp_dir}/restore-helper.bak"
+"${repo_root}/scripts/restore-helper.sh" \
+  --backup "${tmp_dir}/restore-helper.bak" \
+  --target "${tmp_dir}/restore-helper-home/.msmtprc" >/dev/null
+assert_contains "${tmp_dir}/restore-helper-home/.msmtprc" "restore-helper-config"
+
 mkdir -p "${tmp_dir}/restore-links"
 printf 'linked-config\n' > "${tmp_dir}/restore-links/generated.msmtprc"
 ln -s "${tmp_dir}/restore-links/generated.msmtprc" "${tmp_dir}/restore-links/symlink-backup"
@@ -362,6 +426,36 @@ assert_contains "${tmp_dir}/central/generated.msmtprc" "account cli"
 assert_contains "${tmp_dir}/multi-install.msmtprc" "account work"
 assert_contains "${tmp_dir}/multi-home/.msmtprc" "account personal"
 
+mkdir -p "${tmp_dir}/managed-accounts"
+cp "${tmp_dir}/accounts/work.env" "${tmp_dir}/managed-accounts/work.env"
+cp "${tmp_dir}/accounts/personal.env" "${tmp_dir}/managed-accounts/personal.env"
+
+"${repo_root}/scripts/account-manager.sh" \
+  --accounts-dir "${tmp_dir}/managed-accounts" \
+  --mode multi \
+  --action set-default \
+  --account personal >/dev/null
+
+assert_contains "${tmp_dir}/managed-accounts/personal.env" "MSMTP_SET_DEFAULT='true'"
+assert_contains "${tmp_dir}/managed-accounts/work.env" "MSMTP_SET_DEFAULT='false'"
+
+"${repo_root}/scripts/account-manager.sh" \
+  --accounts-dir "${tmp_dir}/managed-accounts" \
+  --mode multi \
+  --action list > "${tmp_dir}/managed-accounts-list.txt"
+
+assert_contains "${tmp_dir}/managed-accounts-list.txt" "personal.env (personal, default)"
+
+"${repo_root}/scripts/account-manager.sh" \
+  --accounts-dir "${tmp_dir}/managed-accounts" \
+  --mode multi \
+  --action delete \
+  --account work \
+  --force > "${tmp_dir}/managed-accounts-delete.txt"
+
+[ ! -f "${tmp_dir}/managed-accounts/work.env" ] || fail "Expected work.env to be moved away"
+[ -n "$(find "${tmp_dir}/managed-accounts" -maxdepth 1 -type f -name 'work.env.bak.*' -print -quit)" ] || fail "Expected deleted account backup"
+
 if command -v make >/dev/null 2>&1; then
   make -C "${repo_root}" \
     ENV_FILE="${tmp_dir}/command.env" \
@@ -389,6 +483,12 @@ if command -v make >/dev/null 2>&1; then
     BACKUP="${tmp_dir}/make-restore-user.bak" \
     restore-user >/dev/null
   assert_contains "${tmp_dir}/make-restore-home/.msmtprc" "make-restored"
+
+  printf 'make-password\nmake-password\n' | make -C "${repo_root}" \
+    SECRET_ENV_FILE="${tmp_dir}/password-helper.env" \
+    password >/dev/null
+  assert_contains "${tmp_dir}/password-helper-secret" "make-password"
+  rm -f "${tmp_dir}/password-helper-secret"
 fi
 
 printf 'All tests passed.\n'

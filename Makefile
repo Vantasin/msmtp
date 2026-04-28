@@ -13,7 +13,7 @@ EXAMPLE ?= default
 ACCOUNTS_DIR ?=
 DEFAULT_ACCOUNT ?=
 ACCOUNT_NAME ?= account
-SECRET_ENV_FILE ?= $(ENV_FILE)
+SECRET_ENV_FILE ?=
 PASSWORD_FILE ?=
 GPG_FILE ?=
 GPG_RECIPIENT ?=
@@ -25,7 +25,7 @@ DEFAULT_ACCOUNT_ARGS = $(if $(strip $(DEFAULT_ACCOUNT)),--default-account $(DEFA
 ACCOUNT_ENV_FILE = accounts/$(ACCOUNT_NAME).env
 FORCE_ARG = $(if $(filter 1 yes true on,$(INSTALL_FORCE)),--force,)
 
-.PHONY: help setup setup-example setup-account setup-account-example generate preview install install-user install-system restore restore-user restore-system link link-user check clean secrets-help secret-check keychain-add password-file-init gpg-file-init quickstart init-env render print-config update test
+.PHONY: help account password setup setup-example setup-account setup-account-example generate preview install install-user install-system restore restore-user restore-system link link-user check clean secrets-help secret-check keychain-add password-file-init gpg-file-init quickstart init-env render print-config update test
 
 help: ## Show the common repo commands
 	@printf "Common commands:\n"
@@ -47,6 +47,12 @@ help: ## Show the common repo commands
 	@printf "  INSTALL_FORCE %s\n" "$(INSTALL_FORCE)"
 	@printf "  BACKUP       %s\n" "$(BACKUP)"
 
+account: ## Manage single or multi-account env files from one workflow
+	./scripts/account-manager.sh --env-file $(ENV_FILE) --accounts-dir $(if $(strip $(ACCOUNTS_DIR)),$(ACCOUNTS_DIR),accounts) $(FORCE_ARG)
+
+password: ## Choose an env file and run the matching password helper
+	./scripts/password-helper.sh $(if $(strip $(SECRET_ENV_FILE)),--env-file $(SECRET_ENV_FILE),)
+
 setup: ## Run the interactive setup wizard and write a local .env
 	./scripts/setup.sh --env-file $(ENV_FILE) --output $(OUTPUT) --target $(INSTALL_PATH)
 
@@ -65,25 +71,25 @@ generate: ## Render the generated msmtprc from ENV_FILE or ACCOUNTS_DIR
 preview: ## Print the rendered msmtprc from ENV_FILE or ACCOUNTS_DIR
 	./scripts/render-config.sh $(INPUT_ARGS) $(DEFAULT_ACCOUNT_ARGS) --stdout
 
-install: ## Copy the rendered config into your active msmtp path
-	./scripts/install.sh $(INPUT_ARGS) $(DEFAULT_ACCOUNT_ARGS) --output $(OUTPUT) --target $(INSTALL_PATH) --mode copy $(FORCE_ARG)
+install: ## Guided install flow for choosing source, target, and copy vs symlink
+	./scripts/install-helper.sh $(if $(strip $(ACCOUNTS_DIR)),--accounts-dir $(ACCOUNTS_DIR),$(if $(strip $(ENV_FILE)),--env-file $(ENV_FILE),)) $(DEFAULT_ACCOUNT_ARGS) --output $(OUTPUT) --target $(INSTALL_PATH) $(FORCE_ARG)
 
-install-user: ## Copy the rendered config into ~/.msmtprc
+install-user: ## Explicitly copy the rendered config into ~/.msmtprc
 	./scripts/install.sh $(INPUT_ARGS) $(DEFAULT_ACCOUNT_ARGS) --output $(OUTPUT) --target $(USER_INSTALL_PATH) --mode copy $(FORCE_ARG)
 
-install-system: ## Copy the rendered config into /etc/msmtprc
+install-system: ## Explicitly copy the rendered config into /etc/msmtprc
 	./scripts/install.sh $(INPUT_ARGS) $(DEFAULT_ACCOUNT_ARGS) --output $(SYSTEM_INSTALL_PATH) --target $(SYSTEM_INSTALL_PATH) --mode copy $(FORCE_ARG)
 
-restore: ## Restore INSTALL_PATH from BACKUP
-	./scripts/restore-backup.sh --backup $(BACKUP) --target $(INSTALL_PATH) $(FORCE_ARG)
+restore: ## Guided restore flow for choosing a target and backup
+	./scripts/restore-helper.sh $(if $(strip $(BACKUP)),--backup $(BACKUP),) --target $(INSTALL_PATH) $(FORCE_ARG)
 
-restore-user: ## Restore ~/.msmtprc from BACKUP
-	./scripts/restore-backup.sh --backup $(BACKUP) --target $(USER_INSTALL_PATH) $(FORCE_ARG)
+restore-user: ## Restore ~/.msmtprc from BACKUP or choose one interactively
+	./scripts/restore-helper.sh $(if $(strip $(BACKUP)),--backup $(BACKUP),) --target $(USER_INSTALL_PATH) $(FORCE_ARG)
 
-restore-system: ## Restore /etc/msmtprc from BACKUP
-	./scripts/restore-backup.sh --backup $(BACKUP) --target $(SYSTEM_INSTALL_PATH) $(FORCE_ARG)
+restore-system: ## Restore /etc/msmtprc from BACKUP or choose one interactively
+	./scripts/restore-helper.sh $(if $(strip $(BACKUP)),--backup $(BACKUP),) --target $(SYSTEM_INSTALL_PATH) $(FORCE_ARG)
 
-link: ## Symlink your active msmtp path to the repo-managed output file
+link: ## Explicitly symlink your active msmtp path to the repo-managed output file
 	./scripts/install.sh $(INPUT_ARGS) $(DEFAULT_ACCOUNT_ARGS) --output $(OUTPUT) --target $(INSTALL_PATH) --mode symlink $(FORCE_ARG)
 
 link-user: ## Symlink ~/.msmtprc to the repo-managed output file
@@ -99,13 +105,13 @@ secret-check: ## Validate that the configured passwordeval command works
 	./scripts/secret-check.sh $(INPUT_ARGS)
 
 keychain-add: ## Add or update a macOS Keychain secret for one env file
-	./scripts/keychain-add.sh --env-file $(SECRET_ENV_FILE) $(if $(strip $(KEYCHAIN_SERVICE)),--service $(KEYCHAIN_SERVICE),) $(if $(strip $(KEYCHAIN_ACCOUNT)),--account $(KEYCHAIN_ACCOUNT),)
+	./scripts/keychain-add.sh --env-file $(if $(strip $(SECRET_ENV_FILE)),$(SECRET_ENV_FILE),$(ENV_FILE)) $(if $(strip $(KEYCHAIN_SERVICE)),--service $(KEYCHAIN_SERVICE),) $(if $(strip $(KEYCHAIN_ACCOUNT)),--account $(KEYCHAIN_ACCOUNT),)
 
 password-file-init: ## Create a password file with strict permissions
-	./scripts/password-file-init.sh --env-file $(SECRET_ENV_FILE) $(if $(strip $(PASSWORD_FILE)),--password-file $(PASSWORD_FILE),)
+	./scripts/password-file-init.sh --env-file $(if $(strip $(SECRET_ENV_FILE)),$(SECRET_ENV_FILE),$(ENV_FILE)) $(if $(strip $(PASSWORD_FILE)),--password-file $(PASSWORD_FILE),)
 
 gpg-file-init: ## Create a GPG-encrypted password file without plaintext args
-	./scripts/gpg-file-init.sh --env-file $(SECRET_ENV_FILE) $(if $(strip $(GPG_FILE)),--gpg-file $(GPG_FILE),) $(if $(strip $(GPG_RECIPIENT)),--recipient $(GPG_RECIPIENT),)
+	./scripts/gpg-file-init.sh --env-file $(if $(strip $(SECRET_ENV_FILE)),$(SECRET_ENV_FILE),$(ENV_FILE)) $(if $(strip $(GPG_FILE)),--gpg-file $(GPG_FILE),) $(if $(strip $(GPG_RECIPIENT)),--recipient $(GPG_RECIPIENT),)
 
 clean: ## Remove generated files from the repo root
 	rm -f $(OUTPUT)

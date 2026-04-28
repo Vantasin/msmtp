@@ -10,8 +10,9 @@ Use this workflow after significant repository changes.
 4. Review [`docs/README.md`](../../docs/README.md) and major directory
    `README.md` files for mismatches and non-navigable repo references that
    should be relative Markdown links.
-5. If the change affects onboarding, setup, install, restore, or verification
-   flows, explicitly review [README.md](../../README.md) and
+5. If the change affects onboarding, account management, password setup,
+   install, restore, or verification flows, explicitly review
+   [README.md](../../README.md) and
    [docs/getting-started.md](../../docs/getting-started.md) for linear,
    actionable quick-start drift.
 6. If the change affects accounts or secret handling, explicitly review

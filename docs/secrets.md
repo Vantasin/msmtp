@@ -14,9 +14,13 @@ Make variables or normal CLI arguments.
 ## Common Commands
 
 ```bash
+make password
 make secrets-help
 make secret-check
 ```
+
+`make password` chooses an env file and dispatches to the matching helper based
+on `MSMTP_SECRET_METHOD`.
 
 `make secret-check` executes the configured `passwordeval` command and verifies
 that it returns a non-empty secret, but it never prints the secret value.

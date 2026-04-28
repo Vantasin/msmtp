@@ -4,8 +4,12 @@
 
 Current files:
 
+- [`account-manager.sh`](../../scripts/account-manager.sh): guided single and
+  multi-account management
 - [`secrets-help.sh`](../../scripts/secrets-help.sh): print the supported
   secret helpers and docs
+- [`password-helper.sh`](../../scripts/password-helper.sh): choose an env file
+  and dispatch to the matching password helper
 - [`secret-check.sh`](../../scripts/secret-check.sh): validate configured
   `passwordeval` commands without printing secrets
 - [`keychain-add.sh`](../../scripts/keychain-add.sh): add or update a macOS
@@ -20,9 +24,13 @@ Current files:
   a chosen example
 - [`render-config.sh`](../../scripts/render-config.sh): render the canonical
   `msmtprc` template from one env file or an account directory
+- [`install-helper.sh`](../../scripts/install-helper.sh): guided install flow
+  for choosing source, target, and install mode
 - [`install.sh`](../../scripts/install.sh): render and install the generated
   config from one env file or an account directory, backing up existing live
   targets before replacement
+- [`restore-helper.sh`](../../scripts/restore-helper.sh): guided backup
+  selection and restore
 - [`restore-backup.sh`](../../scripts/restore-backup.sh): restore a chosen
   backup into the live target path while protecting any current target first
 - [`lib/common.sh`](../../scripts/lib/common.sh): shared helper functions
