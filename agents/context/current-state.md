@@ -1,6 +1,6 @@
 # Current State
 
-As of 2026-04-27, this repository contains both the governance scaffold and a
+As of 2026-04-28, this repository contains both the governance scaffold and a
 working implementation for managing `msmtp` configuration.
 
 Present today:
@@ -18,8 +18,8 @@ Present today:
 - [`templates/msmtprc.template`](../../templates/msmtprc.template)
 - account-file examples in [`templates/examples/`](../../templates/examples/)
 - implementation scripts in [`scripts/`](../../scripts/) for quickstart,
-  guided account/password/rotation/install/restore flows, interactive setup,
-  render, guarded install, and backup restore flows
+  guided account/configure/password/rotation/install/restore flows,
+  interactive setup, render, guarded install, and backup restore flows
 - a [`Makefile`](../../Makefile) with guided top-level commands plus explicit
   user/system install and restore targets
 - shell-based smoke tests in [`tests/test.sh`](../../tests/test.sh)
@@ -31,7 +31,7 @@ Operational convention today:
   files in the same directory.
 - User vs system install scope is selected through `make` targets and
   variables, not through account-file data.
-- The preferred human-facing commands are `make account`, `make password`,
+- The preferred human-facing commands are `make configure`, `make password`,
   `make install`, and `make restore`.
 
 Not present today:

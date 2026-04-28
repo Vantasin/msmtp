@@ -5,7 +5,9 @@
 Current files:
 
 - [`account-manager.sh`](../../scripts/account-manager.sh): guided account-file
-  management
+  management without deployment
+- [`configure.sh`](../../scripts/configure.sh): guided human workflow for
+  account, secret, validation, and install
 - [`secrets-help.sh`](../../scripts/secrets-help.sh): print the supported
   secret helpers and docs
 - [`password-helper.sh`](../../scripts/password-helper.sh): choose an account
@@ -21,7 +23,7 @@ Current files:
 - [`gpg-file-init.sh`](../../scripts/gpg-file-init.sh): create a GPG-encrypted
   password file
 - [`setup.sh`](../../scripts/setup.sh): interactive setup that writes one
-  account file
+  account file without installing the live config
 - [`quickstart.sh`](../../scripts/quickstart.sh): create an account file from a
   chosen example
 - [`render-config.sh`](../../scripts/render-config.sh): render the canonical

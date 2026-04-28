@@ -36,6 +36,12 @@ Check every account in the canonical directory:
 make secret-check ACCOUNTS_DIR=accounts
 ```
 
+Check one named account:
+
+```bash
+make secret-check ACCOUNT_NAME=work
+```
+
 ## macOS Keychain
 
 Use this when `MSMTP_SECRET_METHOD=keychain`.

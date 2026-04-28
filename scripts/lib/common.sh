@@ -330,8 +330,7 @@ account_name_from_env_file() {
 }
 
 render_account_block() {
-  local auth tls starttls certcheck default_line logfile_line trust_file_line
-  local fingerprint_line passwordeval
+  local auth tls starttls certcheck passwordeval
 
   require_var MSMTP_ACCOUNT_NAME
   require_var MSMTP_HOST
@@ -344,24 +343,15 @@ render_account_block() {
   starttls="$(normalize_on_off "${MSMTP_TLS_STARTTLS:-on}")"
   certcheck="$(normalize_on_off "${MSMTP_TLS_CERTCHECK:-on}")"
   passwordeval="$(passwordeval_command)"
-  logfile_line="$(optional_line "logfile" "${MSMTP_LOGFILE:-}")"
-  trust_file_line="$(optional_line "tls_trust_file" "${MSMTP_TLS_TRUST_FILE:-}")"
-  fingerprint_line="$(optional_line "tls_fingerprint" "${MSMTP_TLS_FINGERPRINT:-}")"
 
   printf 'account %s\n' "$MSMTP_ACCOUNT_NAME"
   printf 'auth %s\n' "$auth"
   printf 'tls %s\n' "$tls"
   printf 'tls_starttls %s\n' "$starttls"
   printf 'tls_certcheck %s\n' "$certcheck"
-  if [ -n "$logfile_line" ]; then
-    printf '%s' "$logfile_line"
-  fi
-  if [ -n "$trust_file_line" ]; then
-    printf '%s' "$trust_file_line"
-  fi
-  if [ -n "$fingerprint_line" ]; then
-    printf '%s' "$fingerprint_line"
-  fi
+  optional_line "logfile" "${MSMTP_LOGFILE:-}"
+  optional_line "tls_trust_file" "${MSMTP_TLS_TRUST_FILE:-}"
+  optional_line "tls_fingerprint" "${MSMTP_TLS_FINGERPRINT:-}"
   printf 'host %s\n' "$MSMTP_HOST"
   printf 'port %s\n' "$MSMTP_PORT"
   printf 'from %s\n' "$MSMTP_FROM"

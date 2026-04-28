@@ -7,19 +7,15 @@ script_dir="$(cd "$(dirname "$0")" && pwd)"
 
 usage() {
   cat <<'EOF'
-Usage: scripts/setup.sh [--env-file PATH] [--output PATH] [--target PATH]
-                       [--overwrite]
+Usage: scripts/setup.sh [--env-file PATH] [--overwrite]
 
-Interactive setup for creating or editing one account file. The account-file
-workflow remains the source of truth; this script is a convenience layer that
-collects values step by step and writes them into a file under accounts/.
-Use --overwrite to edit an existing file in place.
+Interactive setup for creating or editing one account file. This command only
+updates account data under accounts/; it does not render or install the live
+msmtp config.
 EOF
 }
 
 env_file="${repo_root}/accounts/default.env"
-output_file="${repo_root}/.msmtprc.generated"
-target_path="${HOME}/.msmtprc"
 allow_overwrite="false"
 
 while [ $# -gt 0 ]; do
@@ -27,16 +23,6 @@ while [ $# -gt 0 ]; do
     --env-file)
       [ $# -ge 2 ] || die "--env-file requires a value"
       env_file="$2"
-      shift 2
-      ;;
-    --output)
-      [ $# -ge 2 ] || die "--output requires a value"
-      output_file="$2"
-      shift 2
-      ;;
-    --target)
-      [ $# -ge 2 ] || die "--target requires a value"
-      target_path="$2"
       shift 2
       ;;
     --overwrite)
@@ -72,19 +58,32 @@ yes_no_default_from_truthy() {
   fi
 }
 
+account_file_hint() {
+  local file_name
+
+  file_name="$(basename "$env_file")"
+  printf 'Account file: %s\n' "$env_file" >&2
+  printf 'This step only updates account data. Use make configure for the full guided flow, or run make password / make install afterward.\n' >&2
+  if [ "$file_name" = "default.env" ]; then
+    printf 'Examples for named accounts: work.env, personal.env, server-alerts.env.\n\n' >&2
+  else
+    printf 'This file name becomes part of your local account inventory under accounts/.\n\n' >&2
+  fi
+}
+
 prompt_secret_method() {
   local response default_value normalized
 
   default_value="${1:-$(default_secret_method)}"
 
-  printf 'Setup profiles:\n' >&2
-  printf '  1. keychain\n' >&2
-  printf '  2. gpg\n' >&2
-  printf '  3. password_file\n' >&2
-  printf '  4. command\n' >&2
+  printf 'Choose how msmtp should retrieve the password:\n' >&2
+  printf '  1. keychain      Recommended on macOS desktops. Stores the secret in Keychain.\n' >&2
+  printf '  2. gpg           Recommended on Linux desktops. Uses an encrypted file.\n' >&2
+  printf '  3. password_file Recommended on unattended servers. Uses a root-owned file.\n' >&2
+  printf '  4. command       Advanced mode for pass, Vault, or another external command.\n' >&2
 
   while true; do
-    response="$(prompt_value "Choose a secret method" "$default_value")"
+    response="$(prompt_value "Secret method" "$default_value")"
     normalized="$(printf '%s' "$response" | tr '[:upper:]' '[:lower:]' | tr '-' '_')"
     case "$normalized" in
       1 | keychain)
@@ -109,41 +108,28 @@ prompt_secret_method() {
   done
 }
 
-prompt_install_mode() {
-  local response normalized
-
-  while true; do
-    response="$(prompt_value "Install mode" "copy")"
-    normalized="$(printf '%s' "$response" | tr '[:upper:]' '[:lower:]')"
-    case "$normalized" in
-      copy | symlink)
-        printf '%s\n' "$normalized"
-        return 0
-        ;;
-    esac
-
-    printf 'Choose one of: copy, symlink.\n' >&2
-  done
-}
-
 if [ -e "$env_file" ] && [ "$allow_overwrite" != "true" ]; then
   die "Refusing to overwrite existing file: $env_file"
 fi
 
+printf 'Interactive msmtp account setup\n' >&2
 if [ -e "$env_file" ]; then
   load_env_file "$env_file"
-  printf 'Interactive msmtp setup\n' >&2
   printf 'Editing %s in place.\n\n' "$env_file" >&2
 else
-  printf 'Interactive msmtp setup\n' >&2
-  printf 'This writes %s and keeps the account-file workflow as the source of truth.\n\n' "$env_file" >&2
+  printf 'Creating %s.\n\n' "$env_file" >&2
 fi
 
-MSMTP_ACCOUNT_NAME="$(prompt_required "Account name" "${MSMTP_ACCOUNT_NAME:-default}")"
-MSMTP_HOST="$(prompt_required "SMTP host" "${MSMTP_HOST:-}")"
-MSMTP_PORT="$(prompt_required "SMTP port" "${MSMTP_PORT:-587}")"
-MSMTP_FROM="$(prompt_required "From address" "${MSMTP_FROM:-}")"
-MSMTP_USER="$(prompt_required "Username" "${MSMTP_USER:-$MSMTP_FROM}")"
+account_file_hint
+
+printf 'Basic account settings:\n' >&2
+MSMTP_ACCOUNT_NAME="$(prompt_required "Account name (examples: default, work, personal)" "${MSMTP_ACCOUNT_NAME:-default}")"
+MSMTP_HOST="$(prompt_required "SMTP host (example: smtp.example.com)" "${MSMTP_HOST:-}")"
+MSMTP_PORT="$(prompt_required "SMTP port (common values: 587 or 465)" "${MSMTP_PORT:-587}")"
+MSMTP_FROM="$(prompt_required "From address (example: you@example.com)" "${MSMTP_FROM:-}")"
+MSMTP_USER="$(prompt_required "Username (press Enter to reuse the From address)" "${MSMTP_USER:-$MSMTP_FROM}")"
+
+printf '\nSecret settings:\n' >&2
 MSMTP_SECRET_METHOD="$(prompt_secret_method "${MSMTP_SECRET_METHOD:-$(default_secret_method)}")"
 
 existing_keychain_service="${MSMTP_KEYCHAIN_SERVICE:-}"
@@ -160,33 +146,34 @@ MSMTP_PASSWORDEVAL_COMMAND=""
 
 case "$MSMTP_SECRET_METHOD" in
   keychain)
-    MSMTP_KEYCHAIN_SERVICE="$(prompt_required "Keychain service" "${existing_keychain_service:-$MSMTP_HOST}")"
-    MSMTP_KEYCHAIN_ACCOUNT="$(prompt_required "Keychain account" "${existing_keychain_account:-$MSMTP_USER}")"
+    MSMTP_KEYCHAIN_SERVICE="$(prompt_required "Keychain service (usually the SMTP host)" "${existing_keychain_service:-$MSMTP_HOST}")"
+    MSMTP_KEYCHAIN_ACCOUNT="$(prompt_required "Keychain account (usually the SMTP username)" "${existing_keychain_account:-$MSMTP_USER}")"
     ;;
   gpg)
-    MSMTP_GPG_FILE="$(prompt_required "Path to the GPG-encrypted password file" "$existing_gpg_file")"
+    MSMTP_GPG_FILE="$(prompt_required "Path to the GPG-encrypted password file (example: ~/.local/state/msmtp/work.gpg)" "$existing_gpg_file")"
     ;;
   password_file)
-    MSMTP_PASSWORD_FILE="$(prompt_required "Path to the password file" "$existing_password_file")"
+    MSMTP_PASSWORD_FILE="$(prompt_required "Path to the password file (server example: /etc/msmtp/work.password)" "$existing_password_file")"
     ;;
   command)
-    MSMTP_PASSWORDEVAL_COMMAND="$(prompt_required "Custom passwordeval command" "$existing_passwordeval_command")"
+    MSMTP_PASSWORDEVAL_COMMAND="$(prompt_required "Custom passwordeval command (example: pass show mail/work)" "$existing_passwordeval_command")"
     ;;
 esac
 
-if [ "$(prompt_yes_no "Enable SMTP auth" "$(yes_no_default_from_truthy "${MSMTP_AUTH:-on}")")" = "yes" ]; then
+printf '\nSMTP behavior:\n' >&2
+if [ "$(prompt_yes_no "Enable SMTP auth for this account" "$(yes_no_default_from_truthy "${MSMTP_AUTH:-on}")")" = "yes" ]; then
   MSMTP_AUTH="on"
 else
   MSMTP_AUTH="off"
 fi
 
-if [ "$(prompt_yes_no "Enable TLS" "$(yes_no_default_from_truthy "${MSMTP_TLS:-on}")")" = "yes" ]; then
+if [ "$(prompt_yes_no "Enable TLS encryption" "$(yes_no_default_from_truthy "${MSMTP_TLS:-on}")")" = "yes" ]; then
   MSMTP_TLS="on"
 else
   MSMTP_TLS="off"
 fi
 
-if [ "$(prompt_yes_no "Enable STARTTLS" "$(yes_no_default_from_truthy "${MSMTP_TLS_STARTTLS:-on}")")" = "yes" ]; then
+if [ "$(prompt_yes_no "Enable STARTTLS (recommended for port 587)" "$(yes_no_default_from_truthy "${MSMTP_TLS_STARTTLS:-on}")")" = "yes" ]; then
   MSMTP_TLS_STARTTLS="on"
 else
   MSMTP_TLS_STARTTLS="off"
@@ -198,32 +185,22 @@ else
   MSMTP_TLS_CERTCHECK="off"
 fi
 
-if [ "$(prompt_yes_no "Set this as the default account" "$(yes_no_default_from_truthy "${MSMTP_SET_DEFAULT:-true}")")" = "yes" ]; then
+if [ "$(prompt_yes_no "Set this as the default account when msmtp does not receive an explicit account" "$(yes_no_default_from_truthy "${MSMTP_SET_DEFAULT:-true}")")" = "yes" ]; then
   MSMTP_SET_DEFAULT="true"
 else
   MSMTP_SET_DEFAULT="false"
 fi
 
-MSMTP_LOGFILE="$(prompt_value "Log file path (optional)" "${MSMTP_LOGFILE:-}")"
-MSMTP_TLS_TRUST_FILE="$(prompt_value "TLS trust file path (optional)" "${MSMTP_TLS_TRUST_FILE:-}")"
-MSMTP_TLS_FINGERPRINT="$(prompt_value "TLS fingerprint (optional)" "${MSMTP_TLS_FINGERPRINT:-}")"
+printf '\nOptional advanced settings:\n' >&2
+MSMTP_LOGFILE="$(prompt_value "Log file path (optional, example: ~/.local/state/msmtp.log)" "${MSMTP_LOGFILE:-}")"
+MSMTP_TLS_TRUST_FILE="$(prompt_value "TLS trust file path (optional, example: /etc/ssl/certs/ca-certificates.crt)" "${MSMTP_TLS_TRUST_FILE:-}")"
+MSMTP_TLS_FINGERPRINT="$(prompt_value "TLS fingerprint (optional, example: AA:BB:CC:DD...)" "${MSMTP_TLS_FINGERPRINT:-}")"
 
 write_msmtp_env_file "$env_file"
 
-printf 'Created %s\n' "$env_file"
-
-if [ "$(prompt_yes_no "Render and install ~/.msmtprc now" "no")" = "yes" ]; then
-  install_mode="$(prompt_install_mode)"
-  accounts_dir_for_install="$(dirname "$env_file")"
-  "${repo_root}/scripts/install.sh" \
-    --accounts-dir "$accounts_dir_for_install" \
-    --output "$output_file" \
-    --target "$target_path" \
-    --mode "$install_mode"
-  exit 0
-fi
-
-printf 'Next steps:\n'
-printf '  1. Review %s.\n' "$env_file"
-printf '  2. Run make check.\n'
-printf '  3. Run make install.\n'
+account_file_name="$(basename "$env_file" .env)"
+printf 'Saved %s\n' "$env_file"
+printf 'Next steps:\n' >&2
+printf '  1. Run make password ACCOUNT_NAME=%s to provision the secret.\n' "$account_file_name" >&2
+printf '  2. Run make secret-check ACCOUNT_NAME=%s to validate the secret lookup.\n' "$account_file_name" >&2
+printf '  3. Run make configure for the full guided flow, or make install when you are ready to deploy.\n' >&2

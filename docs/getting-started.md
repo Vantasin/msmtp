@@ -35,75 +35,85 @@ Fedora:
 sudo dnf install msmtp
 ```
 
-### 3. Create or Edit Your Account File
+### 3. Run the Guided Configure Flow
+
+```bash
+make configure
+```
+
+This walks through account creation or editing, secret setup or rotation,
+validation, and install.
+
+If you only want account-file CRUD without deployment, use:
 
 ```bash
 make account
 ```
 
-This manages the canonical [`accounts/`](../accounts/) directory. Use one file
-per mailing address.
-
-### 4. Store the SMTP Password Securely
-
-```bash
-make password
-```
-
-`make password` chooses an account file and dispatches to the matching helper
-based on `MSMTP_SECRET_METHOD`. For a custom command backend such as `pass`, it
-shows the configured command and can validate it. See
-[secrets.md](./secrets.md) for backend-specific details.
-
-Rotate an existing password later with:
-
-```bash
-make rotate-password
-```
-
-### 5. Verify the Secret Lookup
-
-```bash
-make secret-check
-```
-
-### 6. Run the Repo Smoke Tests
+### 4. Run the Repo Smoke Tests
 
 ```bash
 make check
 ```
 
-### 7. Install `~/.msmtprc`
-
-```bash
-make install
-```
-
-By default, `make install` writes to `~/.msmtprc` and keeps a rendered copy in
-`.msmtprc.generated`.
-
-`make install` guides you through:
-
-- choosing user, system, or custom install targets
-- choosing copy vs symlink install mode
-- choosing a default account when more than one exists and none is already set
-
-If the live target already exists, `make install` backs it up and asks before
-replacing it. For non-interactive replacement, use an explicit install command:
-
-```bash
-make install-user INSTALL_FORCE=yes
-```
-
-Backups are stored next to the target as `TARGET.bak.<UTC timestamp>`.
-
-### 8. Send a Test Email
+### 5. Send a Test Email
 
 Replace `you@example.com` with the mailbox that should receive the test
 message.
 
 ```bash
 printf 'Subject: msmtp test\nTo: you@example.com\n\nmsmtp is working.\n' | msmtp you@example.com
+```
+
+## Account-Only Workflow
+
+Use this when you want to update `accounts/*.env` without changing the live
+config yet.
+
+```bash
+make account
+```
+
+That flow can:
+
+- add an account
+- edit an account
+- delete an account
+- set the default account
+- list accounts
+
+It does not render or install the live config.
+
+## Direct Secret and Install Commands
+
+Set up the first secret for one account:
+
+```bash
+make password ACCOUNT_NAME=work
+```
+
+Rotate the secret for one account:
+
+```bash
+make rotate-password ACCOUNT_NAME=work
+```
+
+Validate the whole directory:
+
+```bash
+make secret-check
+```
+
+Validate one named account:
+
+```bash
+make secret-check ACCOUNT_NAME=work
+```
+
+Install the rendered config:
+
+```bash
+make install
 ```
 
 ## Setup Model
@@ -149,7 +159,7 @@ file.
 
 ## Multiple Accounts
 
-Use the guided account manager:
+Use the account-only manager:
 
 ```bash
 make account
@@ -174,10 +184,11 @@ exactly one account file.
 
 ## Secret Storage Details
 
-After choosing a secret backend, use the dedicated helpers or the guided
-password flow:
+After choosing a secret backend, use the dedicated helpers or the configure
+flow:
 
 ```bash
+make configure
 make password
 make rotate-password
 make secrets-help
@@ -213,6 +224,9 @@ Install the rendered config to the default `msmtp` location:
 ```bash
 make install
 ```
+
+`make configure` can hand you into this install flow automatically. The direct
+install commands remain useful for repeatable re-deploys.
 
 Use the explicit user install command:
 

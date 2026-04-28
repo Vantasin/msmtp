@@ -13,13 +13,15 @@ Operational project assets live in focused directories:
 - [`templates/`](../../templates/) for `msmtp` config generation assets and
   account-file examples
 - [`scripts/`](../../scripts/) for repeatable automation such as bootstrap,
-  secret setup, interactive setup, render, and install
+  secret setup, interactive setup, account-only management, guided configure,
+  render, and install
 - [`tests/`](../../tests/) for shell-based verification logic
 
 The current implementation flow is:
 
 1. create one or more account files under [`accounts/`](../../accounts/) using
-   an example, the interactive setup script, or the guided account manager
+   an example, the interactive setup script, the guided account manager, or the
+   end-to-end configure flow
 2. provision or verify the chosen secret backend using
    [docs/secrets.md](../../docs/secrets.md)
 3. render [`templates/msmtprc.template`](../../templates/msmtprc.template)

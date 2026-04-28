@@ -12,7 +12,7 @@ It uses one canonical model:
 It also ships with:
 
 - a template-based `msmtprc` renderer
-- guided account, password, install, and restore workflows
+- an account-only management workflow plus a separate guided human configure flow
 - a dedicated password-rotation workflow for supported secret backends
 - `passwordeval` support for macOS Keychain, Linux GPG, secure password files,
   and custom commands
@@ -51,75 +51,39 @@ Fedora:
 sudo dnf install msmtp
 ```
 
-3. Create or edit your account file.
+3. Run the guided configure flow.
+
+```bash
+make configure
+```
+
+This guides you through account setup, secret setup or rotation, validation,
+and install. It applies the full account set in [`accounts/`](./accounts/).
+
+If you only want to manage account files without deploying anything, use:
 
 ```bash
 make account
 ```
 
-This manages files under [`accounts/`](./accounts/). One account means one file
-such as `accounts/default.env`. Multiple addresses mean multiple files in the
-same directory.
-
-4. Store the SMTP password securely for that account.
+Other direct commands remain available:
 
 ```bash
 make password
-```
-
-Rotate an existing password later with:
-
-```bash
 make rotate-password
-```
-
-5. Verify that the configured secret lookup works.
-
-```bash
 make secret-check
+make install
 ```
 
-6. Run the repo smoke tests.
+4. Run the repo smoke tests.
 
 ```bash
 make check
 ```
 
-7. Install the generated config to `~/.msmtprc`.
-
-```bash
-make install
-```
-
-`make install` guides you through:
-
-- choosing the install target
-- choosing copy vs symlink mode
-- choosing a default account when needed
-
-If the live target already exists, the install flow backs it up and asks before
-replacing it. For non-interactive replacement, rerun an explicit command with
-`INSTALL_FORCE=yes`.
-
-Backups are stored next to the target as `TARGET.bak.<UTC timestamp>`, for
-example `~/.msmtprc.bak.20260427T153000Z`.
-
-For a system-wide config at `/etc/msmtprc`, use:
-
-```bash
-sudo make install-system INSTALL_FORCE=yes
-```
-
-Restore a previous live config:
-
-```bash
-make restore
-```
-
-8. Send a test email. Replace `you@example.com` with the mailbox that should
+5. Send a test email. Replace `you@example.com` with the mailbox that should
 receive the message.
 
-```bash
 printf 'Subject: msmtp test\nTo: you@example.com\n\nmsmtp is working.\n' | msmtp you@example.com
 ```
 
@@ -133,8 +97,8 @@ This repo intentionally uses `accounts/` as the only source of account truth.
 
 - `accounts/default.env` is the simplest single-account setup
 - `accounts/work.env` and `accounts/personal.env` are typical multi-account files
-- `make generate`, `make install`, and `make secret-check` operate on the whole
-  directory
+- `make generate` and `make install` operate on the whole directory
+- `make secret-check` can validate the whole directory or one account when you pass `ACCOUNT_NAME=...`
 
 If you do not pass `DEFAULT_ACCOUNT=...`, set `MSMTP_SET_DEFAULT=true` on
 exactly one account file.
@@ -161,7 +125,9 @@ local secret paths do not get committed accidentally.
 - [`accounts/README.md`](./accounts/README.md): canonical account-file model
 - [`Makefile`](./Makefile): common repo entrypoints
 - [`scripts/account-manager.sh`](./scripts/account-manager.sh): guided account
-  management
+  management without deployment
+- [`scripts/configure.sh`](./scripts/configure.sh): guided human workflow for
+  account, secret, validation, and install
 - [`scripts/password-helper.sh`](./scripts/password-helper.sh): choose an
   account file and dispatch to the correct password helper
 - [`scripts/rotate-password.sh`](./scripts/rotate-password.sh): rotate an

@@ -22,6 +22,7 @@ Supported secret backends:
 Common commands:
 
   make secrets-help
+  make configure
   make account
   make password
   make rotate-password
@@ -35,7 +36,9 @@ Accounts directory usage:
 
   make setup
   make setup ACCOUNT_NAME=work
+  make configure
   make secret-check ACCOUNTS_DIR=accounts
+  make secret-check ACCOUNT_NAME=work
   make keychain-add ACCOUNT_NAME=work
   make password-file-init ACCOUNT_NAME=work
   make gpg-file-init ACCOUNT_NAME=work

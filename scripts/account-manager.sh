@@ -12,8 +12,8 @@ Usage: scripts/account-manager.sh [--accounts-dir PATH]
                                   [--account NAME]
                                   [--force]
 
-Manage account files in one accounts directory. Single-account and
-multi-account setups use the same model: one file per account.
+Manage account files in one accounts directory. This workflow only changes
+files under accounts/; it does not install or remove the live msmtp config.
 EOF
 }
 
@@ -69,7 +69,7 @@ EOF
 
   [ "${#env_files[@]}" -gt 0 ] || die "No account env files found in: $accounts_dir"
 
-  label="$(choose_from_menu "Choose an account:" "${labels[@]}")"
+  label="$(choose_from_menu "Choose an account file to work with:" "${labels[@]}")"
   for i in "${!labels[@]}"; do
     if [ "${labels[$i]}" = "$label" ]; then
       printf '%s\n' "${env_files[$i]}"
@@ -121,6 +121,10 @@ create_account() {
   local account_name env_path
 
   mkdir -p "$accounts_dir"
+  if [ -z "$account_name_arg" ]; then
+    printf 'Create a new account file under %s.\n' "$accounts_dir" >&2
+    printf 'Examples: default, work, personal, server-alerts\n' >&2
+  fi
   account_name="${account_name_arg:-$(prompt_required "Account file name" "default")}"
   validate_account_file_name "$account_name"
   env_path="$(account_env_path_for_name "$account_name")"
@@ -154,6 +158,9 @@ set_default_from_arg_or_prompt() {
 
   [ -f "$env_path" ] || die "Account file not found: $env_path"
   set_default_account "$env_path"
+  printf 'Next steps:\n' >&2
+  printf '  1. Run make install to deploy the updated default account selection.\n' >&2
+  printf '  2. Run make configure if you also need secret or install guidance.\n' >&2
 }
 
 delete_from_arg_or_prompt() {
@@ -167,6 +174,9 @@ delete_from_arg_or_prompt() {
   fi
 
   delete_account_file "$env_path"
+  printf 'Next steps:\n' >&2
+  printf '  1. Review the remaining files under %s.\n' "$accounts_dir" >&2
+  printf '  2. Run make install to redeploy the remaining account set if needed.\n' >&2
 }
 
 list_accounts() {
@@ -181,6 +191,7 @@ $(list_account_env_files "$accounts_dir")
 EOF
 
   [ "$found_any" = "true" ] || die "No account env files found in: $accounts_dir"
+  printf '\nNext step: run make configure for a guided end-to-end flow, or make install to deploy the current account set.\n' >&2
 }
 
 run_action() {
@@ -218,33 +229,37 @@ $(list_account_env_files "$accounts_dir")
 EOF
 
   if [ "$env_count" -eq 0 ]; then
-    action_label="$(choose_from_menu "No account files exist yet. Choose an action:" \
-      "Add an account" \
+    printf 'No account files exist yet in %s.\n' "$accounts_dir" >&2
+    printf 'This workflow only creates or edits account files. It does not install the live msmtp config.\n' >&2
+    action_label="$(choose_from_menu "Choose the account task you want to run:" \
+      "Add an account - create a new accounts/<name>.env file" \
       "Done")"
   else
-    action_label="$(choose_from_menu "Choose an account action:" \
-      "Add an account" \
-      "Edit an account" \
-      "Delete an account" \
-      "Set the default account" \
-      "List accounts" \
+    printf 'Account management only updates files under %s.\n' "$accounts_dir" >&2
+    printf 'Use make configure for the full guided flow, or make install to deploy the current account set.\n' >&2
+    action_label="$(choose_from_menu "Choose the account task you want to run:" \
+      "Add an account - create a new accounts/<name>.env file" \
+      "Edit an account - update SMTP settings for an existing account file" \
+      "Delete an account - move one account file aside into a backup" \
+      "Set the default account - choose which account msmtp uses by default" \
+      "List accounts - review the current account inventory" \
       "Done")"
   fi
 
   case "$action_label" in
-    "Add an account")
+    "Add an account - create a new accounts/<name>.env file")
       printf 'create\n'
       ;;
-    "Edit an account")
+    "Edit an account - update SMTP settings for an existing account file")
       printf 'edit\n'
       ;;
-    "Delete an account")
+    "Delete an account - move one account file aside into a backup")
       printf 'delete\n'
       ;;
-    "Set the default account")
+    "Set the default account - choose which account msmtp uses by default")
       printf 'set-default\n'
       ;;
-    "List accounts")
+    "List accounts - review the current account inventory")
       printf 'list\n'
       ;;
     *)

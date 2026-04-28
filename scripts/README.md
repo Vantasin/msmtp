@@ -5,6 +5,8 @@ This directory contains the repository's executable automation.
 Files:
 
 - [`account-manager.sh`](./account-manager.sh): guided account-file management
+- [`configure.sh`](./configure.sh): guided human workflow for account, secret,
+  validation, and install
 - [`secrets-help.sh`](./secrets-help.sh): print the supported secret backends
   and helper commands
 - [`password-helper.sh`](./password-helper.sh): choose an account file and
@@ -19,6 +21,7 @@ Files:
 - [`gpg-file-init.sh`](./gpg-file-init.sh): create a GPG-encrypted password
   file
 - [`setup.sh`](./setup.sh): interactive setup that writes one account file
+  without installing the live config
 - [`quickstart.sh`](./quickstart.sh): initialize an account file from a chosen
   example
 - [`render-config.sh`](./render-config.sh): render

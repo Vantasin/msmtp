@@ -80,4 +80,4 @@ printf 'Created %s from %s\n' "$env_file" "$source_file"
 printf 'Next steps:\n'
 printf '  1. Edit %s and replace placeholders.\n' "$env_file"
 printf '  2. Run make check.\n'
-printf '  3. Run make install.\n'
+printf '  3. Run make configure for the full guided flow, or run make password / make install directly.\n'

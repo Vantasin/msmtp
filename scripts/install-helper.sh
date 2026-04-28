@@ -15,7 +15,8 @@ Usage: scripts/install-helper.sh [--accounts-dir PATH]
                                  [--force]
 
 Interactive wrapper around scripts/install.sh. When run in a terminal without
-an explicit target or install mode, it prompts for the missing choices.
+an explicit target or install mode, it prompts for the missing choices and
+explains the deployment tradeoffs.
 EOF
 }
 
@@ -62,7 +63,11 @@ EOF
 choose_target_path() {
   local choice custom_target
 
-  choice="$(choose_from_menu "Choose the install target:" \
+  printf 'Install target guidance:\n' >&2
+  printf '  1. User config    Recommended for desktop or single-user setups.\n' >&2
+  printf '  2. System config  Recommended for root-managed server installs.\n' >&2
+  printf '  3. Custom path    Use when another tool or user will consume the rendered file.\n' >&2
+  choice="$(choose_from_menu "Choose where the live msmtp config should be installed:" \
     "User config (~/.msmtprc)" \
     "System config (/etc/msmtprc)" \
     "Custom path")"
@@ -84,7 +89,10 @@ choose_target_path() {
 choose_install_mode() {
   local choice
 
-  choice="$(choose_from_menu "Choose how the config should be installed:" \
+  printf 'Install mode guidance:\n' >&2
+  printf '  1. Copy a real file  Recommended for servers and standalone machine-local installs.\n' >&2
+  printf '  2. Create a symlink  Recommended for desktops when you want the live file to point back into the repo.\n' >&2
+  choice="$(choose_from_menu "Choose how the live config should be installed:" \
     "Copy a real file" \
     "Create a symlink")"
 
@@ -177,6 +185,8 @@ if [ -z "$default_account" ]; then
   if [ -n "$detected_default" ]; then
     default_account="$detected_default"
   elif [ -t 0 ] && [ "$(account_count "$accounts_dir")" -gt 1 ]; then
+    printf 'No default account is marked in %s.\n' "$accounts_dir" >&2
+    printf 'Choose which account msmtp should use when no explicit account name is supplied.\n' >&2
     default_account="$(choose_from_menu "Choose the default account for this install:" $(account_names_in_dir "$accounts_dir"))"
   fi
 fi

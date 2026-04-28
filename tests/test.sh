@@ -20,6 +20,17 @@ assert_contains() {
   fi
 }
 
+assert_line() {
+  local file_path="$1"
+  local expected="$2"
+
+  if ! grep -Fx "$expected" "$file_path" >/dev/null 2>&1; then
+    printf 'Expected line:\n%s\n\nIn file:\n%s\n' "$expected" "$file_path" >&2
+    sed -n '1,200p' "$file_path" >&2
+    exit 1
+  fi
+}
+
 run_syntax_checks() {
   bash -n "${repo_root}/scripts/secrets-help.sh"
   bash -n "${repo_root}/scripts/secret-check.sh"
@@ -32,6 +43,7 @@ run_syntax_checks() {
   bash -n "${repo_root}/scripts/restore-backup.sh"
   bash -n "${repo_root}/scripts/restore-helper.sh"
   bash -n "${repo_root}/scripts/account-manager.sh"
+  bash -n "${repo_root}/scripts/configure.sh"
   bash -n "${repo_root}/scripts/password-helper.sh"
   bash -n "${repo_root}/scripts/rotate-password.sh"
   bash -n "${repo_root}/scripts/setup.sh"
@@ -81,13 +93,11 @@ printf '%s\n' \
   "" \
   "" \
   "" \
-  "" \
-  "no" | "${repo_root}/scripts/setup.sh" \
-    --env-file "${tmp_dir}/guided-accounts/guided.env" \
-    --output "${tmp_dir}/guided.msmtprc" \
-    --target "${tmp_dir}/guided-home/.msmtprc" >/dev/null 2>&1
+  "" | "${repo_root}/scripts/setup.sh" \
+    --env-file "${tmp_dir}/guided-accounts/guided.env" >/dev/null 2>&1
 
 assert_contains "${tmp_dir}/guided-accounts/guided.env" "MSMTP_SECRET_METHOD='command'"
+[ ! -e "${tmp_dir}/guided-home/.msmtprc" ] || fail "setup.sh should not install a live config"
 
 printf '%s\n' \
   "" \
@@ -103,12 +113,9 @@ printf '%s\n' \
   "" \
   "" \
   "" \
-  "" \
-  "no" | "${repo_root}/scripts/setup.sh" \
+  "" | "${repo_root}/scripts/setup.sh" \
     --env-file "${tmp_dir}/guided-accounts/guided.env" \
-    --overwrite \
-    --output "${tmp_dir}/guided.msmtprc" \
-    --target "${tmp_dir}/guided-home/.msmtprc" >/dev/null 2>&1
+    --overwrite >/dev/null 2>&1
 
 assert_contains "${tmp_dir}/guided-accounts/guided.env" "MSMTP_HOST='smtp.edited.example'"
 
@@ -165,6 +172,9 @@ MSMTP_TLS=on
 MSMTP_TLS_STARTTLS=off
 MSMTP_TLS_CERTCHECK=on
 MSMTP_SET_DEFAULT=false
+MSMTP_LOGFILE=/tmp/msmtp-personal.log
+MSMTP_TLS_TRUST_FILE=/etc/ssl/certs/ca-certificates.crt
+MSMTP_TLS_FINGERPRINT=AA:BB:CC:DD
 MSMTP_SECRET_METHOD=command
 MSMTP_PASSWORDEVAL_COMMAND='pass show mail/personal'
 EOF
@@ -178,6 +188,10 @@ assert_contains "${tmp_dir}/multi.msmtprc" "account work"
 assert_contains "${tmp_dir}/multi.msmtprc" "account personal"
 assert_contains "${tmp_dir}/multi.msmtprc" "tls_starttls off"
 assert_contains "${tmp_dir}/multi.msmtprc" "account default : personal"
+assert_line "${tmp_dir}/multi.msmtprc" "logfile /tmp/msmtp-personal.log"
+assert_line "${tmp_dir}/multi.msmtprc" "tls_trust_file /etc/ssl/certs/ca-certificates.crt"
+assert_line "${tmp_dir}/multi.msmtprc" "tls_fingerprint AA:BB:CC:DD"
+assert_line "${tmp_dir}/multi.msmtprc" "host smtp.personal.example"
 
 cat > "${tmp_dir}/multi-accounts/password.env" <<EOF
 MSMTP_ACCOUNT_NAME=passwordfile
@@ -415,6 +429,12 @@ if command -v make >/dev/null 2>&1; then
     OUTPUT="${tmp_dir}/make.msmtprc" \
     generate >/dev/null
   assert_contains "${tmp_dir}/make.msmtprc" "account default : personal"
+
+  make -C "${repo_root}" \
+    ACCOUNTS_DIR="${tmp_dir}/secret-check-accounts" \
+    ACCOUNT_NAME=work \
+    secret-check > "${tmp_dir}/make-secret-check-single.txt"
+  assert_contains "${tmp_dir}/make-secret-check-single.txt" "ok: work"
 
   make -C "${repo_root}" \
     ACCOUNTS_DIR="${tmp_dir}/multi-accounts" \

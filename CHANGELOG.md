@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-04-28
+
+- split account-only editing from deployment, removed install prompts from
+  `make account` / `setup.sh`, and added a new `make configure` guided flow
+  with richer prompts and clearer next-step guidance
+
 ## 2026-04-27
 
 - added a thin root `AGENTS.md` wrapper that routes into canonical repo
