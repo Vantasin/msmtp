@@ -123,7 +123,7 @@ else
 fi
 
 account_file_hint
-show_prompt_help
+printf 'Press Enter to accept the bracketed value. For yes/no prompts, the capitalized choice is the default.\n\n' >&2
 account_file_name="$(basename "$env_file" .env)"
 
 printf 'Basic account settings:\n' >&2

@@ -44,7 +44,6 @@ EOF
     return 0
   fi
 
-  show_prompt_help
   printf 'Choose the account whose secret you want to set up.\n' >&2
   printf 'This creates the first secret for the backend configured in the account file.\n' >&2
   label="$(choose_from_menu "Choose an account file for password setup:" "${labels[@]}")"

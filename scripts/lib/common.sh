@@ -83,26 +83,13 @@ require_tty() {
   [ -t 0 ] || die "This command requires an interactive terminal"
 }
 
-show_prompt_help() {
-  if [ "${PROMPT_HELP_PRINTED:-false}" = "true" ]; then
-    return 0
-  fi
-
-  printf 'Prompt help:\n' >&2
-  printf '  - Values in [brackets] are the current saved values or suggested defaults.\n' >&2
-  printf '  - Press Enter to accept the bracketed value.\n' >&2
-  printf '  - [Y/n] means yes is the default. [y/N] means no is the default.\n' >&2
-  printf '  - Menu prompts like Enter a number [1] use the bracketed number as the default.\n\n' >&2
-  PROMPT_HELP_PRINTED="true"
-}
-
 prompt_value() {
   local prompt_text="$1"
   local default_value="${2:-}"
   local response
 
   if [ -n "$default_value" ]; then
-    printf '%s [%s]: ' "$prompt_text" "$default_value" >&2
+    printf '%s [%s] (press Enter to accept): ' "$prompt_text" "$default_value" >&2
   else
     printf '%s: ' "$prompt_text" >&2
   fi
@@ -148,7 +135,7 @@ prompt_yes_no() {
   esac
 
   while true; do
-    printf '%s [%s]: ' "$prompt_text" "$suffix" >&2
+    printf '%s [%s] (press Enter for %s): ' "$prompt_text" "$suffix" "$default_value" >&2
     IFS= read -r response
     if [ -z "$response" ]; then
       response="$default_value"
@@ -185,7 +172,7 @@ choose_from_menu() {
       printf '  %d. %s\n' "$((choice + 1))" "${options[$choice]}" >&2
     done
 
-    printf 'Enter a number [%s]: ' "$default_index" >&2
+    printf 'Enter a number or press Enter for [%s]: ' "$default_index" >&2
     IFS= read -r response
     if [ -z "$response" ]; then
       response="$default_index"

@@ -51,7 +51,6 @@ EOF
     return 0
   fi
 
-  show_prompt_help
   printf 'Choose the account whose secret you want to rotate.\n' >&2
   printf 'This replaces the existing secret for the configured backend and validates it afterward when supported.\n' >&2
   label="$(choose_from_menu "Choose an account file for password rotation:" "${labels[@]}")"

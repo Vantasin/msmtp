@@ -93,7 +93,6 @@ choose_workflow_action() {
 $(list_account_env_files "$accounts_dir")
 EOF
 
-  show_prompt_help
   printf 'Guided msmtp configuration\n' >&2
   printf 'This flow can create or edit an account, set up or rotate its secret, validate it, and install the live config.\n' >&2
   printf 'The install step applies the full account set in %s.\n\n' "$accounts_dir" >&2
