@@ -68,6 +68,7 @@ Notes:
 
 - this helper is macOS-only
 - it uses `security add-generic-password -w` in prompt mode, not plaintext args
+- the password prompt appears in the current terminal, not a separate GUI dialog
 - the service and account values come from the account file unless you override
   `KEYCHAIN_SERVICE` or `KEYCHAIN_ACCOUNT`
 

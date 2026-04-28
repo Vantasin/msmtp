@@ -48,9 +48,9 @@ account_label_for_env_file() {
   default_label="$(default_account_name_from_env_file "$env_path")"
 
   if [ -n "$default_label" ]; then
-    printf '%s (%s, default)\n' "$file_label" "$account_label"
+    printf '%s (msmtp account: %s, default)\n' "$file_label" "$account_label"
   else
-    printf '%s (%s)\n' "$file_label" "$account_label"
+    printf '%s (msmtp account: %s)\n' "$file_label" "$account_label"
   fi
 }
 
@@ -312,5 +312,8 @@ while true; do
   fi
 
   run_action "$next_action"
+  if [ "$(prompt_yes_no "Manage another account now" "no")" != "yes" ]; then
+    exit 0
+  fi
   printf '\n' >&2
 done

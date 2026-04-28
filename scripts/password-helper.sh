@@ -36,6 +36,10 @@ EOF
   [ "${#env_files[@]}" -gt 0 ] || die "No account env files found. Create one under ${accounts_dir} first."
 
   if [ "${#env_files[@]}" -eq 1 ]; then
+    printf 'Using the only account file in %s: %s (msmtp account: %s).\n' \
+      "$accounts_dir" \
+      "${env_files[0]}" \
+      "$(account_name_from_env_file "${env_files[0]}")" >&2
     printf '%s\n' "${env_files[0]}"
     return 0
   fi
@@ -109,7 +113,7 @@ require_file "$env_file"
 secret_method="$(secret_method_from_env_file "$env_file")"
 account_name="$(account_name_from_env_file "$env_file")"
 
-printf 'Selected %s for account %s.\n' "$env_file" "$account_name"
+printf 'Selected account file %s (msmtp account name: %s).\n' "$env_file" "$account_name" >&2
 
 case "$secret_method" in
   keychain)

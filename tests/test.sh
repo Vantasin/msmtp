@@ -411,7 +411,7 @@ assert_contains "${tmp_dir}/managed-accounts/work.env" "MSMTP_SET_DEFAULT='false
   --accounts-dir "${tmp_dir}/managed-accounts" \
   --action list > "${tmp_dir}/managed-accounts-list.txt"
 
-assert_contains "${tmp_dir}/managed-accounts-list.txt" "personal.env (personal, default)"
+assert_contains "${tmp_dir}/managed-accounts-list.txt" "personal.env (msmtp account: personal, default)"
 
 "${repo_root}/scripts/account-manager.sh" \
   --accounts-dir "${tmp_dir}/managed-accounts" \

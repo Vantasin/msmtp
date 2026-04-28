@@ -60,7 +60,8 @@ fi
 [ -n "$account_name" ] || die "Missing keychain account name"
 
 printf 'Adding or updating the Keychain password for service "%s" and account "%s".\n' "$service_name" "$account_name"
-printf 'macOS will now prompt you securely for the password.\n'
+printf 'The macOS security tool will now prompt in this terminal.\n'
+printf 'Your input will not be echoed. When you see "password data for new item:", type the SMTP password and press Enter.\n'
 security add-generic-password -U -s "$service_name" -a "$account_name" -w
 
 printf 'Stored Keychain secret for %s / %s\n' "$service_name" "$account_name"

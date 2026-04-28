@@ -205,7 +205,7 @@ account_name="${MSMTP_ACCOUNT_NAME:-}"
 [ -n "$account_name" ] || die "Missing MSMTP_ACCOUNT_NAME in $env_file"
 secret_method="${MSMTP_SECRET_METHOD:-command}"
 
-printf 'Selected %s for account %s.\n' "$env_file" "$account_name"
+printf 'Selected account file %s (msmtp account name: %s).\n' "$env_file" "$account_name" >&2
 
 case "$secret_method" in
   keychain)

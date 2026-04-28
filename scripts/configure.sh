@@ -218,7 +218,7 @@ load_env_file "$env_file"
 account_file_name="$(basename "$env_file" .env)"
 account_name="${MSMTP_ACCOUNT_NAME:-}"
 
-printf '\nSelected %s for account %s.\n' "$env_file" "$account_name" >&2
+printf '\nSelected account file %s (msmtp account name: %s).\n' "$env_file" "$account_name" >&2
 
 secret_action="$(choose_secret_action)"
 case "$secret_action" in

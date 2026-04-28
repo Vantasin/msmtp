@@ -64,6 +64,8 @@ account_file_hint() {
   file_name="$(basename "$env_file")"
   printf 'Account file: %s\n' "$env_file" >&2
   printf 'This step only updates account data. Use make configure for the full guided flow, or run make password / make install afterward.\n' >&2
+  printf 'The account file name and the msmtp account name are separate. The file name selects a file under accounts/, and the msmtp account name is written into msmtprc.\n' >&2
+  printf 'Keeping them aligned is usually clearer, but it is not required.\n' >&2
   if [ "$file_name" = "default.env" ]; then
     printf 'Examples for named accounts: work.env, personal.env, server-alerts.env.\n\n' >&2
   else
@@ -121,9 +123,10 @@ else
 fi
 
 account_file_hint
+account_file_name="$(basename "$env_file" .env)"
 
 printf 'Basic account settings:\n' >&2
-MSMTP_ACCOUNT_NAME="$(prompt_required "Account name (examples: default, work, personal)" "${MSMTP_ACCOUNT_NAME:-default}")"
+MSMTP_ACCOUNT_NAME="$(prompt_required "msmtp account name (examples: default, work, personal)" "${MSMTP_ACCOUNT_NAME:-$account_file_name}")"
 MSMTP_HOST="$(prompt_required "SMTP host (example: smtp.example.com)" "${MSMTP_HOST:-}")"
 MSMTP_PORT="$(prompt_required "SMTP port (common values: 587 or 465)" "${MSMTP_PORT:-587}")"
 MSMTP_FROM="$(prompt_required "From address (example: you@example.com)" "${MSMTP_FROM:-}")"
@@ -198,7 +201,6 @@ MSMTP_TLS_FINGERPRINT="$(prompt_value "TLS fingerprint (optional, example: AA:BB
 
 write_msmtp_env_file "$env_file"
 
-account_file_name="$(basename "$env_file" .env)"
 printf 'Saved %s\n' "$env_file"
 printf 'Next steps:\n' >&2
 printf '  1. Run make password ACCOUNT_NAME=%s to provision the secret.\n' "$account_file_name" >&2
