@@ -12,6 +12,6 @@ Its goals are:
 
 The repository now includes a working implementation built around an env file,
 a canonical `msmtprc` template, an optional interactive setup flow, executable
-render and install scripts, multi-account support via local account env files,
-secret-helper scripts for supported backends, and smoke tests for the supported
-credential modes.
+render, safer install, and backup-restore scripts, linear human quick-start
+docs, multi-account support via local account env files, secret-helper scripts
+for supported backends, and smoke tests for the supported credential modes.

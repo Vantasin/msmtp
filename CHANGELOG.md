@@ -31,3 +31,7 @@
   account/secret drift review
 - rewrote the quick-start docs into a linear clone-to-test-email flow with
   single-purpose copy/paste command blocks
+- added backup-and-confirm install safety, an explicit system install target,
+  and aligned agent guidance for quick-start/install drift
+- added backup restore commands and documented that install scope lives in
+  `make` targets and variables rather than account env files

@@ -7,6 +7,9 @@ Present today:
 
 - root [README.md](../../README.md), [AGENTS.md](../../AGENTS.md), and
   [CHANGELOG.md](../../CHANGELOG.md)
+- linear human onboarding in [README.md](../../README.md) and
+  [docs/getting-started.md](../../docs/getting-started.md), from clone through
+  test email
 - canonical [`agents/`](../) guidance
 - human-readable [`docs/README.md`](../../docs/README.md)
 - multi-account guidance in [accounts/README.md](../../accounts/README.md)
@@ -15,9 +18,17 @@ Present today:
 - [`.env.example`](../../.env.example) and mode-specific example env files
 - [`templates/msmtprc.template`](../../templates/msmtprc.template)
 - implementation scripts in [`scripts/`](../../scripts/) for quickstart,
-  secret setup, interactive setup, multi-account render, and install flows
-- a [`Makefile`](../../Makefile) with common repo commands
+  secret setup, interactive setup, multi-account render, guarded install, and
+  backup restore flows
+- a [`Makefile`](../../Makefile) with common repo commands, including explicit
+  user and system install/restore targets
 - shell-based smoke tests in [`tests/test.sh`](../../tests/test.sh)
+
+Operational convention today:
+
+- SMTP account values live in `.env` or `accounts/*.env`.
+- User vs system install scope is selected through `make` targets and
+  variables, not through env-file account data.
 
 Not present today:
 

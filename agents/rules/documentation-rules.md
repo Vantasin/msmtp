@@ -1,6 +1,9 @@
 # Documentation Rules
 
 - The root [README.md](../../README.md) is the human-first quick-start guide.
+- Quick-start and onboarding docs should prefer a linear end-to-end flow and
+  use single-purpose copy/paste blocks instead of mixing multiple options in a
+  single command block.
 - [`docs/README.md`](../../docs/README.md) contains human-readable explanatory
   documentation and should not become a duplicate of every canonical rule.
 - Major or non-obvious directories should include a local `README.md`.

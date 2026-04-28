@@ -28,6 +28,7 @@ run_syntax_checks() {
   bash -n "${repo_root}/scripts/gpg-file-init.sh"
   bash -n "${repo_root}/scripts/render-config.sh"
   bash -n "${repo_root}/scripts/install.sh"
+  bash -n "${repo_root}/scripts/restore-backup.sh"
   bash -n "${repo_root}/scripts/setup.sh"
   bash -n "${repo_root}/scripts/quickstart.sh"
   bash -n "${repo_root}/scripts/lib/common.sh"
@@ -290,6 +291,56 @@ assert_contains "${tmp_dir}/command.msmtprc" "logfile /tmp/msmtp.log"
 assert_contains "${tmp_dir}/command.msmtprc" "passwordeval pass show mail/msmtp"
 assert_contains "${tmp_dir}/home/.msmtprc" "account cli"
 
+mkdir -p "${tmp_dir}/existing-home"
+printf 'old-config\n' > "${tmp_dir}/existing-home/.msmtprc"
+if "${repo_root}/scripts/install.sh" \
+  --env-file "${tmp_dir}/command.env" \
+  --output "${tmp_dir}/existing-command.msmtprc" \
+  --target "${tmp_dir}/existing-home/.msmtprc" >/dev/null 2>&1; then
+  fail "install.sh should refuse to replace an existing target without confirmation or --force"
+fi
+
+"${repo_root}/scripts/install.sh" \
+  --env-file "${tmp_dir}/command.env" \
+  --output "${tmp_dir}/existing-command.msmtprc" \
+  --target "${tmp_dir}/existing-home/.msmtprc" \
+  --force > "${tmp_dir}/forced-install.txt"
+
+backup_path="$(sed -n 's/^Backed up existing target to //p' "${tmp_dir}/forced-install.txt" | head -n 1)"
+[ -n "$backup_path" ] || fail "Expected backup path in forced install output"
+[ -f "$backup_path" ] || fail "Expected forced install backup file"
+assert_contains "$backup_path" "old-config"
+assert_contains "${tmp_dir}/existing-home/.msmtprc" "account cli"
+
+mkdir -p "${tmp_dir}/restore-home"
+printf 'current-config\n' > "${tmp_dir}/restore-home/.msmtprc"
+printf 'restored-config\n' > "${tmp_dir}/restore-home/.msmtprc.bak.saved"
+if "${repo_root}/scripts/restore-backup.sh" \
+  --backup "${tmp_dir}/restore-home/.msmtprc.bak.saved" \
+  --target "${tmp_dir}/restore-home/.msmtprc" >/dev/null 2>&1; then
+  fail "restore-backup.sh should refuse to replace an existing target without confirmation or --force"
+fi
+
+"${repo_root}/scripts/restore-backup.sh" \
+  --backup "${tmp_dir}/restore-home/.msmtprc.bak.saved" \
+  --target "${tmp_dir}/restore-home/.msmtprc" \
+  --force > "${tmp_dir}/restore-output.txt"
+
+restore_backup_path="$(sed -n 's/^Backed up existing target to //p' "${tmp_dir}/restore-output.txt" | head -n 1)"
+[ -n "$restore_backup_path" ] || fail "Expected backup path in restore output"
+[ -f "$restore_backup_path" ] || fail "Expected restore backup file"
+assert_contains "$restore_backup_path" "current-config"
+assert_contains "${tmp_dir}/restore-home/.msmtprc" "restored-config"
+[ -f "${tmp_dir}/restore-home/.msmtprc.bak.saved" ] || fail "Expected chosen restore backup to remain in place"
+
+mkdir -p "${tmp_dir}/restore-links"
+printf 'linked-config\n' > "${tmp_dir}/restore-links/generated.msmtprc"
+ln -s "${tmp_dir}/restore-links/generated.msmtprc" "${tmp_dir}/restore-links/symlink-backup"
+"${repo_root}/scripts/restore-backup.sh" \
+  --backup "${tmp_dir}/restore-links/symlink-backup" \
+  --target "${tmp_dir}/restore-links/.msmtprc" >/dev/null
+[ -L "${tmp_dir}/restore-links/.msmtprc" ] || fail "Expected symlink restore target"
+
 "${repo_root}/scripts/install.sh" \
   --env-file "${tmp_dir}/command.env" \
   --output "${tmp_dir}/central/generated.msmtprc" \
@@ -324,6 +375,20 @@ if command -v make >/dev/null 2>&1; then
     OUTPUT="${tmp_dir}/make-multi.msmtprc" \
     generate >/dev/null
   assert_contains "${tmp_dir}/make-multi.msmtprc" "account default : personal"
+
+  make -C "${repo_root}" \
+    ENV_FILE="${tmp_dir}/command.env" \
+    SYSTEM_INSTALL_PATH="${tmp_dir}/etc/msmtprc" \
+    INSTALL_FORCE=yes \
+    install-system >/dev/null
+  assert_contains "${tmp_dir}/etc/msmtprc" "account cli"
+
+  printf 'make-restored\n' > "${tmp_dir}/make-restore-user.bak"
+  make -C "${repo_root}" \
+    USER_INSTALL_PATH="${tmp_dir}/make-restore-home/.msmtprc" \
+    BACKUP="${tmp_dir}/make-restore-user.bak" \
+    restore-user >/dev/null
+  assert_contains "${tmp_dir}/make-restore-home/.msmtprc" "make-restored"
 fi
 
 printf 'All tests passed.\n'

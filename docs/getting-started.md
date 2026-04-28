@@ -101,6 +101,15 @@ make install
 By default, `make install` writes to `~/.msmtprc` and keeps a rendered copy in
 `.msmtprc.generated`.
 
+If `~/.msmtprc` already exists, `make install` backs it up and asks before
+replacing it. For non-interactive replacement, use:
+
+```bash
+make install INSTALL_FORCE=yes
+```
+
+Backups are stored next to the target as `TARGET.bak.<UTC timestamp>`.
+
 ### 8. Send a Test Email
 
 Replace `you@example.com` with the mailbox that should receive the test
@@ -120,6 +129,9 @@ The primary workflow in this repository is:
 
 `msmtp` still consumes `~/.msmtprc`, but the env/template layer keeps the setup
 reproducible and scriptable.
+
+Keep SMTP account data in `.env` or `accounts/*.env`. Choose user vs system
+install scope with `make` targets and variables, not in the env files.
 
 ## Non-Interactive Bootstrap
 
@@ -222,6 +234,18 @@ Install the rendered config to the default `msmtp` location:
 make install
 ```
 
+Install explicitly to the user config path:
+
+```bash
+make install-user
+```
+
+Install directly to `/etc/msmtprc`:
+
+```bash
+sudo make install-system INSTALL_FORCE=yes
+```
+
 Install a symlink instead of copying the file:
 
 ```bash
@@ -230,13 +254,44 @@ make link
 
 `copy` is the default and is the safer choice. `symlink` is an advanced mode
 for users who want `~/.msmtprc` to stay linked to the repo-managed rendered
-file.
+file. When the target file already exists, install and link modes back it up
+before replacement. Interactive runs ask for confirmation; automation should
+set `INSTALL_FORCE=yes`.
 
 Override paths when needed:
 
 ```bash
 make install ENV_FILE=.env.work OUTPUT=.msmtprc.work INSTALL_PATH=$HOME/.msmtprc
 ```
+
+## Restore From Backup
+
+List user-config backups:
+
+```bash
+ls -1 "$HOME"/.msmtprc.bak.*
+```
+
+Restore one user-config backup:
+
+```bash
+make restore-user BACKUP="$HOME/.msmtprc.bak.20260427T153000Z"
+```
+
+List system-config backups:
+
+```bash
+sudo ls -1 /etc/msmtprc.bak.*
+```
+
+Restore one system-config backup:
+
+```bash
+sudo make restore-system BACKUP=/etc/msmtprc.bak.20260427T153000Z INSTALL_FORCE=yes
+```
+
+Restore commands keep the chosen backup file in place. If the current target
+already exists, the restore flow backs it up before replacement.
 
 ## Manual Fallback
 

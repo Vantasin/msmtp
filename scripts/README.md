@@ -20,6 +20,9 @@ Files:
   [`templates/msmtprc.template`](../templates/msmtprc.template) into a
   concrete `msmtprc` from one env file or an account directory
 - [`install.sh`](./install.sh): render and install the generated config to a
-  target path using copy or symlink mode
+  target path using copy or symlink mode, with backup-and-confirm protection
+  for existing live targets
+- [`restore-backup.sh`](./restore-backup.sh): restore a previously backed up
+  live target while backing up the current target first when needed
 - [`lib/common.sh`](./lib/common.sh): shared helpers used by the executable
   scripts

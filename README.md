@@ -13,9 +13,11 @@ It ships with:
   and custom commands
 - helper commands for secret-backend setup and validation
 - cleaner [`Makefile`](./Makefile) commands for setup, generate, install,
-  link, preview, and check
+  link, restore, preview, and check
+- safer install flows that back up existing targets before replacement
 - copy-based install by default, with optional symlink install for centralized
-  repo-managed configs
+  repo-managed configs, explicit user/system install targets, and backup
+  restores
 - smoke tests that validate rendered config without needing a live SMTP account
 
 ## Quick Start
@@ -96,6 +98,31 @@ make check
 make install
 ```
 
+If `~/.msmtprc` already exists, `make install` will back it up and ask before
+replacing it. For non-interactive replacement, rerun with
+`INSTALL_FORCE=yes`.
+
+Backups are stored next to the target as `TARGET.bak.<UTC timestamp>`, for
+example `~/.msmtprc.bak.20260427T153000Z`.
+
+For a system-wide config at `/etc/msmtprc`, use:
+
+```bash
+sudo make install-system INSTALL_FORCE=yes
+```
+
+Restore a user backup:
+
+```bash
+make restore-user BACKUP="$HOME/.msmtprc.bak.20260427T153000Z"
+```
+
+Restore a system backup:
+
+```bash
+sudo make restore-system BACKUP=/etc/msmtprc.bak.20260427T153000Z INSTALL_FORCE=yes
+```
+
 8. Send a test email. Replace `you@example.com` with the mailbox that should
 receive the message.
 
@@ -111,6 +138,9 @@ advanced secret backend such as `pass`, continue with
 The env/template layer is intentional. `msmtp` reads `~/.msmtprc`, but keeping
 structured inputs in `.env` plus a template makes setup reproducible, testable,
 and easier to document.
+
+The account env files describe SMTP account settings. Choose user vs system
+install scope with `make` targets and variables, not in `.env`.
 
 ## Multiple Mailing Addresses
 
@@ -163,6 +193,8 @@ accidentally.
 - [`scripts/render-config.sh`](./scripts/render-config.sh): generate a
   concrete config file
 - [`scripts/install.sh`](./scripts/install.sh): render and install the config
+- [`scripts/restore-backup.sh`](./scripts/restore-backup.sh): restore a
+  backed-up live config target
 - [`scripts/quickstart.sh`](./scripts/quickstart.sh): bootstrap `.env` from a
   chosen example
 - [`tests/test.sh`](./tests/test.sh): repo smoke tests

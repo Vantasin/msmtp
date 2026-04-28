@@ -21,7 +21,10 @@ Current files:
 - [`render-config.sh`](../../scripts/render-config.sh): render the canonical
   `msmtprc` template from one env file or an account directory
 - [`install.sh`](../../scripts/install.sh): render and install the generated
-  config from one env file or an account directory
+  config from one env file or an account directory, backing up existing live
+  targets before replacement
+- [`restore-backup.sh`](../../scripts/restore-backup.sh): restore a chosen
+  backup into the live target path while protecting any current target first
 - [`lib/common.sh`](../../scripts/lib/common.sh): shared helper functions
 
 The scripts assume `bash` and standard Unix utilities available on macOS and

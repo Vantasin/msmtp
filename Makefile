@@ -4,7 +4,11 @@ SHELL := /bin/bash
 
 ENV_FILE ?= .env
 OUTPUT ?= .msmtprc.generated
-INSTALL_PATH ?= $(HOME)/.msmtprc
+USER_INSTALL_PATH ?= $(HOME)/.msmtprc
+SYSTEM_INSTALL_PATH ?= /etc/msmtprc
+INSTALL_PATH ?= $(USER_INSTALL_PATH)
+INSTALL_FORCE ?= no
+BACKUP ?=
 EXAMPLE ?= default
 ACCOUNTS_DIR ?=
 DEFAULT_ACCOUNT ?=
@@ -19,8 +23,9 @@ KEYCHAIN_ACCOUNT ?=
 INPUT_ARGS = $(if $(strip $(ACCOUNTS_DIR)),--accounts-dir $(ACCOUNTS_DIR),--env-file $(ENV_FILE))
 DEFAULT_ACCOUNT_ARGS = $(if $(strip $(DEFAULT_ACCOUNT)),--default-account $(DEFAULT_ACCOUNT),)
 ACCOUNT_ENV_FILE = accounts/$(ACCOUNT_NAME).env
+FORCE_ARG = $(if $(filter 1 yes true on,$(INSTALL_FORCE)),--force,)
 
-.PHONY: help setup setup-example setup-account setup-account-example generate preview install link check clean secrets-help secret-check keychain-add password-file-init gpg-file-init quickstart init-env render print-config update test
+.PHONY: help setup setup-example setup-account setup-account-example generate preview install install-user install-system restore restore-user restore-system link link-user check clean secrets-help secret-check keychain-add password-file-init gpg-file-init quickstart init-env render print-config update test
 
 help: ## Show the common repo commands
 	@printf "Common commands:\n"
@@ -36,7 +41,11 @@ help: ## Show the common repo commands
 	@printf "  GPG_FILE %s\n" "$(GPG_FILE)"
 	@printf "  GPG_RECIPIENT %s\n" "$(GPG_RECIPIENT)"
 	@printf "  OUTPUT       %s\n" "$(OUTPUT)"
+	@printf "  USER_INSTALL_PATH %s\n" "$(USER_INSTALL_PATH)"
+	@printf "  SYSTEM_INSTALL_PATH %s\n" "$(SYSTEM_INSTALL_PATH)"
 	@printf "  INSTALL_PATH %s\n" "$(INSTALL_PATH)"
+	@printf "  INSTALL_FORCE %s\n" "$(INSTALL_FORCE)"
+	@printf "  BACKUP       %s\n" "$(BACKUP)"
 
 setup: ## Run the interactive setup wizard and write a local .env
 	./scripts/setup.sh --env-file $(ENV_FILE) --output $(OUTPUT) --target $(INSTALL_PATH)
@@ -57,10 +66,28 @@ preview: ## Print the rendered msmtprc from ENV_FILE or ACCOUNTS_DIR
 	./scripts/render-config.sh $(INPUT_ARGS) $(DEFAULT_ACCOUNT_ARGS) --stdout
 
 install: ## Copy the rendered config into your active msmtp path
-	./scripts/install.sh $(INPUT_ARGS) $(DEFAULT_ACCOUNT_ARGS) --output $(OUTPUT) --target $(INSTALL_PATH) --mode copy
+	./scripts/install.sh $(INPUT_ARGS) $(DEFAULT_ACCOUNT_ARGS) --output $(OUTPUT) --target $(INSTALL_PATH) --mode copy $(FORCE_ARG)
+
+install-user: ## Copy the rendered config into ~/.msmtprc
+	./scripts/install.sh $(INPUT_ARGS) $(DEFAULT_ACCOUNT_ARGS) --output $(OUTPUT) --target $(USER_INSTALL_PATH) --mode copy $(FORCE_ARG)
+
+install-system: ## Copy the rendered config into /etc/msmtprc
+	./scripts/install.sh $(INPUT_ARGS) $(DEFAULT_ACCOUNT_ARGS) --output $(SYSTEM_INSTALL_PATH) --target $(SYSTEM_INSTALL_PATH) --mode copy $(FORCE_ARG)
+
+restore: ## Restore INSTALL_PATH from BACKUP
+	./scripts/restore-backup.sh --backup $(BACKUP) --target $(INSTALL_PATH) $(FORCE_ARG)
+
+restore-user: ## Restore ~/.msmtprc from BACKUP
+	./scripts/restore-backup.sh --backup $(BACKUP) --target $(USER_INSTALL_PATH) $(FORCE_ARG)
+
+restore-system: ## Restore /etc/msmtprc from BACKUP
+	./scripts/restore-backup.sh --backup $(BACKUP) --target $(SYSTEM_INSTALL_PATH) $(FORCE_ARG)
 
 link: ## Symlink your active msmtp path to the repo-managed output file
-	./scripts/install.sh $(INPUT_ARGS) $(DEFAULT_ACCOUNT_ARGS) --output $(OUTPUT) --target $(INSTALL_PATH) --mode symlink
+	./scripts/install.sh $(INPUT_ARGS) $(DEFAULT_ACCOUNT_ARGS) --output $(OUTPUT) --target $(INSTALL_PATH) --mode symlink $(FORCE_ARG)
+
+link-user: ## Symlink ~/.msmtprc to the repo-managed output file
+	./scripts/install.sh $(INPUT_ARGS) $(DEFAULT_ACCOUNT_ARGS) --output $(OUTPUT) --target $(USER_INSTALL_PATH) --mode symlink $(FORCE_ARG)
 
 check: ## Run the repo smoke tests
 	./tests/test.sh
