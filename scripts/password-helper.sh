@@ -101,6 +101,10 @@ while [ $# -gt 0 ]; do
   esac
 done
 
+install_interrupt_handler \
+  "Cancelled. No secret changes were written." \
+  "Cancelled. Check the configured secret backend for partial updates."
+
 if [ -z "$env_file" ]; then
   if [ -t 0 ]; then
     env_file="$(choose_env_file)"
@@ -117,13 +121,16 @@ printf 'Selected account file %s (msmtp account name: %s).\n' "$env_file" "$acco
 
 case "$secret_method" in
   keychain)
-    "${repo_root}/scripts/keychain-add.sh" --env-file "$env_file"
+    run_with_interrupt_passthrough "${repo_root}/scripts/keychain-add.sh" --env-file "$env_file"
+    mark_interrupt_dirty
     ;;
   gpg)
-    "${repo_root}/scripts/gpg-file-init.sh" --env-file "$env_file"
+    run_with_interrupt_passthrough "${repo_root}/scripts/gpg-file-init.sh" --env-file "$env_file"
+    mark_interrupt_dirty
     ;;
   password_file)
-    "${repo_root}/scripts/password-file-init.sh" --env-file "$env_file"
+    run_with_interrupt_passthrough "${repo_root}/scripts/password-file-init.sh" --env-file "$env_file"
+    mark_interrupt_dirty
     ;;
   command)
     printf 'This account file uses MSMTP_SECRET_METHOD=command.\n'

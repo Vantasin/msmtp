@@ -39,6 +39,10 @@ while [ $# -gt 0 ]; do
   esac
 done
 
+install_interrupt_handler \
+  "Cancelled. No account changes were written." \
+  "Cancelled. Check ${env_file} for partial changes."
+
 default_secret_method() {
   case "$(uname -s)" in
     Darwin)

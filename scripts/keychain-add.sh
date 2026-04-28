@@ -46,6 +46,10 @@ while [ $# -gt 0 ]; do
   esac
 done
 
+install_interrupt_handler \
+  "Cancelled. No Keychain changes were written." \
+  "Cancelled. The Keychain item may already have been updated."
+
 require_tty
 [ "$(uname -s)" = "Darwin" ] || die "keychain-add is only available on macOS"
 
@@ -64,4 +68,5 @@ printf 'The macOS security tool will now prompt in this terminal.\n'
 printf 'Your input will not be echoed. When you see "password data for new item:", type the SMTP password and press Enter.\n'
 security add-generic-password -U -s "$service_name" -a "$account_name" -w
 
+mark_interrupt_dirty
 printf 'Stored Keychain secret for %s / %s\n' "$service_name" "$account_name"

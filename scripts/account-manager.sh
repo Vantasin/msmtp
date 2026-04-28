@@ -113,6 +113,7 @@ delete_account_file() {
     fi
   fi
 
+  mark_interrupt_dirty
   mv "$env_path" "$backup_path"
   printf 'Moved %s to %s\n' "$env_path" "$backup_path"
 }
@@ -129,7 +130,8 @@ create_account() {
   validate_account_file_name "$account_name"
   env_path="$(account_env_path_for_name "$account_name")"
   [ ! -e "$env_path" ] || die "Account file already exists: $env_path"
-  "${repo_root}/scripts/setup.sh" --env-file "$env_path"
+  run_with_interrupt_passthrough "${repo_root}/scripts/setup.sh" --env-file "$env_path"
+  mark_interrupt_dirty
 }
 
 edit_account() {
@@ -143,7 +145,8 @@ edit_account() {
   fi
 
   [ -f "$env_path" ] || die "Account file not found: $env_path"
-  "${repo_root}/scripts/setup.sh" --env-file "$env_path" --overwrite
+  run_with_interrupt_passthrough "${repo_root}/scripts/setup.sh" --env-file "$env_path" --overwrite
+  mark_interrupt_dirty
 }
 
 set_default_from_arg_or_prompt() {
@@ -157,6 +160,7 @@ set_default_from_arg_or_prompt() {
   fi
 
   [ -f "$env_path" ] || die "Account file not found: $env_path"
+  mark_interrupt_dirty
   set_default_account "$env_path"
   printf 'Next steps:\n' >&2
   printf '  1. Run make install to deploy the updated default account selection.\n' >&2
@@ -298,6 +302,10 @@ while [ $# -gt 0 ]; do
       ;;
   esac
 done
+
+install_interrupt_handler \
+  "Cancelled. No account changes were written." \
+  "Cancelled. Check the account files and any adjacent .bak.* backups."
 
 if [ -n "$action" ]; then
   run_action "$action"

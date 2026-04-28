@@ -162,6 +162,10 @@ while [ $# -gt 0 ]; do
   esac
 done
 
+install_interrupt_handler \
+  "Cancelled. No install changes were written." \
+  "Cancelled. Check the live config path and any adjacent .bak.* files."
+
 [ -d "$accounts_dir" ] || die "Accounts directory not found: $accounts_dir"
 [ -n "$(list_account_env_files "$accounts_dir")" ] || die "No account env files found in: $accounts_dir"
 
@@ -210,4 +214,4 @@ if [ "$force_replace" = "true" ]; then
   install_args+=(--force)
 fi
 
-"${repo_root}/scripts/install.sh" "${install_args[@]}"
+run_with_interrupt_passthrough "${repo_root}/scripts/install.sh" "${install_args[@]}"

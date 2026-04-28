@@ -68,12 +68,16 @@ fi
 [ -n "$gpg_file" ] || die "Missing GPG file path"
 [ ! -e "$gpg_file" ] || die "Refusing to overwrite existing file: $gpg_file"
 
+install_interrupt_handler \
+  "Cancelled. No GPG secret file was written." \
+  "Cancelled. Check ${gpg_file} for partial changes."
+
 secret_one="$(prompt_secret "Enter the SMTP password")"
 [ -n "$secret_one" ] || die "Password cannot be empty"
 secret_two="$(prompt_secret "Re-enter the SMTP password")"
 [ "$secret_one" = "$secret_two" ] || die "Passwords did not match"
 
-tmp_file="$(mktemp "${TMPDIR:-/tmp}/msmtp-password-gpg.XXXXXX")"
+tmp_file="$(temp_path_for_destination "$gpg_file")"
 
 cleanup() {
   rm -f "$tmp_file"
@@ -81,7 +85,6 @@ cleanup() {
 
 trap cleanup EXIT
 
-mkdir -p "$(dirname "$gpg_file")"
 umask 077
 
 if [ -n "$recipient" ]; then
@@ -91,6 +94,7 @@ else
 fi
 
 chmod 600 "$tmp_file"
+mark_interrupt_dirty
 mv "$tmp_file" "$gpg_file"
 trap - EXIT
 

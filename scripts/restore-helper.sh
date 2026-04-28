@@ -85,6 +85,10 @@ while [ $# -gt 0 ]; do
   esac
 done
 
+install_interrupt_handler \
+  "Cancelled. No restore changes were written." \
+  "Cancelled. Check the live config path and any adjacent .bak.* files."
+
 if [ -z "$target_path" ]; then
   if [ -t 0 ]; then
     choose_target_path
@@ -103,4 +107,4 @@ if [ "$force_replace" = "true" ]; then
   restore_args+=(--force)
 fi
 
-"${repo_root}/scripts/restore-backup.sh" "${restore_args[@]}"
+run_with_interrupt_passthrough "${repo_root}/scripts/restore-backup.sh" "${restore_args[@]}"

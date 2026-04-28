@@ -5,6 +5,9 @@
 - split account-only editing from deployment, removed install prompts from
   `make account` / `setup.sh`, and added a new `make configure` guided flow
   with richer prompts and clearer next-step guidance
+- clarified interactive defaults, optional-field behavior, and cancellation
+  messaging, and moved the remaining write/install/restore paths toward
+  same-directory atomic replacement semantics
 
 ## 2026-04-27
 

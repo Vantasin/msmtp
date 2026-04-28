@@ -49,6 +49,10 @@ while [ $# -gt 0 ]; do
   esac
 done
 
+install_interrupt_handler \
+  "Cancelled. No restore changes were written." \
+  "Cancelled. Check the live config path and any adjacent .bak.* files."
+
 [ -n "$backup_path" ] || die "--backup is required"
 [ "$backup_path" != "$target_path" ] || die "--backup and --target must be different paths"
 [ -e "$backup_path" ] || [ -L "$backup_path" ] || die "Backup path not found: $backup_path"
@@ -120,22 +124,20 @@ backup_current_target_if_needed() {
 
   next_backup_path="$(backup_path_for "$destination_path")"
   confirm_target_replacement "$destination_path" "$next_backup_path"
-  mv "$destination_path" "$next_backup_path"
+  atomic_backup_copy "$destination_path" "$next_backup_path"
   printf 'Backed up existing target to %s\n' "$next_backup_path"
 }
 
 restore_backup() {
   local source_path="$1"
   local destination_path="$2"
+  local file_mode=""
 
-  mkdir -p "$(dirname "$destination_path")"
-  if [ -L "$source_path" ]; then
-    cp -P "$source_path" "$destination_path"
-    return 0
+  if ! [ -L "$source_path" ]; then
+    file_mode="600"
   fi
 
-  cp "$source_path" "$destination_path"
-  chmod 600 "$destination_path"
+  atomic_replace_from_path "$source_path" "$destination_path" "$file_mode"
 }
 
 backup_current_target_if_needed "$target_path"

@@ -187,6 +187,10 @@ while [ $# -gt 0 ]; do
   esac
 done
 
+install_interrupt_handler \
+  "Cancelled. No configuration changes were completed." \
+  "Cancelled. Check the account files, secret backends, and live config paths for partial changes or adjacent .bak.* files."
+
 require_tty
 mkdir -p "$accounts_dir"
 
@@ -202,11 +206,13 @@ case "$workflow_action" in
     validate_account_file_name "$account_file_name"
     env_file="$(account_env_path_for_name "$account_file_name")"
     [ ! -e "$env_file" ] || die "Account file already exists: $env_file"
-    "${repo_root}/scripts/setup.sh" --env-file "$env_file"
+    run_with_interrupt_passthrough "${repo_root}/scripts/setup.sh" --env-file "$env_file"
+    mark_interrupt_dirty
     ;;
   edit)
     env_file="$(choose_account_file)"
-    "${repo_root}/scripts/setup.sh" --env-file "$env_file" --overwrite
+    run_with_interrupt_passthrough "${repo_root}/scripts/setup.sh" --env-file "$env_file" --overwrite
+    mark_interrupt_dirty
     ;;
   use)
     env_file="$(choose_account_file)"
@@ -223,14 +229,16 @@ printf '\nSelected account file %s (msmtp account name: %s).\n' "$env_file" "$ac
 secret_action="$(choose_secret_action)"
 case "$secret_action" in
   setup)
-    "${repo_root}/scripts/password-helper.sh" --env-file "$env_file" --check
+    run_with_interrupt_passthrough "${repo_root}/scripts/password-helper.sh" --env-file "$env_file" --check
+    mark_interrupt_dirty
     ;;
   rotate)
     rotate_args=(--env-file "$env_file")
     if [ -n "$force_replace" ]; then
       rotate_args+=(--force)
     fi
-    "${repo_root}/scripts/rotate-password.sh" "${rotate_args[@]}"
+    run_with_interrupt_passthrough "${repo_root}/scripts/rotate-password.sh" "${rotate_args[@]}"
+    mark_interrupt_dirty
     ;;
   skip)
     if [ "$(prompt_yes_no "Run secret validation now" "yes")" = "yes" ]; then
@@ -253,7 +261,8 @@ if [ "$(prompt_install_decision)" = "yes" ]; then
   if [ "$force_replace" = "true" ]; then
     install_args+=(--force)
   fi
-  "${repo_root}/scripts/install-helper.sh" "${install_args[@]}"
+  run_with_interrupt_passthrough "${repo_root}/scripts/install-helper.sh" "${install_args[@]}"
+  mark_interrupt_dirty
   printf '\nNext steps:\n' >&2
   printf '  1. Send a test email, for example:\n' >&2
   printf "     printf 'Subject: msmtp test\\nTo: %s\\n\\nmsmtp is working.\\n' | msmtp %s\n" "$MSMTP_FROM" "$MSMTP_FROM" >&2

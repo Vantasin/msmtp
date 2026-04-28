@@ -75,6 +75,10 @@ while [ $# -gt 0 ]; do
   esac
 done
 
+install_interrupt_handler \
+  "Cancelled. No install changes were written." \
+  "Cancelled. Check the live config path and any adjacent .bak.* files."
+
 case "$install_mode" in
   copy | symlink)
     ;;
@@ -145,7 +149,7 @@ prepare_target_path() {
 
   backup_path="$(backup_path_for "$destination_path")"
   confirm_target_replacement "$destination_path" "$backup_path"
-  mv "$destination_path" "$backup_path"
+  atomic_backup_copy "$destination_path" "$backup_path"
   printf 'Backed up existing target to %s\n' "$backup_path"
 }
 
@@ -157,13 +161,7 @@ write_generated_copy() {
     die "Refusing to replace directory with file: $destination_path"
   fi
 
-  mkdir -p "$(dirname "$destination_path")"
-  if path_exists "$destination_path"; then
-    rm -f "$destination_path"
-  fi
-
-  cp "$source_path" "$destination_path"
-  chmod 600 "$destination_path"
+  atomic_replace_from_path "$source_path" "$destination_path" 600
 }
 
 install_file() {
@@ -171,9 +169,7 @@ install_file() {
   local destination_path="$2"
 
   prepare_target_path "$destination_path"
-  mkdir -p "$(dirname "$destination_path")"
-  cp "$source_path" "$destination_path"
-  chmod 600 "$destination_path"
+  atomic_replace_from_path "$source_path" "$destination_path" 600
 }
 
 install_symlink() {
@@ -181,8 +177,7 @@ install_symlink() {
   local destination_path="$2"
 
   prepare_target_path "$destination_path"
-  mkdir -p "$(dirname "$destination_path")"
-  ln -s "$source_path" "$destination_path"
+  atomic_replace_symlink "$source_path" "$destination_path"
 }
 
 trap cleanup EXIT
@@ -205,7 +200,6 @@ fi
 
 [ "$output_file" != "$target_path" ] || die "In symlink mode, --output and --target must be different paths"
 
-mkdir -p "$(dirname "$output_file")"
 "${repo_root}/scripts/render-config.sh" "${render_args[@]}" --output "$output_file" >/dev/null
 install_symlink "$(absolute_path "$output_file")" "$target_path"
 

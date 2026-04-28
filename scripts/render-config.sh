@@ -66,9 +66,7 @@ if [ "$stdout_mode" = "true" ]; then
   exit 0
 fi
 
-mkdir -p "$(dirname "$output_file")"
 umask 077
-printf '%s\n' "$rendered_config" > "$output_file"
-chmod 600 "$output_file"
+atomic_write_text_file "$output_file" 600 "$rendered_config"
 
 printf 'Rendered %s from %s\n' "$output_file" "$accounts_dir"

@@ -118,7 +118,7 @@ backup_existing_target_if_needed() {
   fi
 
   backup_path="$(backup_path_for "$target_path")"
-  mv "$target_path" "$backup_path"
+  atomic_backup_copy "$target_path" "$backup_path"
   printf 'Backed up existing secret to %s\n' "$backup_path"
 }
 
@@ -127,11 +127,12 @@ write_password_file_secret() {
   local secret_value="$2"
 
   mkdir -p "$(dirname "$target_path")"
-  tmp_secret_file="$(mktemp "${TMPDIR:-/tmp}/msmtp-rotate-password-file.XXXXXX")"
+  tmp_secret_file="$(temp_path_for_destination "$target_path")"
   umask 077
   printf '%s' "$secret_value" > "$tmp_secret_file"
   chmod 600 "$tmp_secret_file"
   backup_existing_target_if_needed "$target_path"
+  mark_interrupt_dirty
   mv "$tmp_secret_file" "$target_path"
   chmod 600 "$target_path"
   tmp_secret_file=""
@@ -143,7 +144,7 @@ write_gpg_secret() {
   local recipient_value="$3"
 
   mkdir -p "$(dirname "$target_path")"
-  tmp_secret_file="$(mktemp "${TMPDIR:-/tmp}/msmtp-rotate-gpg.XXXXXX")"
+  tmp_secret_file="$(temp_path_for_destination "$target_path")"
   umask 077
 
   if [ -n "$recipient_value" ]; then
@@ -154,6 +155,7 @@ write_gpg_secret() {
 
   chmod 600 "$tmp_secret_file"
   backup_existing_target_if_needed "$target_path"
+  mark_interrupt_dirty
   mv "$tmp_secret_file" "$target_path"
   chmod 600 "$target_path"
   tmp_secret_file=""
@@ -190,6 +192,10 @@ while [ $# -gt 0 ]; do
   esac
 done
 
+install_interrupt_handler \
+  "Cancelled. No secret changes were written." \
+  "Cancelled. Check the secret backend and any adjacent .bak.* files."
+
 if [ -z "$env_file" ]; then
   if [ -t 0 ]; then
     env_file="$(choose_env_file)"
@@ -209,7 +215,8 @@ printf 'Selected account file %s (msmtp account name: %s).\n' "$env_file" "$acco
 
 case "$secret_method" in
   keychain)
-    "${repo_root}/scripts/keychain-add.sh" --env-file "$env_file"
+    run_with_interrupt_passthrough "${repo_root}/scripts/keychain-add.sh" --env-file "$env_file"
+    mark_interrupt_dirty
     "${repo_root}/scripts/secret-check.sh" --env-file "$env_file"
     ;;
   password_file)

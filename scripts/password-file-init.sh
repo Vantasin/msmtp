@@ -58,25 +58,17 @@ fi
 [ -n "$password_file" ] || die "Missing password file path"
 [ ! -e "$password_file" ] || die "Refusing to overwrite existing file: $password_file"
 
+install_interrupt_handler \
+  "Cancelled. No password file was written." \
+  "Cancelled. Check ${password_file} for partial changes."
+
 password_one="$(prompt_secret "Enter the SMTP password")"
 [ -n "$password_one" ] || die "Password cannot be empty"
 password_two="$(prompt_secret "Re-enter the SMTP password")"
 [ "$password_one" = "$password_two" ] || die "Passwords did not match"
 
-tmp_file="$(mktemp "${TMPDIR:-/tmp}/msmtp-password-file.XXXXXX")"
-
-cleanup() {
-  rm -f "$tmp_file"
-}
-
-trap cleanup EXIT
-
-mkdir -p "$(dirname "$password_file")"
 umask 077
-printf '%s' "$password_one" > "$tmp_file"
-chmod 600 "$tmp_file"
-mv "$tmp_file" "$password_file"
-trap - EXIT
+atomic_write_raw_file "$password_file" 600 "$password_one"
 
 printf 'Created %s with mode 600\n' "$password_file"
 printf 'If you require a root-owned file, move or chown it in a separate step.\n'
