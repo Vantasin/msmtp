@@ -10,6 +10,8 @@ Current files:
   secret helpers and docs
 - [`password-helper.sh`](../../scripts/password-helper.sh): choose an account
   file and dispatch to the matching password helper
+- [`rotate-password.sh`](../../scripts/rotate-password.sh): rotate an existing
+  secret for one account file and validate it when supported
 - [`secret-check.sh`](../../scripts/secret-check.sh): validate configured
   `passwordeval` commands without printing secrets
 - [`keychain-add.sh`](../../scripts/keychain-add.sh): add or update a macOS

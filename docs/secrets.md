@@ -15,12 +15,17 @@ Make variables or normal CLI arguments.
 
 ```bash
 make password
+make rotate-password
 make secrets-help
 make secret-check
 ```
 
 `make password` chooses an account file from [`accounts/`](../accounts/) and
 dispatches to the matching helper based on `MSMTP_SECRET_METHOD`.
+
+`make rotate-password` targets one account file, rotates the backing secret,
+and then validates the configured `passwordeval` command when the backend
+supports in-repo rotation.
 
 `make secret-check` executes the configured `passwordeval` command and verifies
 that it returns a non-empty secret, but it never prints the secret value.
@@ -47,6 +52,12 @@ Create or update the secret for a named account:
 make keychain-add ACCOUNT_NAME=work
 ```
 
+Rotate an existing Keychain-backed password:
+
+```bash
+make rotate-password ACCOUNT_NAME=work
+```
+
 Notes:
 
 - this helper is macOS-only
@@ -70,6 +81,12 @@ Encrypt to a specific public key:
 make gpg-file-init ACCOUNT_NAME=work GPG_RECIPIENT='your-key-id'
 ```
 
+Rotate an existing GPG-backed password in place:
+
+```bash
+make rotate-password ACCOUNT_NAME=work GPG_RECIPIENT='your-key-id'
+```
+
 Notes:
 
 - if `GPG_RECIPIENT` is omitted, the helper uses symmetric encryption
@@ -78,6 +95,9 @@ Notes:
   time
 - the helper prompts for the SMTP password securely and never accepts it as a
   Make variable
+- rotation backs up the existing encrypted file next to it before replacement
+- when you use recipient mode, pass the recipient again during rotation so the
+  encryption mode stays explicit
 
 ## Password File
 
@@ -95,12 +115,19 @@ Override the target path explicitly:
 make password-file-init ACCOUNT_NAME=work PASSWORD_FILE=/path/to/password-file
 ```
 
+Rotate an existing password-file secret in place:
+
+```bash
+make rotate-password ACCOUNT_NAME=work
+```
+
 Notes:
 
 - the helper refuses to overwrite an existing file
 - it writes the password without a trailing newline
 - if you need a root-owned file, create it in a writable location first and
   move or `chown` it in a separate step
+- rotation backs up the existing file next to it before replacement
 
 ## Custom Command
 
@@ -118,6 +145,10 @@ For example, with `pass`:
 ```text
 MSMTP_PASSWORDEVAL_COMMAND='pass show mail/msmtp'
 ```
+
+For this backend, `make rotate-password` does not modify the store. It prints
+the configured command and lets you validate it after you rotate the secret in
+the external system.
 
 ## Manual Fallback
 

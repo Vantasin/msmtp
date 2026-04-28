@@ -12,6 +12,7 @@ SYSTEM_INSTALL_PATH ?= /etc/msmtprc
 INSTALL_PATH ?=
 INSTALL_MODE ?=
 INSTALL_FORCE ?= no
+ROTATE_FORCE ?= no
 BACKUP ?=
 EXAMPLE ?= default
 PASSWORD_FILE ?=
@@ -20,12 +21,16 @@ GPG_RECIPIENT ?=
 KEYCHAIN_SERVICE ?=
 KEYCHAIN_ACCOUNT ?=
 
+ACCOUNT_NAME_ORIGIN := $(firstword $(origin ACCOUNT_NAME))
+ACCOUNT_FILE_ORIGIN := $(firstword $(origin ACCOUNT_FILE))
 DEFAULT_ACCOUNT_ARGS = $(if $(strip $(DEFAULT_ACCOUNT)),--default-account $(DEFAULT_ACCOUNT),)
 FORCE_ARG = $(if $(filter 1 yes true on,$(INSTALL_FORCE)),--force,)
+ROTATE_FORCE_ARG = $(if $(filter 1 yes true on,$(ROTATE_FORCE)),--force,)
 MODE_ARG = $(if $(strip $(INSTALL_MODE)),--mode $(INSTALL_MODE),)
 TARGET_ARG = $(if $(strip $(INSTALL_PATH)),--target $(INSTALL_PATH),)
+ACCOUNT_SELECTION_ARG = $(if $(filter command environment,$(ACCOUNT_FILE_ORIGIN)),--env-file $(ACCOUNT_FILE),$(if $(filter command environment,$(ACCOUNT_NAME_ORIGIN)),--env-file $(ACCOUNT_FILE),--accounts-dir $(ACCOUNTS_DIR)))
 
-.PHONY: help account password setup setup-example generate preview install install-user install-system restore restore-user restore-system link link-user check clean secrets-help secret-check keychain-add password-file-init gpg-file-init quickstart init-env render print-config update test
+.PHONY: help account password rotate-password setup setup-example generate preview install install-user install-system restore restore-user restore-system link link-user check clean secrets-help secret-check keychain-add password-file-init gpg-file-init quickstart init-env render print-config update test
 
 help: ## Show the common repo commands
 	@printf "Common commands:\n"
@@ -45,13 +50,17 @@ help: ## Show the common repo commands
 	@printf "  INSTALL_PATH %s\n" "$(INSTALL_PATH)"
 	@printf "  INSTALL_MODE %s\n" "$(INSTALL_MODE)"
 	@printf "  INSTALL_FORCE %s\n" "$(INSTALL_FORCE)"
+	@printf "  ROTATE_FORCE %s\n" "$(ROTATE_FORCE)"
 	@printf "  BACKUP       %s\n" "$(BACKUP)"
 
 account: ## Manage account files in ACCOUNTS_DIR from one workflow
 	./scripts/account-manager.sh --accounts-dir $(ACCOUNTS_DIR) $(FORCE_ARG)
 
 password: ## Choose an account file and run the matching password helper
-	./scripts/password-helper.sh --accounts-dir $(ACCOUNTS_DIR)
+	./scripts/password-helper.sh $(ACCOUNT_SELECTION_ARG)
+
+rotate-password: ## Rotate the secret for one account file safely
+	./scripts/rotate-password.sh $(ACCOUNT_SELECTION_ARG) $(if $(strip $(GPG_RECIPIENT)),--recipient $(GPG_RECIPIENT),) $(ROTATE_FORCE_ARG)
 
 setup: ## Run the interactive setup wizard for ACCOUNT_FILE
 	./scripts/setup.sh --env-file $(ACCOUNT_FILE) --output $(OUTPUT) --target $(if $(strip $(INSTALL_PATH)),$(INSTALL_PATH),$(USER_INSTALL_PATH))

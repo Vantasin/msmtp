@@ -33,6 +33,7 @@ run_syntax_checks() {
   bash -n "${repo_root}/scripts/restore-helper.sh"
   bash -n "${repo_root}/scripts/account-manager.sh"
   bash -n "${repo_root}/scripts/password-helper.sh"
+  bash -n "${repo_root}/scripts/rotate-password.sh"
   bash -n "${repo_root}/scripts/setup.sh"
   bash -n "${repo_root}/scripts/quickstart.sh"
   bash -n "${repo_root}/scripts/lib/common.sh"
@@ -262,6 +263,35 @@ password_helper_contents="$(cat "${tmp_dir}/password-helper-secret")"
 [ "$password_helper_contents" = "helper-secret" ] || fail "Unexpected password-helper output"
 rm -f "${tmp_dir}/password-helper-secret"
 
+mkdir -p "${tmp_dir}/rotate-password-accounts"
+cat > "${tmp_dir}/rotate-password-accounts/default.env" <<EOF
+MSMTP_ACCOUNT_NAME=rotator
+MSMTP_HOST=smtp.rotate.example
+MSMTP_PORT=587
+MSMTP_FROM=rotator@example.com
+MSMTP_USER=rotator@example.com
+MSMTP_AUTH=on
+MSMTP_TLS=on
+MSMTP_TLS_STARTTLS=on
+MSMTP_TLS_CERTCHECK=on
+MSMTP_SET_DEFAULT=true
+MSMTP_SECRET_METHOD=password_file
+MSMTP_PASSWORD_FILE=${tmp_dir}/rotate-password-secret
+EOF
+
+printf 'old-rotate-secret' > "${tmp_dir}/rotate-password-secret"
+printf 'new-rotate-secret\nnew-rotate-secret\n' | "${repo_root}/scripts/rotate-password.sh" \
+  --accounts-dir "${tmp_dir}/rotate-password-accounts" \
+  --force > "${tmp_dir}/rotate-password-output.txt"
+
+rotated_password_contents="$(cat "${tmp_dir}/rotate-password-secret")"
+[ "$rotated_password_contents" = "new-rotate-secret" ] || fail "Unexpected rotated password contents"
+rotate_backup_path="$(sed -n 's/^Backed up existing secret to //p' "${tmp_dir}/rotate-password-output.txt" | head -n 1)"
+[ -n "$rotate_backup_path" ] || fail "Expected backup path in rotate-password output"
+[ -f "$rotate_backup_path" ] || fail "Expected rotate-password backup file"
+assert_contains "$rotate_backup_path" "old-rotate-secret"
+assert_contains "${tmp_dir}/rotate-password-output.txt" "ok: rotator"
+
 "${repo_root}/scripts/install.sh" \
   --accounts-dir "${tmp_dir}/multi-accounts" \
   --default-account personal \
@@ -422,6 +452,32 @@ EOF
     password >/dev/null
   assert_contains "${tmp_dir}/make-password-secret" "make-password"
   rm -f "${tmp_dir}/make-password-secret"
+
+  mkdir -p "${tmp_dir}/make-rotate-accounts"
+  cat > "${tmp_dir}/make-rotate-accounts/default.env" <<EOF
+MSMTP_ACCOUNT_NAME=makerotate
+MSMTP_HOST=smtp.rotate.example
+MSMTP_PORT=587
+MSMTP_FROM=makerotate@example.com
+MSMTP_USER=makerotate@example.com
+MSMTP_AUTH=on
+MSMTP_TLS=on
+MSMTP_TLS_STARTTLS=on
+MSMTP_TLS_CERTCHECK=on
+MSMTP_SET_DEFAULT=true
+MSMTP_SECRET_METHOD=password_file
+MSMTP_PASSWORD_FILE=${tmp_dir}/make-rotate-secret
+EOF
+
+  printf 'old-make-rotate' > "${tmp_dir}/make-rotate-secret"
+  printf 'make-rotated\nmake-rotated\n' | make -C "${repo_root}" \
+    ACCOUNTS_DIR="${tmp_dir}/make-rotate-accounts" \
+    ROTATE_FORCE=yes \
+    rotate-password > "${tmp_dir}/make-rotate-output.txt"
+  assert_contains "${tmp_dir}/make-rotate-secret" "make-rotated"
+  make_rotate_backup_path="$(sed -n 's/^Backed up existing secret to //p' "${tmp_dir}/make-rotate-output.txt" | head -n 1)"
+  [ -n "$make_rotate_backup_path" ] || fail "Expected backup path in make rotate-password output"
+  assert_contains "$make_rotate_backup_path" "old-make-rotate"
 fi
 
 printf 'All tests passed.\n'

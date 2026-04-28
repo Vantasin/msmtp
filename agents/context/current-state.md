@@ -18,8 +18,8 @@ Present today:
 - [`templates/msmtprc.template`](../../templates/msmtprc.template)
 - account-file examples in [`templates/examples/`](../../templates/examples/)
 - implementation scripts in [`scripts/`](../../scripts/) for quickstart,
-  guided account/password/install/restore flows, interactive setup, render,
-  guarded install, and backup restore flows
+  guided account/password/rotation/install/restore flows, interactive setup,
+  render, guarded install, and backup restore flows
 - a [`Makefile`](../../Makefile) with guided top-level commands plus explicit
   user/system install and restore targets
 - shell-based smoke tests in [`tests/test.sh`](../../tests/test.sh)

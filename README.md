@@ -13,6 +13,7 @@ It also ships with:
 
 - a template-based `msmtprc` renderer
 - guided account, password, install, and restore workflows
+- a dedicated password-rotation workflow for supported secret backends
 - `passwordeval` support for macOS Keychain, Linux GPG, secure password files,
   and custom commands
 - helper commands for secret-backend setup and validation
@@ -64,6 +65,12 @@ same directory.
 
 ```bash
 make password
+```
+
+Rotate an existing password later with:
+
+```bash
+make rotate-password
 ```
 
 5. Verify that the configured secret lookup works.
@@ -157,6 +164,8 @@ local secret paths do not get committed accidentally.
   management
 - [`scripts/password-helper.sh`](./scripts/password-helper.sh): choose an
   account file and dispatch to the correct password helper
+- [`scripts/rotate-password.sh`](./scripts/rotate-password.sh): rotate an
+  existing secret safely and validate it
 - [`templates/msmtprc.template`](./templates/msmtprc.template): canonical
   config template
 - [`scripts/setup.sh`](./scripts/setup.sh): interactive setup that writes one

@@ -41,3 +41,5 @@
   as a first-class source, added a canonical default example under
   `templates/examples/`, and aligned docs/tests/agent context with the new
   workflow
+- added a dedicated `make rotate-password` flow that safely rotates supported
+  secret backends and validates them after replacement

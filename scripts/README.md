@@ -9,6 +9,8 @@ Files:
   and helper commands
 - [`password-helper.sh`](./password-helper.sh): choose an account file and
   dispatch to the matching password helper
+- [`rotate-password.sh`](./rotate-password.sh): rotate an existing secret for
+  one account file and validate it when supported
 - [`secret-check.sh`](./secret-check.sh): validate configured `passwordeval`
   commands without printing the secret
 - [`keychain-add.sh`](./keychain-add.sh): add or update a macOS Keychain secret

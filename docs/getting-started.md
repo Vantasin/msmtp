@@ -55,6 +55,12 @@ based on `MSMTP_SECRET_METHOD`. For a custom command backend such as `pass`, it
 shows the configured command and can validate it. See
 [secrets.md](./secrets.md) for backend-specific details.
 
+Rotate an existing password later with:
+
+```bash
+make rotate-password
+```
+
 ### 5. Verify the Secret Lookup
 
 ```bash
@@ -173,6 +179,7 @@ password flow:
 
 ```bash
 make password
+make rotate-password
 make secrets-help
 make secret-check
 ```
