@@ -117,6 +117,30 @@ prompt_required() {
   printf '%s\n' "$response"
 }
 
+prompt_optional_value() {
+  local prompt_text="$1"
+  local existing_value="${2:-}"
+  local response
+
+  if [ -n "$existing_value" ]; then
+    printf '%s [%s] (press Enter to keep, enter - to clear): ' "$prompt_text" "$existing_value" >&2
+  else
+    printf '%s (press Enter to skip): ' "$prompt_text" >&2
+  fi
+
+  IFS= read -r response || response=""
+  case "$response" in
+    "")
+      response="$existing_value"
+      ;;
+    "-")
+      response=""
+      ;;
+  esac
+
+  printf '%s\n' "$response"
+}
+
 prompt_yes_no() {
   local prompt_text="$1"
   local default_value="$2"

@@ -92,11 +92,13 @@ printf '%s\n' \
   "" \
   "" \
   "" \
+  "~/.msmtp.log" \
   "" \
   "" | "${repo_root}/scripts/setup.sh" \
     --env-file "${tmp_dir}/guided-accounts/guided.env" >/dev/null 2>&1
 
 assert_contains "${tmp_dir}/guided-accounts/guided.env" "MSMTP_SECRET_METHOD='command'"
+assert_contains "${tmp_dir}/guided-accounts/guided.env" "MSMTP_LOGFILE='~/.msmtp.log'"
 [ ! -e "${tmp_dir}/guided-home/.msmtprc" ] || fail "setup.sh should not install a live config"
 
 printf '%s\n' \
@@ -112,12 +114,14 @@ printf '%s\n' \
   "" \
   "" \
   "" \
+  "-" \
   "" \
   "" | "${repo_root}/scripts/setup.sh" \
     --env-file "${tmp_dir}/guided-accounts/guided.env" \
     --overwrite >/dev/null 2>&1
 
 assert_contains "${tmp_dir}/guided-accounts/guided.env" "MSMTP_HOST='smtp.edited.example'"
+assert_contains "${tmp_dir}/guided-accounts/guided.env" "MSMTP_LOGFILE=''"
 
 mkdir -p "${tmp_dir}/single-account"
 cat > "${tmp_dir}/single-account/default.env" <<'EOF'

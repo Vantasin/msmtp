@@ -123,7 +123,8 @@ else
 fi
 
 account_file_hint
-printf 'Press Enter to accept the bracketed value. For yes/no prompts, the capitalized choice is the default.\n\n' >&2
+printf 'Press Enter to accept the bracketed value. For optional fields, press Enter to skip a blank value or keep a saved one, and enter - to clear a saved optional value.\n' >&2
+printf 'For yes/no prompts, the capitalized choice is the default.\n\n' >&2
 account_file_name="$(basename "$env_file" .env)"
 
 printf 'Basic account settings:\n' >&2
@@ -196,9 +197,9 @@ else
 fi
 
 printf '\nOptional advanced settings:\n' >&2
-MSMTP_LOGFILE="$(prompt_value "Log file path (optional, example: ~/.local/state/msmtp.log)" "${MSMTP_LOGFILE:-}")"
-MSMTP_TLS_TRUST_FILE="$(prompt_value "TLS trust file path (optional, example: /etc/ssl/certs/ca-certificates.crt)" "${MSMTP_TLS_TRUST_FILE:-}")"
-MSMTP_TLS_FINGERPRINT="$(prompt_value "TLS fingerprint (optional, example: AA:BB:CC:DD...)" "${MSMTP_TLS_FINGERPRINT:-}")"
+MSMTP_LOGFILE="$(prompt_optional_value "Log file path (optional, example: ~/.local/state/msmtp.log)" "${MSMTP_LOGFILE:-}")"
+MSMTP_TLS_TRUST_FILE="$(prompt_optional_value "TLS trust file path (optional, example: /etc/ssl/certs/ca-certificates.crt)" "${MSMTP_TLS_TRUST_FILE:-}")"
+MSMTP_TLS_FINGERPRINT="$(prompt_optional_value "TLS fingerprint (optional, example: AA:BB:CC:DD...)" "${MSMTP_TLS_FINGERPRINT:-}")"
 
 write_msmtp_env_file "$env_file"
 
