@@ -19,13 +19,13 @@ make secrets-help
 make secret-check
 ```
 
-`make password` chooses an env file and dispatches to the matching helper based
-on `MSMTP_SECRET_METHOD`.
+`make password` chooses an account file from [`accounts/`](../accounts/) and
+dispatches to the matching helper based on `MSMTP_SECRET_METHOD`.
 
 `make secret-check` executes the configured `passwordeval` command and verifies
 that it returns a non-empty secret, but it never prints the secret value.
 
-For multi-account setups:
+Check every account in the canonical directory:
 
 ```bash
 make secret-check ACCOUNTS_DIR=accounts
@@ -35,23 +35,23 @@ make secret-check ACCOUNTS_DIR=accounts
 
 Use this when `MSMTP_SECRET_METHOD=keychain`.
 
-Create or update the secret:
+Create or update the secret for the default account:
 
 ```bash
-make keychain-add SECRET_ENV_FILE=.env
+make keychain-add
 ```
 
-For a multi-account setup:
+Create or update the secret for a named account:
 
 ```bash
-make keychain-add SECRET_ENV_FILE=accounts/work.env
+make keychain-add ACCOUNT_NAME=work
 ```
 
 Notes:
 
 - this helper is macOS-only
 - it uses `security add-generic-password -w` in prompt mode, not plaintext args
-- the service and account values come from the env file unless you override
+- the service and account values come from the account file unless you override
   `KEYCHAIN_SERVICE` or `KEYCHAIN_ACCOUNT`
 
 ## GPG-Encrypted Password File
@@ -61,13 +61,13 @@ Use this when `MSMTP_SECRET_METHOD=gpg`.
 Create the encrypted file:
 
 ```bash
-make gpg-file-init SECRET_ENV_FILE=.env
+make gpg-file-init
 ```
 
 Encrypt to a specific public key:
 
 ```bash
-make gpg-file-init SECRET_ENV_FILE=.env GPG_RECIPIENT='your-key-id'
+make gpg-file-init ACCOUNT_NAME=work GPG_RECIPIENT='your-key-id'
 ```
 
 Notes:
@@ -86,13 +86,13 @@ Use this when `MSMTP_SECRET_METHOD=password_file`.
 Create the file with mode `600`:
 
 ```bash
-make password-file-init SECRET_ENV_FILE=.env
+make password-file-init
 ```
 
 Override the target path explicitly:
 
 ```bash
-make password-file-init PASSWORD_FILE=/path/to/password-file
+make password-file-init ACCOUNT_NAME=work PASSWORD_FILE=/path/to/password-file
 ```
 
 Notes:

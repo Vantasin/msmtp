@@ -7,7 +7,7 @@ script_dir="$(cd "$(dirname "$0")" && pwd)"
 
 usage() {
   cat <<'EOF'
-Usage: scripts/install-helper.sh [--env-file PATH | --accounts-dir PATH]
+Usage: scripts/install-helper.sh [--accounts-dir PATH]
                                  [--default-account NAME]
                                  [--output PATH]
                                  [--target PATH]
@@ -15,12 +15,11 @@ Usage: scripts/install-helper.sh [--env-file PATH | --accounts-dir PATH]
                                  [--force]
 
 Interactive wrapper around scripts/install.sh. When run in a terminal without
-explicit source, target, or mode values, it prompts for the missing choices.
+an explicit target or install mode, it prompts for the missing choices.
 EOF
 }
 
-env_file=""
-accounts_dir=""
+accounts_dir="${repo_root}/accounts"
 default_account=""
 output_file=""
 target_path=""
@@ -58,43 +57,6 @@ $(list_account_env_files "$directory")
 EOF
 
   printf '%s\n' "$found_default"
-}
-
-choose_input_source() {
-  local has_single="false"
-  local has_multi="false"
-  local choice
-
-  if [ -f "${repo_root}/.env" ]; then
-    has_single="true"
-  fi
-
-  if [ -n "$(list_account_env_files "${repo_root}/accounts")" ]; then
-    has_multi="true"
-  fi
-
-  if [ "$has_single" = "true" ] && [ "$has_multi" != "true" ]; then
-    env_file="${repo_root}/.env"
-    return 0
-  fi
-
-  if [ "$has_single" != "true" ] && [ "$has_multi" = "true" ]; then
-    accounts_dir="${repo_root}/accounts"
-    return 0
-  fi
-
-  choice="$(choose_from_menu "Choose the config source to install:" \
-    "Single account from .env" \
-    "All accounts from accounts/")"
-
-  case "$choice" in
-    "Single account from .env")
-      env_file="${repo_root}/.env"
-      ;;
-    *)
-      accounts_dir="${repo_root}/accounts"
-      ;;
-  esac
 }
 
 choose_target_path() {
@@ -136,13 +98,23 @@ choose_install_mode() {
   esac
 }
 
+account_count() {
+  local directory="$1"
+  local count=0
+  local env_path
+
+  while IFS= read -r env_path; do
+    [ -n "$env_path" ] || continue
+    count=$((count + 1))
+  done <<EOF
+$(list_account_env_files "$directory")
+EOF
+
+  printf '%s\n' "$count"
+}
+
 while [ $# -gt 0 ]; do
   case "$1" in
-    --env-file)
-      [ $# -ge 2 ] || die "--env-file requires a value"
-      env_file="$2"
-      shift 2
-      ;;
     --accounts-dir)
       [ $# -ge 2 ] || die "--accounts-dir requires a value"
       accounts_dir="$2"
@@ -182,32 +154,16 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-if [ -n "$env_file" ] && [ -n "$accounts_dir" ]; then
-  die "Use either --env-file or --accounts-dir, not both"
-fi
+[ -d "$accounts_dir" ] || die "Accounts directory not found: $accounts_dir"
+[ -n "$(list_account_env_files "$accounts_dir")" ] || die "No account env files found in: $accounts_dir"
 
 if ! [ -t 0 ]; then
-  [ -n "$env_file" ] || [ -n "$accounts_dir" ] || env_file="${repo_root}/.env"
   [ -n "$target_path" ] || target_path="${HOME}/.msmtprc"
   [ -n "$install_mode" ] || install_mode="copy"
 fi
 
-if [ -z "$env_file" ] && [ -z "$accounts_dir" ]; then
-  require_tty
-  choose_input_source
-fi
-
-if [ -t 0 ] && [ -z "$accounts_dir" ] && [ "$env_file" = "${repo_root}/.env" ] && [ -n "$(list_account_env_files "${repo_root}/accounts")" ]; then
-  env_file=""
-  choose_input_source
-fi
-
 if [ -z "$target_path" ]; then
   require_tty
-  choose_target_path
-fi
-
-if [ -t 0 ] && [ "$target_path" = "${HOME}/.msmtprc" ]; then
   choose_target_path
 fi
 
@@ -216,12 +172,12 @@ if [ -z "$install_mode" ]; then
   choose_install_mode
 fi
 
-if [ -n "$accounts_dir" ] && [ -z "$default_account" ]; then
+if [ -z "$default_account" ]; then
   detected_default="$(detect_default_account "$accounts_dir" || true)"
-  if [ -z "$detected_default" ] && [ -t 0 ]; then
-    default_account="$(choose_from_menu "Choose the default account for this install:" $(account_names_in_dir "$accounts_dir"))"
-  else
+  if [ -n "$detected_default" ]; then
     default_account="$detected_default"
+  elif [ -t 0 ] && [ "$(account_count "$accounts_dir")" -gt 1 ]; then
+    default_account="$(choose_from_menu "Choose the default account for this install:" $(account_names_in_dir "$accounts_dir"))"
   fi
 fi
 
@@ -235,12 +191,7 @@ elif [ "$output_file" = "${repo_root}/.msmtprc.generated" ] && [ "$install_mode"
   output_file="$target_path"
 fi
 
-install_args=()
-if [ -n "$accounts_dir" ]; then
-  install_args+=(--accounts-dir "$accounts_dir")
-else
-  install_args+=(--env-file "$env_file")
-fi
+install_args=(--accounts-dir "$accounts_dir")
 if [ -n "$default_account" ]; then
   install_args+=(--default-account "$default_account")
 fi

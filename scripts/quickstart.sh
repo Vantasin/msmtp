@@ -15,18 +15,18 @@ Available examples:
   linux-gpg
   password-file
 
-Copies the chosen example env file into place without overwriting an existing
-target file.
+Copies the chosen example account file into place without overwriting an
+existing target file.
 EOF
 }
 
 example_name="default"
-env_file="${repo_root}/.env"
+env_file="${repo_root}/accounts/default.env"
 
 resolve_example_path() {
   case "$1" in
     default)
-      printf '%s/.env.example' "$repo_root"
+      printf '%s/templates/examples/default.env.example' "$repo_root"
       ;;
     macos-keychain)
       printf '%s/templates/examples/macos-keychain.env.example' "$repo_root"

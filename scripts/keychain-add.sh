@@ -15,7 +15,7 @@ accepts the password as a CLI argument.
 EOF
 }
 
-env_file="${repo_root}/.env"
+env_file="${repo_root}/accounts/default.env"
 service_name=""
 account_name=""
 

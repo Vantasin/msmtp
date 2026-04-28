@@ -11,7 +11,7 @@ Usage: scripts/password-helper.sh [--env-file PATH]
                                   [--accounts-dir PATH]
                                   [--check]
 
-Choose an env file and dispatch to the matching password helper based on
+Choose an account file and dispatch to the matching password helper based on
 MSMTP_SECRET_METHOD.
 EOF
 }
@@ -23,24 +23,24 @@ run_check_after="false"
 choose_env_file() {
   local env_files=()
   local labels=()
-  local label
+  local env_path label
 
   while IFS= read -r env_path; do
     [ -n "$env_path" ] || continue
     env_files+=("$env_path")
     labels+=("$(basename "$env_path") ($(account_name_from_env_file "$env_path"))")
   done <<EOF
-$(list_managed_env_files "${repo_root}/.env" "$accounts_dir")
+$(list_account_env_files "$accounts_dir")
 EOF
 
-  [ "${#env_files[@]}" -gt 0 ] || die "No env files found. Create .env or accounts/*.env first."
+  [ "${#env_files[@]}" -gt 0 ] || die "No account env files found. Create one under ${accounts_dir} first."
 
   if [ "${#env_files[@]}" -eq 1 ]; then
     printf '%s\n' "${env_files[0]}"
     return 0
   fi
 
-  label="$(choose_from_menu "Choose an env file for password setup:" "${labels[@]}")"
+  label="$(choose_from_menu "Choose an account file for password setup:" "${labels[@]}")"
   for i in "${!labels[@]}"; do
     if [ "${labels[$i]}" = "$label" ]; then
       printf '%s\n' "${env_files[$i]}"
@@ -48,7 +48,25 @@ EOF
     fi
   done
 
-  die "Selected env file could not be resolved"
+  die "Selected account file could not be resolved"
+}
+
+default_env_file_if_unambiguous() {
+  local only_env=""
+  local env_path
+
+  while IFS= read -r env_path; do
+    [ -n "$env_path" ] || continue
+    if [ -n "$only_env" ]; then
+      return 1
+    fi
+    only_env="$env_path"
+  done <<EOF
+$(list_account_env_files "$accounts_dir")
+EOF
+
+  [ -n "$only_env" ] || return 1
+  printf '%s\n' "$only_env"
 }
 
 while [ $# -gt 0 ]; do
@@ -78,8 +96,11 @@ while [ $# -gt 0 ]; do
 done
 
 if [ -z "$env_file" ]; then
-  require_tty
-  env_file="$(choose_env_file)"
+  if [ -t 0 ]; then
+    env_file="$(choose_env_file)"
+  else
+    env_file="$(default_env_file_if_unambiguous)" || die "This command requires --env-file or a single account file in ${accounts_dir} when run non-interactively"
+  fi
 fi
 
 require_file "$env_file"
@@ -99,7 +120,7 @@ case "$secret_method" in
     "${repo_root}/scripts/password-file-init.sh" --env-file "$env_file"
     ;;
   command)
-    printf 'This env file uses MSMTP_SECRET_METHOD=command.\n'
+    printf 'This account file uses MSMTP_SECRET_METHOD=command.\n'
     printf 'No provisioning helper is available for arbitrary command backends.\n'
     printf 'Current command: %s\n' "$(passwordeval_command_from_env_file "$env_file")"
     run_check_after="true"

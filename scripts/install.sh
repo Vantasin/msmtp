@@ -7,14 +7,15 @@ script_dir="$(cd "$(dirname "$0")" && pwd)"
 
 usage() {
   cat <<'EOF'
-Usage: scripts/install.sh [--env-file PATH | --accounts-dir PATH]
+Usage: scripts/install.sh [--accounts-dir PATH]
                           [--default-account NAME]
                           [--output PATH]
                           [--target PATH]
                           [--mode copy|symlink]
                           [--force]
 
-Render a config and install it to the desired msmtp target path.
+Render a config from an accounts directory and install it to the desired
+msmtp target path.
 
 Modes:
   copy    Render a config and copy it to the target path.
@@ -26,8 +27,7 @@ for confirmation when a target already exists. Non-interactive runs require
 EOF
 }
 
-env_file=""
-accounts_dir=""
+accounts_dir="${repo_root}/accounts"
 default_account=""
 output_file="${repo_root}/.msmtprc.generated"
 target_path="${HOME}/.msmtprc"
@@ -36,11 +36,6 @@ force_replace="false"
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --env-file)
-      [ $# -ge 2 ] || die "--env-file requires a value"
-      env_file="$2"
-      shift 2
-      ;;
     --accounts-dir)
       [ $# -ge 2 ] || die "--accounts-dir requires a value"
       accounts_dir="$2"
@@ -88,27 +83,10 @@ case "$install_mode" in
     ;;
 esac
 
-if [ -n "$env_file" ] && [ -n "$accounts_dir" ]; then
-  die "Use either --env-file or --accounts-dir, not both"
-fi
+[ -d "$accounts_dir" ] || die "Accounts directory not found: $accounts_dir"
+[ -n "$(list_account_env_files "$accounts_dir")" ] || die "No account env files found in: $accounts_dir"
 
-if [ -z "$env_file" ] && [ -z "$accounts_dir" ]; then
-  env_file="${repo_root}/.env"
-fi
-
-if [ -n "$accounts_dir" ]; then
-  install_source="$accounts_dir"
-else
-  install_source="$env_file"
-fi
-
-render_args=()
-if [ -n "$accounts_dir" ]; then
-  render_args+=(--accounts-dir "$accounts_dir")
-else
-  render_args+=(--env-file "$env_file")
-fi
-
+render_args=(--accounts-dir "$accounts_dir")
 if [ -n "$default_account" ]; then
   render_args+=(--default-account "$default_account")
 fi
@@ -117,25 +95,6 @@ tmp_output="$(mktemp "${TMPDIR:-/tmp}/msmtprc-install.XXXXXX")"
 
 cleanup() {
   rm -f "$tmp_output"
-}
-
-path_exists() {
-  [ -e "$1" ] || [ -L "$1" ]
-}
-
-backup_path_for() {
-  local original_path="$1"
-  local timestamp candidate_path suffix
-
-  timestamp="$(date -u '+%Y%m%dT%H%M%SZ')"
-  candidate_path="${original_path}.bak.${timestamp}"
-  suffix=1
-  while path_exists "$candidate_path"; do
-    candidate_path="${original_path}.bak.${timestamp}.${suffix}"
-    suffix=$((suffix + 1))
-  done
-
-  printf '%s\n' "$candidate_path"
 }
 
 confirm_target_replacement() {
@@ -237,7 +196,7 @@ if [ "$install_mode" = "copy" ]; then
 
   install_file "$tmp_output" "$target_path"
 
-  printf 'Installed %s from %s using copy mode\n' "$target_path" "$install_source"
+  printf 'Installed %s from %s using copy mode\n' "$target_path" "$accounts_dir"
   if [ "$output_file" != "$target_path" ]; then
     printf 'Saved rendered copy to %s\n' "$output_file"
   fi
@@ -250,5 +209,5 @@ mkdir -p "$(dirname "$output_file")"
 "${repo_root}/scripts/render-config.sh" "${render_args[@]}" --output "$output_file" >/dev/null
 install_symlink "$(absolute_path "$output_file")" "$target_path"
 
-printf 'Installed %s from %s using symlink mode\n' "$target_path" "$install_source"
+printf 'Installed %s from %s using symlink mode\n' "$target_path" "$accounts_dir"
 printf 'Symlink target: %s\n' "$(absolute_path "$output_file")"

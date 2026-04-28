@@ -22,17 +22,21 @@ Supported secret backends:
 Common commands:
 
   make secrets-help
+  make account
+  make password
   make secret-check
-  make keychain-add SECRET_ENV_FILE=.env
-  make password-file-init SECRET_ENV_FILE=.env
-  make gpg-file-init SECRET_ENV_FILE=.env GPG_RECIPIENT='<your key id>'
+  make keychain-add ACCOUNT_NAME=work
+  make password-file-init ACCOUNT_NAME=work
+  make gpg-file-init ACCOUNT_NAME=work GPG_RECIPIENT='<your key id>'
 
-Multi-account usage:
+Accounts directory usage:
 
+  make setup
+  make setup ACCOUNT_NAME=work
   make secret-check ACCOUNTS_DIR=accounts
-  make keychain-add SECRET_ENV_FILE=accounts/work.env
-  make password-file-init SECRET_ENV_FILE=accounts/work.env
-  make gpg-file-init SECRET_ENV_FILE=accounts/work.env
+  make keychain-add ACCOUNT_NAME=work
+  make password-file-init ACCOUNT_NAME=work
+  make gpg-file-init ACCOUNT_NAME=work
 
 Documentation:
 

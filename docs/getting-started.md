@@ -7,9 +7,6 @@
 
 ## Guided Quick Start
 
-Use this path when you want the repo to guide you through account setup,
-password setup, install, and restore choices.
-
 ### 1. Clone the Repo
 
 ```bash
@@ -38,19 +35,14 @@ Fedora:
 sudo dnf install msmtp
 ```
 
-### 3. Create or Edit Your Account Config
+### 3. Create or Edit Your Account File
 
 ```bash
 make account
 ```
 
-For a single account, this manages `.env`. For multiple accounts, it can:
-
-- add an account
-- edit an account
-- delete an account
-- set the default account
-- list existing accounts
+This manages the canonical [`accounts/`](../accounts/) directory. Use one file
+per mailing address.
 
 ### 4. Store the SMTP Password Securely
 
@@ -58,10 +50,10 @@ For a single account, this manages `.env`. For multiple accounts, it can:
 make password
 ```
 
-`make password` lets you choose the env file and then dispatches to the
-matching helper based on `MSMTP_SECRET_METHOD`. For a custom command backend
-such as `pass`, it shows the configured command and can validate it. See
-[secrets.md](./secrets.md) for the supported backends.
+`make password` chooses an account file and dispatches to the matching helper
+based on `MSMTP_SECRET_METHOD`. For a custom command backend such as `pass`, it
+shows the configured command and can validate it. See
+[secrets.md](./secrets.md) for backend-specific details.
 
 ### 5. Verify the Secret Lookup
 
@@ -86,9 +78,9 @@ By default, `make install` writes to `~/.msmtprc` and keeps a rendered copy in
 
 `make install` guides you through:
 
-- choosing `.env` or `accounts/` when both exist
 - choosing user, system, or custom install targets
 - choosing copy vs symlink install mode
+- choosing a default account when more than one exists and none is already set
 
 If the live target already exists, `make install` backs it up and asks before
 replacing it. For non-interactive replacement, use an explicit install command:
@@ -112,45 +104,42 @@ printf 'Subject: msmtp test\nTo: you@example.com\n\nmsmtp is working.\n' | msmtp
 
 The primary workflow in this repository is:
 
-1. create a local `.env` or one env file per account under `accounts/`
+1. create one or more account files under [`accounts/`](../accounts/)
 2. render [`templates/msmtprc.template`](../templates/msmtprc.template)
-3. install the generated config to `~/.msmtprc`
+3. install the generated config to the desired `msmtp` config path
 
-`msmtp` still consumes `~/.msmtprc`, but the env/template layer keeps the setup
-reproducible and scriptable.
+`msmtp` still consumes `~/.msmtprc`, but the account-file plus template layer
+keeps the setup reproducible and scriptable.
 
-Keep SMTP account data in `.env` or `accounts/*.env`. Choose user vs system
-install scope with `make` targets and variables, not in the env files.
+Keep SMTP account data in `accounts/*.env`. Choose user vs system install scope
+with `make` targets and variables, not in the account files.
 
-## Non-Interactive Bootstrap
+## Direct Account Bootstrap
 
-Pick the closest starter example:
+Create the default account file interactively:
 
-Default example:
+```bash
+make setup
+```
+
+Create a named account file interactively:
+
+```bash
+make setup ACCOUNT_NAME=work
+```
+
+Start from an example instead:
 
 ```bash
 make setup-example EXAMPLE=default
 ```
 
-macOS Keychain example:
-
 ```bash
-make setup-example EXAMPLE=macos-keychain
+make setup-example ACCOUNT_NAME=work EXAMPLE=macos-keychain
 ```
 
-Linux GPG example:
-
-```bash
-make setup-example EXAMPLE=linux-gpg
-```
-
-Password-file example:
-
-```bash
-make setup-example EXAMPLE=password-file
-```
-
-Each command creates `.env` and refuses to overwrite an existing file.
+Each command creates one account file and refuses to overwrite an existing
+file.
 
 ## Multiple Accounts
 
@@ -160,26 +149,18 @@ Use the guided account manager:
 make account
 ```
 
-From there, choose the multi-account workflow to add, edit, delete, or set the
-default account.
+From there, you can add, edit, delete, list, and set the default account.
 
-If you want the older explicit commands, they still exist. Create one account
-from a starter example:
-
-```bash
-make setup-account-example ACCOUNT_NAME=work EXAMPLE=macos-keychain
-```
-
-Render the combined config from the account directory:
+Explicit combined render:
 
 ```bash
 make generate ACCOUNTS_DIR=accounts DEFAULT_ACCOUNT=work
 ```
 
-Install the combined config:
+Explicit combined install:
 
 ```bash
-make install ACCOUNTS_DIR=accounts DEFAULT_ACCOUNT=work
+make install-user ACCOUNTS_DIR=accounts DEFAULT_ACCOUNT=work
 ```
 
 If you do not pass `DEFAULT_ACCOUNT=...`, set `MSMTP_SET_DEFAULT=true` on
@@ -187,8 +168,8 @@ exactly one account file.
 
 ## Secret Storage Details
 
-After choosing a secret backend, use the dedicated secret helpers or follow the
-backend docs:
+After choosing a secret backend, use the dedicated helpers or the guided
+password flow:
 
 ```bash
 make password
@@ -253,19 +234,16 @@ set `INSTALL_FORCE=yes`.
 Override paths when needed:
 
 ```bash
-make install ENV_FILE=.env.work OUTPUT=.msmtprc.work INSTALL_PATH=$HOME/.msmtprc
+make install INSTALL_PATH=$HOME/.config/msmtp/config INSTALL_MODE=copy INSTALL_FORCE=yes
 ```
 
 ## Restore From Backup
 
-List user-config backups:
+List backups and choose one interactively:
 
 ```bash
 make restore
 ```
-
-`make restore` lists matching backups for the chosen target and lets you pick
-one by number.
 
 Use the explicit restore commands when you already know the backup path:
 

@@ -9,20 +9,19 @@ This repository uses a thin-wrapper architecture for agent instructions:
 
 Operational project assets live in focused directories:
 
-- [`accounts/`](../../accounts/) for local per-account env files in
-  multi-account setups
+- [`accounts/`](../../accounts/) for local per-account account files
 - [`templates/`](../../templates/) for `msmtp` config generation assets and
-  env examples
+  account-file examples
 - [`scripts/`](../../scripts/) for repeatable automation such as bootstrap,
-  secret setup, interactive setup, multi-account render, and install
+  secret setup, interactive setup, render, and install
 - [`tests/`](../../tests/) for shell-based verification logic
 
 The current implementation flow is:
 
-1. initialize a local `.env` from [`.env.example`](../../.env.example), a
-   mode-specific example, the interactive setup script, or one env file per
-   account in [`accounts/`](../../accounts/)
-2. provision or verify the chosen secret backend using [docs/secrets.md](../../docs/secrets.md)
+1. create one or more account files under [`accounts/`](../../accounts/) using
+   an example, the interactive setup script, or the guided account manager
+2. provision or verify the chosen secret backend using
+   [docs/secrets.md](../../docs/secrets.md)
 3. render [`templates/msmtprc.template`](../../templates/msmtprc.template)
 4. install the generated output to the desired `msmtp` config path, using copy
    mode by default or symlink mode as an advanced option

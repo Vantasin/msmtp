@@ -6,8 +6,6 @@
 - [AGENTS.md](../AGENTS.md): thin entrypoint for agent platforms
 - [CHANGELOG.md](../CHANGELOG.md): auditable summary of meaningful repository
   changes
-- [`.env.example`](../.env.example): generic starter configuration
-- [`accounts/README.md`](../accounts/README.md): multi-account env-file model
 - [Makefile](../Makefile): common setup, generate, install, preview, link, and
   check commands plus secret helper commands
 
@@ -24,8 +22,8 @@
 
 ## Implementation Areas
 
-- [`accounts/`](../accounts/): local multi-account env files
-- [`templates/`](../templates/): config templates and env examples
+- [`accounts/`](../accounts/): the canonical local account-file workspace
+- [`templates/`](../templates/): config templates and account-file examples
 - [`scripts/`](../scripts/): repeatable automation for quickstart, interactive
-  setup, multi-account render, and install
+  setup, render, install, restore, and secret workflows
 - [`tests/`](../tests/): repository verification assets

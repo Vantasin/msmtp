@@ -14,7 +14,7 @@ from the terminal and is never accepted as a CLI argument.
 EOF
 }
 
-env_file="${repo_root}/.env"
+env_file="${repo_root}/accounts/default.env"
 password_file=""
 
 prompt_secret() {

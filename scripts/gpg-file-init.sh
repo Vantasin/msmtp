@@ -18,7 +18,7 @@ passphrase through pinentry when available.
 EOF
 }
 
-env_file="${repo_root}/.env"
+env_file="${repo_root}/accounts/default.env"
 gpg_file=""
 recipient=""
 

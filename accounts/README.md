@@ -1,19 +1,19 @@
 # Accounts
 
-This directory is reserved for local multi-account env files.
+[`accounts/`](./) is the canonical workspace for local `msmtp` account files.
 
-Use one `.env` file per mailing account, for example:
+Use one file per mailing account, for example:
 
+- `accounts/default.env`
 - `accounts/work.env`
 - `accounts/personal.env`
 
-These files are ignored by Git because they contain private account details.
-
 Recommended workflows:
 
-- manage them interactively with `make account`
-- create them directly with `make setup-account ACCOUNT_NAME=work`
-- create them from an example with
-  `make setup-account-example ACCOUNT_NAME=work EXAMPLE=macos-keychain`
-- render all accounts together with
-  `make generate ACCOUNTS_DIR=accounts DEFAULT_ACCOUNT=work`
+- use `make account` for guided create, edit, delete, list, and set-default actions
+- use `make setup ACCOUNT_NAME=work` to edit one account file directly
+- use `make setup-example ACCOUNT_NAME=work EXAMPLE=macos-keychain` to start from an example
+- use `make generate`, `make install`, and `make secret-check` against the whole directory
+
+These files are intentionally ignored by Git because they contain private
+account details and machine-local secret paths.

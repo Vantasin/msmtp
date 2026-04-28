@@ -9,14 +9,14 @@ usage() {
   cat <<'EOF'
 Usage: scripts/secret-check.sh [--env-file PATH | --accounts-dir PATH]
 
-Validate that the configured passwordeval command runs successfully for one env
-file or every account env file in an accounts directory. The command executes
-the configured passwordeval helper but never prints the secret value.
+Validate that the configured passwordeval command runs successfully for one
+account file or every account file in an accounts directory. The command
+executes the configured passwordeval helper but never prints the secret value.
 EOF
 }
 
 env_file=""
-accounts_dir=""
+accounts_dir="${repo_root}/accounts"
 
 check_secret_for_env_file() {
   local env_path="$1"
@@ -56,28 +56,20 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-if [ -n "$env_file" ] && [ -n "$accounts_dir" ]; then
-  die "Use either --env-file or --accounts-dir, not both"
-fi
-
-if [ -z "$env_file" ] && [ -z "$accounts_dir" ]; then
-  env_file="${repo_root}/.env"
-fi
-
-if [ -n "$accounts_dir" ]; then
-  [ -d "$accounts_dir" ] || die "Accounts directory not found: $accounts_dir"
-  found_env_files="false"
-
-  while IFS= read -r account_env; do
-    [ -n "$account_env" ] || continue
-    found_env_files="true"
-    check_secret_for_env_file "$account_env"
-  done <<EOF
-$(find "$accounts_dir" -maxdepth 1 -type f -name '*.env' | sort)
-EOF
-
-  [ "$found_env_files" = "true" ] || die "No account env files found in: $accounts_dir"
+if [ -n "$env_file" ]; then
+  check_secret_for_env_file "$env_file"
   exit 0
 fi
 
-check_secret_for_env_file "$env_file"
+[ -d "$accounts_dir" ] || die "Accounts directory not found: $accounts_dir"
+found_env_files="false"
+
+while IFS= read -r account_env; do
+  [ -n "$account_env" ] || continue
+  found_env_files="true"
+  check_secret_for_env_file "$account_env"
+done <<EOF
+$(list_account_env_files "$accounts_dir")
+EOF
+
+[ "$found_env_files" = "true" ] || die "No account env files found in: $accounts_dir"

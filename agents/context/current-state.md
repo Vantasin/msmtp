@@ -12,23 +12,25 @@ Present today:
   test email
 - canonical [`agents/`](../) guidance
 - human-readable [`docs/README.md`](../../docs/README.md)
-- multi-account guidance in [accounts/README.md](../../accounts/README.md)
+- canonical account-file guidance in [accounts/README.md](../../accounts/README.md)
 - secret-backend docs in [docs/secrets.md](../../docs/secrets.md)
 - manual fallback docs in [docs/manual-setup.md](../../docs/manual-setup.md)
-- [`.env.example`](../../.env.example) and mode-specific example env files
 - [`templates/msmtprc.template`](../../templates/msmtprc.template)
+- account-file examples in [`templates/examples/`](../../templates/examples/)
 - implementation scripts in [`scripts/`](../../scripts/) for quickstart,
-  guided account/password/install/restore flows, interactive setup,
-  multi-account render, guarded install, and backup restore flows
+  guided account/password/install/restore flows, interactive setup, render,
+  guarded install, and backup restore flows
 - a [`Makefile`](../../Makefile) with guided top-level commands plus explicit
   user/system install and restore targets
 - shell-based smoke tests in [`tests/test.sh`](../../tests/test.sh)
 
 Operational convention today:
 
-- SMTP account values live in `.env` or `accounts/*.env`.
+- SMTP account values live in `accounts/*.env`.
+- The simplest setup is `accounts/default.env`; multiple addresses add more
+  files in the same directory.
 - User vs system install scope is selected through `make` targets and
-  variables, not through env-file account data.
+  variables, not through account-file data.
 - The preferred human-facing commands are `make account`, `make password`,
   `make install`, and `make restore`.
 

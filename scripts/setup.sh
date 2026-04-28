@@ -10,14 +10,14 @@ usage() {
 Usage: scripts/setup.sh [--env-file PATH] [--output PATH] [--target PATH]
                        [--overwrite]
 
-Interactive setup for creating a local .env file. The env/template workflow
-remains the primary source of truth; this script is a convenience layer that
-collects values step by step and writes them into an env file. Use --overwrite
-to edit an existing env file in place.
+Interactive setup for creating or editing one account file. The account-file
+workflow remains the source of truth; this script is a convenience layer that
+collects values step by step and writes them into a file under accounts/.
+Use --overwrite to edit an existing file in place.
 EOF
 }
 
-env_file="${repo_root}/.env"
+env_file="${repo_root}/accounts/default.env"
 output_file="${repo_root}/.msmtprc.generated"
 target_path="${HOME}/.msmtprc"
 allow_overwrite="false"
@@ -136,7 +136,7 @@ if [ -e "$env_file" ]; then
   printf 'Editing %s in place.\n\n' "$env_file" >&2
 else
   printf 'Interactive msmtp setup\n' >&2
-  printf 'This writes %s and keeps the env/template workflow as the source of truth.\n\n' "$env_file" >&2
+  printf 'This writes %s and keeps the account-file workflow as the source of truth.\n\n' "$env_file" >&2
 fi
 
 MSMTP_ACCOUNT_NAME="$(prompt_required "Account name" "${MSMTP_ACCOUNT_NAME:-default}")"
@@ -214,8 +214,9 @@ printf 'Created %s\n' "$env_file"
 
 if [ "$(prompt_yes_no "Render and install ~/.msmtprc now" "no")" = "yes" ]; then
   install_mode="$(prompt_install_mode)"
+  accounts_dir_for_install="$(dirname "$env_file")"
   "${repo_root}/scripts/install.sh" \
-    --env-file "$env_file" \
+    --accounts-dir "$accounts_dir_for_install" \
     --output "$output_file" \
     --target "$target_path" \
     --mode "$install_mode"

@@ -7,25 +7,31 @@ script_dir="$(cd "$(dirname "$0")" && pwd)"
 
 usage() {
   cat <<'EOF'
-Usage: scripts/account-manager.sh [--env-file PATH]
-                                  [--accounts-dir PATH]
-                                  [--mode single|multi]
-                                  [--action create|edit|add|delete|set-default|list]
+Usage: scripts/account-manager.sh [--accounts-dir PATH]
+                                  [--action create|edit|delete|set-default|list]
                                   [--account NAME]
                                   [--force]
 
-Manage single-account and multi-account msmtp env files from one workflow.
-Interactive runs prompt for any missing choices. Non-interactive delete
-operations require --force.
+Manage account files in one accounts directory. Single-account and
+multi-account setups use the same model: one file per account.
 EOF
 }
 
-env_file="${repo_root}/.env"
 accounts_dir="${repo_root}/accounts"
-mode=""
 action=""
 account_name_arg=""
 force_replace="false"
+
+validate_account_file_name() {
+  local account_name="$1"
+
+  [ -n "$account_name" ] || die "Account file name cannot be empty"
+  case "$account_name" in
+    *[!A-Za-z0-9._-]*)
+      die "Account file name must use only letters, numbers, dots, underscores, or dashes: $account_name"
+      ;;
+  esac
+}
 
 account_env_path_for_name() {
   local account_name="$1"
@@ -48,57 +54,10 @@ account_label_for_env_file() {
   fi
 }
 
-validate_account_file_name() {
-  local account_name="$1"
-
-  [ -n "$account_name" ] || die "Account file name cannot be empty"
-  case "$account_name" in
-    *[!A-Za-z0-9._-]*)
-      die "Account file name must use only letters, numbers, dots, underscores, or dashes: $account_name"
-      ;;
-  esac
-}
-
-choose_mode() {
-  local has_single="false"
-  local has_multi="false"
-
-  if [ -f "$env_file" ]; then
-    has_single="true"
-  fi
-
-  if [ -n "$(list_account_env_files "$accounts_dir")" ]; then
-    has_multi="true"
-  fi
-
-  if [ "$has_single" = "true" ] && [ "$has_multi" != "true" ]; then
-    printf 'single\n'
-    return 0
-  fi
-
-  if [ "$has_single" != "true" ] && [ "$has_multi" = "true" ]; then
-    printf 'multi\n'
-    return 0
-  fi
-
-  choice="$(choose_from_menu "Choose an account workflow:" \
-    "Single account in $(basename "$env_file")" \
-    "Multiple accounts in $(basename "$accounts_dir")/")"
-
-  case "$choice" in
-    "Single account in $(basename "$env_file")")
-      printf 'single\n'
-      ;;
-    *)
-      printf 'multi\n'
-      ;;
-  esac
-}
-
 choose_account_file() {
   local env_files=()
   local labels=()
-  local label
+  local env_path label
 
   while IFS= read -r env_path; do
     [ -n "$env_path" ] || continue
@@ -158,85 +117,123 @@ delete_account_file() {
   printf 'Moved %s to %s\n' "$env_path" "$backup_path"
 }
 
-run_single_workflow() {
-  local setup_args=(--env-file "$env_file")
+create_account() {
+  local account_name env_path
 
-  if [ -f "$env_file" ]; then
-    setup_args+=(--overwrite)
-  fi
-
-  "${repo_root}/scripts/setup.sh" "${setup_args[@]}"
+  mkdir -p "$accounts_dir"
+  account_name="${account_name_arg:-$(prompt_required "Account file name" "default")}"
+  validate_account_file_name "$account_name"
+  env_path="$(account_env_path_for_name "$account_name")"
+  [ ! -e "$env_path" ] || die "Account file already exists: $env_path"
+  "${repo_root}/scripts/setup.sh" --env-file "$env_path"
 }
 
-run_multi_action() {
-  local selected_env_file account_file_name setup_args
+edit_account() {
+  local env_path
 
-  case "$1" in
-    add)
-      mkdir -p "$accounts_dir"
-      account_file_name="${account_name_arg:-$(prompt_required "Account file name" "account")}"
-      validate_account_file_name "$account_file_name"
-      selected_env_file="$(account_env_path_for_name "$account_file_name")"
-      [ ! -e "$selected_env_file" ] || die "Account file already exists: $selected_env_file"
-      "${repo_root}/scripts/setup.sh" --env-file "$selected_env_file"
-      ;;
-    edit)
-      if [ -n "$account_name_arg" ]; then
-        validate_account_file_name "$account_name_arg"
-        selected_env_file="$(account_env_path_for_name "$account_name_arg")"
-      else
-        selected_env_file="$(choose_account_file)"
-      fi
-      [ -f "$selected_env_file" ] || die "Account file not found: $selected_env_file"
-      "${repo_root}/scripts/setup.sh" --env-file "$selected_env_file" --overwrite
-      ;;
-    delete)
-      if [ -n "$account_name_arg" ]; then
-        validate_account_file_name "$account_name_arg"
-        selected_env_file="$(account_env_path_for_name "$account_name_arg")"
-      else
-        selected_env_file="$(choose_account_file)"
-      fi
-      delete_account_file "$selected_env_file"
-      ;;
-    set-default)
-      if [ -n "$account_name_arg" ]; then
-        validate_account_file_name "$account_name_arg"
-        selected_env_file="$(account_env_path_for_name "$account_name_arg")"
-      else
-        selected_env_file="$(choose_account_file)"
-      fi
-      [ -f "$selected_env_file" ] || die "Account file not found: $selected_env_file"
-      set_default_account "$selected_env_file"
-      ;;
-    list)
-      while IFS= read -r env_path; do
-        [ -n "$env_path" ] || continue
-        printf '%s\n' "$(account_label_for_env_file "$env_path")"
-      done <<EOF
+  if [ -n "$account_name_arg" ]; then
+    validate_account_file_name "$account_name_arg"
+    env_path="$(account_env_path_for_name "$account_name_arg")"
+  else
+    env_path="$(choose_account_file)"
+  fi
+
+  [ -f "$env_path" ] || die "Account file not found: $env_path"
+  "${repo_root}/scripts/setup.sh" --env-file "$env_path" --overwrite
+}
+
+set_default_from_arg_or_prompt() {
+  local env_path
+
+  if [ -n "$account_name_arg" ]; then
+    validate_account_file_name "$account_name_arg"
+    env_path="$(account_env_path_for_name "$account_name_arg")"
+  else
+    env_path="$(choose_account_file)"
+  fi
+
+  [ -f "$env_path" ] || die "Account file not found: $env_path"
+  set_default_account "$env_path"
+}
+
+delete_from_arg_or_prompt() {
+  local env_path
+
+  if [ -n "$account_name_arg" ]; then
+    validate_account_file_name "$account_name_arg"
+    env_path="$(account_env_path_for_name "$account_name_arg")"
+  else
+    env_path="$(choose_account_file)"
+  fi
+
+  delete_account_file "$env_path"
+}
+
+list_accounts() {
+  local env_path found_any="false"
+
+  while IFS= read -r env_path; do
+    [ -n "$env_path" ] || continue
+    found_any="true"
+    printf '%s\n' "$(account_label_for_env_file "$env_path")"
+  done <<EOF
 $(list_account_env_files "$accounts_dir")
 EOF
+
+  [ "$found_any" = "true" ] || die "No account env files found in: $accounts_dir"
+}
+
+run_action() {
+  case "$1" in
+    create)
+      create_account
+      ;;
+    edit)
+      edit_account
+      ;;
+    delete)
+      delete_from_arg_or_prompt
+      ;;
+    set-default)
+      set_default_from_arg_or_prompt
+      ;;
+    list)
+      list_accounts
       ;;
     *)
-      die "Unsupported multi-account action: $1"
+      die "Unsupported action: $1"
       ;;
   esac
 }
 
-choose_multi_action() {
-  local action_label
+choose_action() {
+  local env_count=0
+  local env_path action_label
 
-  action_label="$(choose_from_menu "Choose an account action:" \
-    "Add an account" \
-    "Edit an account" \
-    "Delete an account" \
-    "Set the default account" \
-    "List accounts" \
-    "Done")"
+  while IFS= read -r env_path; do
+    [ -n "$env_path" ] || continue
+    env_count=$((env_count + 1))
+  done <<EOF
+$(list_account_env_files "$accounts_dir")
+EOF
+
+  if [ "$env_count" -eq 0 ]; then
+    action_label="$(choose_from_menu "No account files exist yet. Choose an action:" \
+      "Add an account" \
+      "Done")"
+  else
+    action_label="$(choose_from_menu "Choose an account action:" \
+      "Add an account" \
+      "Edit an account" \
+      "Delete an account" \
+      "Set the default account" \
+      "List accounts" \
+      "Done")"
+  fi
 
   case "$action_label" in
     "Add an account")
-      printf 'add\n'
+      printf 'create\n'
       ;;
     "Edit an account")
       printf 'edit\n'
@@ -258,19 +255,9 @@ choose_multi_action() {
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --env-file)
-      [ $# -ge 2 ] || die "--env-file requires a value"
-      env_file="$2"
-      shift 2
-      ;;
     --accounts-dir)
       [ $# -ge 2 ] || die "--accounts-dir requires a value"
       accounts_dir="$2"
-      shift 2
-      ;;
-    --mode)
-      [ $# -ge 2 ] || die "--mode requires a value"
-      mode="$2"
       shift 2
       ;;
     --action)
@@ -297,35 +284,18 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-case "$mode" in
-  "" )
-    require_tty
-    mode="$(choose_mode)"
-    ;;
-  single | multi)
-    ;;
-  *)
-    die "Unsupported mode: $mode"
-    ;;
-esac
-
-if [ "$mode" = "single" ]; then
-  run_single_workflow
-  exit 0
-fi
-
 if [ -n "$action" ]; then
-  run_multi_action "$action"
+  run_action "$action"
   exit 0
 fi
 
 require_tty
 while true; do
-  next_action="$(choose_multi_action)"
+  next_action="$(choose_action)"
   if [ "$next_action" = "done" ]; then
     exit 0
   fi
 
-  run_multi_action "$next_action"
+  run_action "$next_action"
   printf '\n' >&2
 done

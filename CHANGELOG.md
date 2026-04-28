@@ -37,3 +37,7 @@
   `make` targets and variables rather than account env files
 - added guided `make account`, `make password`, `make install`, and
   `make restore` flows on top of the explicit low-level commands
+- simplified the repository to an accounts-only model, removed root `.env`
+  as a first-class source, added a canonical default example under
+  `templates/examples/`, and aligned docs/tests/agent context with the new
+  workflow

@@ -220,17 +220,6 @@ list_account_env_files() {
   find "$accounts_dir" -maxdepth 1 -type f -name '*.env' | sort
 }
 
-list_managed_env_files() {
-  local primary_env_file="$1"
-  local accounts_dir="$2"
-
-  if [ -f "$primary_env_file" ]; then
-    printf '%s\n' "$primary_env_file"
-  fi
-
-  list_account_env_files "$accounts_dir"
-}
-
 secret_method_from_env_file() {
   local env_file="$1"
 
@@ -316,12 +305,6 @@ optional_line() {
 
   if [ -n "$value" ]; then
     printf '%s %s\n' "$key" "$value"
-  fi
-}
-
-default_account_name_from_current_env() {
-  if is_truthy "${MSMTP_SET_DEFAULT:-true}"; then
-    printf '%s\n' "$MSMTP_ACCOUNT_NAME"
   fi
 }
 
@@ -418,25 +401,6 @@ render_msmtprc_template() {
         ;;
     esac
   done < "$template_path"
-}
-
-render_config_from_env_file() {
-  local env_file="$1"
-  local account_block default_account_name default_line
-
-  load_env_file "$env_file"
-  account_block="$(render_account_block)"
-  default_account_name="$(default_account_name_from_current_env)"
-
-  if [ -n "$default_account_name" ]; then
-    default_line="account default : ${default_account_name}"
-  else
-    default_line=""
-  fi
-
-  render_msmtprc_template "${repo_root}/templates/msmtprc.template" \
-    "$account_block" \
-    "$default_line"
 }
 
 render_config_from_accounts_dir() {

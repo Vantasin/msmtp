@@ -1,9 +1,12 @@
 # Tests
 
-This directory contains repository smoke tests.
+[`test.sh`](./test.sh) is the shell smoke suite for the repo.
 
-Files:
+It validates:
 
-- [`test.sh`](./test.sh): validates shell syntax plus quickstart, interactive
-  setup, secret validation, multi-account rendering, copy install, symlink
-  install, and supported credential modes
+- quickstart and interactive account-file setup
+- config rendering from `accounts/`
+- secret helper syntax and secret validation
+- guided install, guarded overwrite, symlink install, and backup restore flows
+- guided account management actions
+- top-level `make` commands against the accounts-only model
