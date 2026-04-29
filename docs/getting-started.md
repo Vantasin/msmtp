@@ -336,6 +336,12 @@ backs it up before replacement.
 Backup names use UTC timestamps in a human-readable format such as
 `2026-04-27T15-30-00Z`.
 
+Interactive restore menus also show those backups with friendlier labels in
+your local timezone when available, such as `Apr 27, 2026 11:30 EDT` on an
+Eastern Time system, while keeping the original backup filename in the menu
+for clarity. If local timezone conversion is unavailable, the menu falls back
+to UTC.
+
 If you want a command-by-command reference for the whole `Makefile`, see
 [makefile.md](./makefile.md).
 

@@ -92,6 +92,10 @@ run_syntax_checks
 canonical_repo_root="$(git -C "${repo_root}" rev-parse --show-toplevel)"
 common_repo_root="$(bash -lc '. "'"${repo_root}/scripts/lib/common.sh"'"; printf "%s\n" "$repo_root"')"
 [ "$common_repo_root" = "$canonical_repo_root" ] || fail "Expected common.sh repo_root to match git rev-parse --show-toplevel"
+friendly_backup_timestamp="$(TZ=America/Toronto bash -lc '. "'"${repo_root}/scripts/lib/common.sh"'"; human_readable_backup_timestamp_from_path "/tmp/.msmtprc.bak.2026-04-27T15-30-00Z"')"
+[ "$friendly_backup_timestamp" = "Apr 27, 2026 11:30 EDT" ] || fail "Expected human-readable backup timestamp formatter to prefer the local timezone"
+friendly_backup_timestamp_fallback="$(bash -lc '. "'"${repo_root}/scripts/lib/common.sh"'"; date() { return 1; }; human_readable_backup_timestamp_from_path "/tmp/.msmtprc.bak.2026-04-27T15-30-00Z"')"
+[ "$friendly_backup_timestamp_fallback" = "Apr 27, 2026 15:30 UTC" ] || fail "Expected human-readable backup timestamp formatter to fall back to UTC when local conversion is unavailable"
 
 mkdir -p "${tmp_dir}/fake-repo/passwords"
 chmod 755 "${tmp_dir}/fake-repo/passwords"

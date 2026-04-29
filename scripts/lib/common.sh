@@ -389,6 +389,104 @@ restore_target_path_from_backup_path() {
   esac
 }
 
+month_name_from_number() {
+  case "$1" in
+    01) printf 'Jan' ;;
+    02) printf 'Feb' ;;
+    03) printf 'Mar' ;;
+    04) printf 'Apr' ;;
+    05) printf 'May' ;;
+    06) printf 'Jun' ;;
+    07) printf 'Jul' ;;
+    08) printf 'Aug' ;;
+    09) printf 'Sep' ;;
+    10) printf 'Oct' ;;
+    11) printf 'Nov' ;;
+    12) printf 'Dec' ;;
+    *) die "Unsupported month number in backup timestamp: $1" ;;
+  esac
+}
+
+backup_timestamp_epoch_from_utc_parts() {
+  local year="$1"
+  local month="$2"
+  local day="$3"
+  local hour="$4"
+  local minute="$5"
+  local second="$6"
+  local utc_input epoch=""
+
+  utc_input="${year}-${month}-${day} ${hour}:${minute}:${second}"
+
+  if epoch="$(TZ=UTC date -j -f '%Y-%m-%d %H:%M:%S' "$utc_input" '+%s' 2>/dev/null)"; then
+    printf '%s\n' "$epoch"
+    return 0
+  fi
+
+  if epoch="$(TZ=UTC date -d "$utc_input UTC" '+%s' 2>/dev/null)"; then
+    printf '%s\n' "$epoch"
+    return 0
+  fi
+
+  return 1
+}
+
+format_epoch_in_local_timezone() {
+  local epoch="$1"
+  local formatted=""
+
+  if formatted="$(date -r "$epoch" '+%b %d, %Y %H:%M %Z' 2>/dev/null)"; then
+    printf '%s\n' "$formatted"
+    return 0
+  fi
+
+  if formatted="$(date -d "@$epoch" '+%b %d, %Y %H:%M %Z' 2>/dev/null)"; then
+    printf '%s\n' "$formatted"
+    return 0
+  fi
+
+  return 1
+}
+
+human_readable_backup_timestamp_from_path() {
+  local backup_path="$1"
+  local backup_name timestamp_fragment year month day hour minute second month_name epoch local_label
+
+  backup_name="$(basename "$backup_path")"
+  timestamp_fragment="${backup_name##*.bak.}"
+
+  if [[ "$timestamp_fragment" =~ ^([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2})-([0-9]{2})-([0-9]{2})Z(\.[0-9]+)?$ ]]; then
+    year="${BASH_REMATCH[1]}"
+    month="${BASH_REMATCH[2]}"
+    day="${BASH_REMATCH[3]}"
+    hour="${BASH_REMATCH[4]}"
+    minute="${BASH_REMATCH[5]}"
+    second="${BASH_REMATCH[6]}"
+
+    if epoch="$(backup_timestamp_epoch_from_utc_parts "$year" "$month" "$day" "$hour" "$minute" "$second")"; then
+      if local_label="$(format_epoch_in_local_timezone "$epoch")"; then
+        printf '%s\n' "$local_label"
+        return 0
+      fi
+    fi
+
+    month_name="$(month_name_from_number "$month")"
+    printf '%s %s, %s %s:%s UTC\n' "$month_name" "$day" "$year" "$hour" "$minute"
+    return 0
+  fi
+
+  printf '%s\n' "$backup_name"
+}
+
+backup_label_for_path() {
+  local backup_path="$1"
+  local friendly_timestamp backup_name
+
+  friendly_timestamp="$(human_readable_backup_timestamp_from_path "$backup_path")"
+  backup_name="$(basename "$backup_path")"
+  printf '%s (%s)\n' "$friendly_timestamp" "$backup_name"
+}
+
 temp_path_for_destination() {
   local destination_path="$1"
   local destination_dir base_name

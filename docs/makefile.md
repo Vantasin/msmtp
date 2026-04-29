@@ -119,3 +119,8 @@ aliases for renamed make targets.
 
 Backup files use UTC timestamps in a human-readable format such as
 `2026-04-27T15-30-00Z`.
+
+Interactive restore menus display those backups in your local timezone when
+available, such as `Apr 27, 2026 11:30 EDT` on an Eastern Time system, while
+still showing the original backup filename. If local timezone conversion is
+unavailable, the menu falls back to UTC.

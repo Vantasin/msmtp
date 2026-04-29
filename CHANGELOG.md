@@ -31,6 +31,9 @@
   start and command-reference docs stay in sync with workflow changes
 - changed generated backup filenames to use a more human-readable UTC timestamp
   format such as `2026-04-27T15-30-00Z`
+- updated interactive restore menus to show friendlier backup labels in the
+  user's local timezone when available, while still including the original
+  backup filename and falling back to UTC if local conversion is unavailable
 
 ## 2026-04-27
 
