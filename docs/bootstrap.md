@@ -4,6 +4,12 @@ The repository includes a self-contained
 [`scripts/bootstrap.sh`](../scripts/bootstrap.sh) entrypoint for optional
 first-run automation.
 
+Supported public bootstrap command:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Vantasin/msmtp/main/scripts/bootstrap.sh | bash
+```
+
 What it does:
 
 - clones the repository into `~/Git/msmtp` by default
@@ -20,9 +26,6 @@ Supported package managers:
 
 Current limits:
 
-- the repository does not publish a hosted raw `curl` URL yet
-- the script is ready for that use case, but the primary documented onboarding
-  path remains the explicit clone-based quick start
 - a shell script can `cd` internally before it runs `make configure`, but it
   cannot leave your calling shell inside the cloned repository after it exits
 

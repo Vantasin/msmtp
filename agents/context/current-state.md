@@ -1,6 +1,6 @@
 # Current State
 
-As of 2026-04-28, this repository contains both the governance scaffold and a
+As of 2026-04-29, this repository contains both the governance scaffold and a
 working implementation for managing `msmtp` configuration.
 
 Present today:
@@ -8,8 +8,8 @@ Present today:
 - root [README.md](../../README.md), [AGENTS.md](../../AGENTS.md), and
   [CHANGELOG.md](../../CHANGELOG.md)
 - linear human onboarding in [README.md](../../README.md) and
-  [docs/getting-started.md](../../docs/getting-started.md), from clone through
-  test email
+  [docs/getting-started.md](../../docs/getting-started.md), from supported
+  bootstrap or manual clone through test email
 - canonical [`agents/`](../) guidance
 - human-readable [`docs/README.md`](../../docs/README.md)
 - an optional [docs/bootstrap.md](../../docs/bootstrap.md) reference for the
@@ -45,8 +45,9 @@ Operational convention today:
   `make test-email`, `make test-live-email`, `make install`, and
   `make restore`; `make account` remains the account-only CRUD entrypoint.
 - A self-contained `scripts/bootstrap.sh` entrypoint now exists for optional
-  clone-plus-install onboarding, but the repo still does not publish a hosted
-  raw `curl` URL for it.
+  clone-plus-install onboarding, and the quick-start docs now treat the public
+  GitHub raw `curl` bootstrap as a supported entry point alongside the manual
+  clone-based path.
 - Guided `make configure` can now add or edit multiple accounts before one
   final install/verification step, so the common human workflow no longer
   requires repeated configure runs just to prepare several accounts.
@@ -87,7 +88,7 @@ Operational convention today:
 Not present today:
 
 - CI automation
-- published release artifacts or a hosted curl entrypoint URL
+- published release artifacts
 
 Do not assume future planned tooling already exists. Any new implementation
 work should update this file if it changes the baseline repository reality.

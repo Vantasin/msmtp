@@ -44,6 +44,9 @@
   guidance with that optional bootstrap path
 - switched the canonical clone and bootstrap repository URL to the public
   GitHub remote
+- promoted the GitHub raw bootstrap command to a supported quick-start entry
+  point and aligned the bootstrap docs plus agent guidance with that public
+  onboarding path
 - hardened the repo-local `passwords/` plaintext-secret option so password-file
   init and rotation enforce mode `700` on the directory automatically while
   keeping secret files at mode `600`

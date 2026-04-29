@@ -16,6 +16,8 @@ Use this workflow after significant repository changes.
    [docs/getting-started.md](../../docs/getting-started.md) for linear,
    actionable quick-start drift. Keep the primary `make configure` path clear,
    note when it can loop through multiple accounts before one install step,
+   keep any supported bootstrap path in its own single-purpose copy/paste
+   block,
    note when it includes an optional test-email step, describe `make test-email`
    as the standalone isolated-account resend/manual path when relevant,
    describe `make test-live-email` as the deployment-level installed-config

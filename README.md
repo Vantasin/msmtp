@@ -26,14 +26,26 @@ It also ships with:
 
 ## Quick Start
 
-1. Clone the repo.
+1. Optional fast bootstrap.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Vantasin/msmtp/main/scripts/bootstrap.sh | bash
+```
+
+This supported entry point clones the repo into `~/Git/msmtp`, installs the
+basic dependencies with Homebrew, `apt-get`, or `dnf`, then starts
+`make configure`. On macOS it still expects `make` from Apple's Command Line
+Tools. The script can run `make configure` interactively, but it cannot leave
+your current shell inside the repo after it exits.
+
+2. Manual clone-based setup.
 
 ```bash
 git clone https://github.com/Vantasin/msmtp.git
 cd msmtp
 ```
 
-2. Install `msmtp`.
+3. Install `msmtp`.
 
 macOS with Homebrew:
 
@@ -54,7 +66,7 @@ Fedora:
 sudo dnf install msmtp
 ```
 
-3. Run the guided configure flow.
+4. Run the guided configure flow.
 
 ```bash
 make configure
@@ -89,7 +101,7 @@ make install
 make restore
 ```
 
-4. If you skip the test email inside `make configure`, send one later.
+5. If you skip the test email inside `make configure`, send one later.
 
 ```bash
 make test-email
@@ -121,15 +133,8 @@ If you want the longer walkthrough or backend-specific secret setup details,
 continue with [docs/getting-started.md](./docs/getting-started.md) and
 [docs/secrets.md](./docs/secrets.md).
 
-Optional bootstrap path:
-
-The repo also includes a self-contained
-[`scripts/bootstrap.sh`](./scripts/bootstrap.sh) entrypoint. It is intended
-for a future hosted `curl` bootstrap path: it clones into `~/Git/msmtp`,
-installs the basic dependencies with Homebrew, `apt-get`, or `dnf`, then runs
-`make configure`. On macOS it still expects `make` from Apple's Command Line
-Tools. This repository does not publish a hosted raw `curl` URL yet, so the
-explicit clone-based quick start above remains the primary setup path.
+Bootstrap details and overrides are documented in
+[docs/bootstrap.md](./docs/bootstrap.md).
 
 ## Account Model
 

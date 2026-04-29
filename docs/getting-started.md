@@ -7,14 +7,26 @@
 
 ## Guided Quick Start
 
-### 1. Clone the Repo
+### 1. Optional Fast Bootstrap
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Vantasin/msmtp/main/scripts/bootstrap.sh | bash
+```
+
+This supported entry point clones the repo into `~/Git/msmtp`, installs the
+basic dependencies with Homebrew, `apt-get`, or `dnf`, then starts
+`make configure`. On macOS it still expects `make` from Apple's Command Line
+Tools. The script can run `make configure` interactively, but it cannot leave
+your current shell inside the repo after it exits.
+
+### 2. Manual Clone-Based Setup
 
 ```bash
 git clone https://github.com/Vantasin/msmtp.git
 cd msmtp
 ```
 
-### 2. Install `msmtp`
+### 3. Install `msmtp`
 
 macOS with Homebrew:
 
@@ -35,7 +47,7 @@ Fedora:
 sudo dnf install msmtp
 ```
 
-### 3. Run the Guided Configure Flow
+### 4. Run the Guided Configure Flow
 
 ```bash
 make configure
@@ -58,7 +70,7 @@ If you only want account-file CRUD without deployment, use:
 make account
 ```
 
-### 4. If You Skip the Test Email Inside `make configure`, Send One Later
+### 5. If You Skip the Test Email Inside `make configure`, Send One Later
 
 ```bash
 make test-email
@@ -88,8 +100,14 @@ does not send mail or verify your live SMTP credentials.
 ## Optional Bootstrap Script
 
 The repository also includes a self-contained
-[`scripts/bootstrap.sh`](../scripts/bootstrap.sh) entrypoint for future hosted
-bootstrap use. It can:
+[`scripts/bootstrap.sh`](../scripts/bootstrap.sh) entrypoint. Supported public
+bootstrap command:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Vantasin/msmtp/main/scripts/bootstrap.sh | bash
+```
+
+It can:
 
 - clone the repo into `~/Git/msmtp`
 - create `~/Git` if it does not exist
@@ -98,7 +116,6 @@ bootstrap use. It can:
 
 Important limits:
 
-- the repository does not publish a hosted raw `curl` URL yet
 - the script can `cd` internally before it runs `make configure`, but it
   cannot leave your current shell in that directory after it exits
 - on macOS, the bootstrap path requires Homebrew; if Homebrew is not
