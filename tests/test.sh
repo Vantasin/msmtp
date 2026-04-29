@@ -607,7 +607,8 @@ if "${repo_root}/scripts/install.sh" \
   --accounts-dir "${tmp_dir}/multi-accounts" \
   --default-account personal \
   --output "${tmp_dir}/existing-command.msmtprc" \
-  --target "${tmp_dir}/existing-home/.msmtprc" >/dev/null 2>&1; then
+  --target "${tmp_dir}/existing-home/.msmtprc" \
+  </dev/null >/dev/null 2>&1; then
   fail "install.sh should refuse to replace an existing target without confirmation or --force"
 fi
 
@@ -643,7 +644,8 @@ printf 'current-config\n' > "${tmp_dir}/restore-home/.msmtprc"
 printf 'restored-config\n' > "${tmp_dir}/restore-home/.msmtprc.bak.saved"
 if "${repo_root}/scripts/restore-backup.sh" \
   --backup "${tmp_dir}/restore-home/.msmtprc.bak.saved" \
-  --target "${tmp_dir}/restore-home/.msmtprc" >/dev/null 2>&1; then
+  --target "${tmp_dir}/restore-home/.msmtprc" \
+  </dev/null >/dev/null 2>&1; then
   fail "restore-backup.sh should refuse to replace an existing target without confirmation or --force"
 fi
 
@@ -751,7 +753,8 @@ PATH="${tmp_dir}/fake-bin:${PATH}" "${repo_root}/scripts/test-email.sh" \
   --recipient recipient@example.com \
   --subject "repo test subject" \
   --body "repo test body" \
-  --yes > "${tmp_dir}/test-email-output.txt" 2>&1
+  --yes \
+  </dev/null > "${tmp_dir}/test-email-output.txt" 2>&1
 
 assert_contains "${tmp_dir}/fake-msmtp-log.txt" "ARGS:-C "
 assert_contains "${tmp_dir}/fake-msmtp-log.txt" " -a mailtest recipient@example.com"
@@ -768,7 +771,8 @@ PATH="${tmp_dir}/fake-bin:${PATH}" "${repo_root}/scripts/test-live-email.sh" \
   --recipient live@example.com \
   --subject "live subject" \
   --body "live body" \
-  --yes > "${tmp_dir}/test-live-email-output.txt" 2>&1
+  --yes \
+  </dev/null > "${tmp_dir}/test-live-email-output.txt" 2>&1
 
 assert_contains "${tmp_dir}/fake-msmtp-log.txt" "ARGS:-C ${tmp_dir}/live-test.msmtprc -a mailtest live@example.com"
 assert_contains "${tmp_dir}/fake-msmtp-log.txt" "Subject: live subject"
@@ -887,7 +891,8 @@ EOF
     TEST_RECIPIENT=verify@example.com \
     TEST_SUBJECT="make subject" \
     TEST_BODY="make body" \
-    test-email > "${tmp_dir}/make-test-email-output.txt" 2>&1
+    test-email \
+    </dev/null > "${tmp_dir}/make-test-email-output.txt" 2>&1
   assert_contains "${tmp_dir}/make-fake-msmtp-log.txt" " -a maketest verify@example.com"
   assert_contains "${tmp_dir}/make-fake-msmtp-log.txt" "Subject: make subject"
   assert_contains "${tmp_dir}/make-test-email-output.txt" "Test email sent."
@@ -899,7 +904,8 @@ EOF
     TEST_RECIPIENT=deploy@example.com \
     TEST_SUBJECT="make live subject" \
     TEST_BODY="make live body" \
-    test-live-email > "${tmp_dir}/make-test-live-email-output.txt" 2>&1
+    test-live-email \
+    </dev/null > "${tmp_dir}/make-test-live-email-output.txt" 2>&1
   assert_contains "${tmp_dir}/make-fake-msmtp-log.txt" "ARGS:-C ${tmp_dir}/make-live-test.msmtprc -a maketest deploy@example.com"
   assert_contains "${tmp_dir}/make-fake-msmtp-log.txt" "Subject: make live subject"
   assert_contains "${tmp_dir}/make-test-live-email-output.txt" "Live-config test email sent."
