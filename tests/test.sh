@@ -35,6 +35,26 @@ assert_line() {
   fi
 }
 
+assert_matches() {
+  local value="$1"
+  local pattern="$2"
+
+  if ! printf '%s\n' "$value" | grep -Eq "$pattern"; then
+    printf 'Expected value to match pattern:\n%s\n\nValue:\n%s\n' "$pattern" "$value" >&2
+    exit 1
+  fi
+}
+
+file_mode() {
+  local path="$1"
+
+  if stat -f '%OLp' "$path" >/dev/null 2>&1; then
+    stat -f '%OLp' "$path"
+  else
+    stat -c '%a' "$path"
+  fi
+}
+
 run_syntax_checks() {
   bash -n "${repo_root}/scripts/secrets-help.sh"
   bash -n "${repo_root}/scripts/secret-check.sh"
@@ -45,6 +65,9 @@ run_syntax_checks() {
   bash -n "${repo_root}/scripts/install.sh"
   bash -n "${repo_root}/scripts/install-helper.sh"
   bash -n "${repo_root}/scripts/restore-backup.sh"
+  bash -n "${repo_root}/scripts/restore-config-helper.sh"
+  bash -n "${repo_root}/scripts/restore-account-helper.sh"
+  bash -n "${repo_root}/scripts/restore-secret-helper.sh"
   bash -n "${repo_root}/scripts/restore-helper.sh"
   bash -n "${repo_root}/scripts/account-manager.sh"
   bash -n "${repo_root}/scripts/configure.sh"
@@ -69,6 +92,11 @@ run_syntax_checks
 canonical_repo_root="$(git -C "${repo_root}" rev-parse --show-toplevel)"
 common_repo_root="$(bash -lc '. "'"${repo_root}/scripts/lib/common.sh"'"; printf "%s\n" "$repo_root"')"
 [ "$common_repo_root" = "$canonical_repo_root" ] || fail "Expected common.sh repo_root to match git rev-parse --show-toplevel"
+
+mkdir -p "${tmp_dir}/fake-repo/passwords"
+chmod 755 "${tmp_dir}/fake-repo/passwords"
+bash -lc '. "'"${repo_root}/scripts/lib/common.sh"'"; repo_root="'"${tmp_dir}/fake-repo"'"; ensure_repo_local_passwords_dir_permissions_for_path "$repo_root/passwords/repo-local-test.password"'
+[ "$(file_mode "${tmp_dir}/fake-repo/passwords")" = "700" ] || fail "Expected repo-local passwords directory helper to enforce mode 700"
 
 mkdir -p "${tmp_dir}/bootstrap-accounts"
 "${repo_root}/scripts/quickstart.sh" \
@@ -454,6 +482,7 @@ rotated_password_contents="$(cat "${tmp_dir}/rotate-password-secret")"
 rotate_backup_path="$(sed -n 's/^Backed up existing secret to //p' "${tmp_dir}/rotate-password-output.txt" | head -n 1)"
 [ -n "$rotate_backup_path" ] || fail "Expected backup path in rotate-password output"
 [ -f "$rotate_backup_path" ] || fail "Expected rotate-password backup file"
+assert_matches "$rotate_backup_path" '\.bak\.[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}-[0-9]{2}-[0-9]{2}Z(\.[0-9]+)?$'
 assert_contains "$rotate_backup_path" "old-rotate-secret"
 assert_contains "${tmp_dir}/rotate-password-output.txt" "ok: rotator"
 
@@ -495,6 +524,7 @@ fi
 backup_path="$(sed -n 's/^Backed up existing target to //p' "${tmp_dir}/forced-install.txt" | head -n 1)"
 [ -n "$backup_path" ] || fail "Expected backup path in forced install output"
 [ -f "$backup_path" ] || fail "Expected forced install backup file"
+assert_matches "$backup_path" '\.bak\.[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}-[0-9]{2}-[0-9]{2}Z(\.[0-9]+)?$'
 assert_contains "$backup_path" "old-config"
 assert_contains "${tmp_dir}/existing-home/.msmtprc" "account personal"
 
@@ -533,10 +563,17 @@ assert_contains "${tmp_dir}/restore-home/.msmtprc" "restored-config"
 [ -f "${tmp_dir}/restore-home/.msmtprc.bak.saved" ] || fail "Expected chosen restore backup to remain in place"
 
 printf 'restore-helper-config\n' > "${tmp_dir}/restore-helper.bak"
-"${repo_root}/scripts/restore-helper.sh" \
+"${repo_root}/scripts/restore-config-helper.sh" \
   --backup "${tmp_dir}/restore-helper.bak" \
   --target "${tmp_dir}/restore-helper-home/.msmtprc" >/dev/null
 assert_contains "${tmp_dir}/restore-helper-home/.msmtprc" "restore-helper-config"
+
+printf 'restore-umbrella-config\n' > "${tmp_dir}/restore-umbrella.bak"
+"${repo_root}/scripts/restore-helper.sh" \
+  --type config \
+  --backup "${tmp_dir}/restore-umbrella.bak" \
+  --target "${tmp_dir}/restore-umbrella-home/.msmtprc" >/dev/null
+assert_contains "${tmp_dir}/restore-umbrella-home/.msmtprc" "restore-umbrella-config"
 
 mkdir -p "${tmp_dir}/restore-links"
 printf 'linked-config\n' > "${tmp_dir}/restore-links/generated.msmtprc"
@@ -570,7 +607,23 @@ assert_contains "${tmp_dir}/managed-accounts-list.txt" "personal.env (msmtp acco
   --force > "${tmp_dir}/managed-accounts-delete.txt"
 
 [ ! -f "${tmp_dir}/managed-accounts/work.env" ] || fail "Expected work.env to be moved away"
-[ -n "$(find "${tmp_dir}/managed-accounts" -maxdepth 1 -type f -name 'work.env.bak.*' -print -quit)" ] || fail "Expected deleted account backup"
+deleted_account_backup="$(find "${tmp_dir}/managed-accounts" -maxdepth 1 -type f -name 'work.env.bak.*' -print -quit)"
+[ -n "$deleted_account_backup" ] || fail "Expected deleted account backup"
+
+"${repo_root}/scripts/restore-account-helper.sh" \
+  --accounts-dir "${tmp_dir}/managed-accounts" \
+  --backup "$deleted_account_backup" >/dev/null
+
+[ -f "${tmp_dir}/managed-accounts/work.env" ] || fail "Expected restore-account-helper to restore work.env"
+assert_contains "${tmp_dir}/managed-accounts/work.env" "MSMTP_ACCOUNT_NAME=work"
+
+"${repo_root}/scripts/restore-secret-helper.sh" \
+  --env-file "${tmp_dir}/rotate-password-accounts/default.env" \
+  --backup "$rotate_backup_path" \
+  --force > "${tmp_dir}/restore-secret-output.txt"
+
+assert_contains "${tmp_dir}/rotate-password-secret" "old-rotate-secret"
+assert_contains "${tmp_dir}/restore-secret-output.txt" "ok: rotator"
 
 if command -v make >/dev/null 2>&1; then
   make -C "${repo_root}" \
@@ -598,7 +651,7 @@ if command -v make >/dev/null 2>&1; then
   make -C "${repo_root}" \
     USER_INSTALL_PATH="${tmp_dir}/make-restore-home/.msmtprc" \
     BACKUP="${tmp_dir}/make-restore-user.bak" \
-    restore-user >/dev/null
+    restore-user-config >/dev/null
   assert_contains "${tmp_dir}/make-restore-home/.msmtprc" "make-restored"
 
   mkdir -p "${tmp_dir}/make-password-accounts"
@@ -646,6 +699,14 @@ EOF
   make_rotate_backup_path="$(sed -n 's/^Backed up existing secret to //p' "${tmp_dir}/make-rotate-output.txt" | head -n 1)"
   [ -n "$make_rotate_backup_path" ] || fail "Expected backup path in make rotate-password output"
   assert_contains "$make_rotate_backup_path" "old-make-rotate"
+
+  make -C "${repo_root}" \
+    ACCOUNT_FILE="${tmp_dir}/make-rotate-accounts/default.env" \
+    BACKUP="${make_rotate_backup_path}" \
+    INSTALL_FORCE=yes \
+    restore-secret > "${tmp_dir}/make-restore-secret-output.txt"
+  assert_contains "${tmp_dir}/make-rotate-secret" "old-make-rotate"
+  assert_contains "${tmp_dir}/make-restore-secret-output.txt" "ok: makerotate"
 fi
 
 printf 'All tests passed.\n'

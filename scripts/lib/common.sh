@@ -125,6 +125,26 @@ password_file_system_path_for_account() {
   printf '/etc/msmtp/%s.password\n' "$account_name"
 }
 
+ensure_repo_local_passwords_dir_permissions_for_path() {
+  local raw_path="$1"
+  local normalized_path repo_passwords_dir destination_dir
+
+  normalized_path="$(normalize_managed_path "$raw_path")"
+  repo_passwords_dir="${repo_root}/passwords"
+
+  case "$normalized_path" in
+    "${repo_passwords_dir}"/*)
+      mkdir -p "$repo_passwords_dir"
+      chmod 700 "$repo_passwords_dir"
+      destination_dir="$(dirname "$normalized_path")"
+      if [ "$destination_dir" != "$repo_passwords_dir" ]; then
+        mkdir -p "$destination_dir"
+        chmod 700 "$destination_dir"
+      fi
+      ;;
+  esac
+}
+
 write_env_assignment() {
   local key="$1"
   local value="${2:-}"
@@ -339,7 +359,7 @@ backup_path_for() {
   local original_path="$1"
   local timestamp candidate_path suffix
 
-  timestamp="$(date -u '+%Y%m%dT%H%M%SZ')"
+  timestamp="$(date -u '+%Y-%m-%dT%H-%M-%SZ')"
   candidate_path="${original_path}.bak.${timestamp}"
   suffix=1
   while path_exists "$candidate_path"; do
@@ -348,6 +368,25 @@ backup_path_for() {
   done
 
   printf '%s\n' "$candidate_path"
+}
+
+backups_for_target() {
+  local target_path="$1"
+
+  find "$(dirname "$target_path")" -maxdepth 1 \( -type f -o -type l \) -name "$(basename "$target_path").bak.*" | sort -r
+}
+
+restore_target_path_from_backup_path() {
+  local backup_path="$1"
+
+  case "$backup_path" in
+    *.bak.*)
+      printf '%s\n' "${backup_path%.bak.*}"
+      ;;
+    *)
+      die "Backup path does not use the expected .bak.* suffix: $backup_path"
+      ;;
+  esac
 }
 
 temp_path_for_destination() {

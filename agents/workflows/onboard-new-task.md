@@ -7,7 +7,8 @@
 3. Inspect the directories or files relevant to the requested work.
 4. If the task touches account management, password setup, install, restore,
    onboarding, or verification flows, also review
-   [docs/getting-started.md](../../docs/getting-started.md) and
+   [docs/getting-started.md](../../docs/getting-started.md),
+   [docs/makefile.md](../../docs/makefile.md), and
    [docs/secrets.md](../../docs/secrets.md).
 5. If the task touches account layouts, persistent default-account behavior, or
    secret backends, also review

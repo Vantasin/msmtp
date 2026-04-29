@@ -8,7 +8,8 @@
 - Plaintext password files should default to user-state or system paths, not
   tracked repo paths. If a repo-local plaintext convenience path is offered, it
   must stay gitignored and be documented as a convenience tradeoff rather than
-  the preferred secure default.
+  the preferred secure default, and the repo-local password directory should be
+  hardened to `700` while the secret file itself stays `600`.
 - Scripts that replace live config or secret files should prefer atomic
   replacement and recoverable backups over destructive in-place mutation.
 - When interruption behavior can leave external state in question, document the

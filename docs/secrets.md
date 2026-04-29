@@ -16,6 +16,7 @@ Make variables or normal CLI arguments.
 ```bash
 make password
 make rotate-password
+make restore-secret
 make secrets-help
 make secret-check
 ```
@@ -94,6 +95,12 @@ Rotate an existing GPG-backed password in place:
 make rotate-password ACCOUNT_NAME=work GPG_RECIPIENT='your-key-id'
 ```
 
+Restore a backed-up GPG secret and validate it:
+
+```bash
+make restore-secret ACCOUNT_NAME=work
+```
+
 Notes:
 
 - if `GPG_RECIPIENT` is omitted, the helper uses symmetric encryption
@@ -141,6 +148,12 @@ Rotate an existing password-file secret in place:
 make rotate-password ACCOUNT_NAME=work
 ```
 
+Restore a backed-up password-file secret and validate it:
+
+```bash
+make restore-secret ACCOUNT_NAME=work
+```
+
 Notes:
 
 - the helper refuses to overwrite an existing file
@@ -149,6 +162,9 @@ Notes:
   under `$HOME/.local/state/msmtp/`
 - the repo-local [`../passwords/`](../passwords/) option is intentionally a
   convenience path, not the preferred secure default
+- when the repo-local [`../passwords/`](../passwords/) option is used, the
+  helpers enforce mode `700` on that directory automatically and mode `600` on
+  the password file
 - if you need a root-owned file, create it in a writable location first and
   move or `chown` it in a separate step
 - rotation backs up the existing file next to it before replacement

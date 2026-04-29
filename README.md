@@ -82,6 +82,7 @@ make password
 make rotate-password
 make secret-check
 make install
+make restore
 ```
 
 4. Send a test email. Replace `you@example.com` with the mailbox that should
@@ -174,8 +175,14 @@ password files stay out of Git.
 - [`scripts/install-helper.sh`](./scripts/install-helper.sh): guided install
   flow for choosing target and install mode
 - [`scripts/install.sh`](./scripts/install.sh): render and install the config
-- [`scripts/restore-helper.sh`](./scripts/restore-helper.sh): guided backup
-  restore flow
+- [`scripts/restore-helper.sh`](./scripts/restore-helper.sh): guided restore
+  umbrella for choosing backup type
+- [`scripts/restore-config-helper.sh`](./scripts/restore-config-helper.sh):
+  guided restore flow for live config targets
+- [`scripts/restore-account-helper.sh`](./scripts/restore-account-helper.sh):
+  guided restore flow for `accounts/*.env` backups
+- [`scripts/restore-secret-helper.sh`](./scripts/restore-secret-helper.sh):
+  guided restore flow for file-backed secret backups
 - [`scripts/restore-backup.sh`](./scripts/restore-backup.sh): restore a
   backed-up live config target
 - [`scripts/quickstart.sh`](./scripts/quickstart.sh): bootstrap one account
@@ -203,6 +210,8 @@ password files stay out of Git.
 
 - [`docs/getting-started.md`](./docs/getting-started.md): setup and usage
   walkthrough
+- [`docs/makefile.md`](./docs/makefile.md): explanation of the `make` command
+  surface and variables
 - [`docs/secrets.md`](./docs/secrets.md): secure secret-backend setup and
   validation
 - [`docs/manual-setup.md`](./docs/manual-setup.md): raw `msmtprc` fallback

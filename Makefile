@@ -30,7 +30,7 @@ MODE_ARG = $(if $(strip $(INSTALL_MODE)),--mode $(INSTALL_MODE),)
 TARGET_ARG = $(if $(strip $(INSTALL_PATH)),--target $(INSTALL_PATH),)
 ACCOUNT_SELECTION_ARG = $(if $(filter command environment,$(ACCOUNT_FILE_ORIGIN)),--env-file $(ACCOUNT_FILE),$(if $(filter command environment,$(ACCOUNT_NAME_ORIGIN)),--env-file $(ACCOUNT_FILE),--accounts-dir $(ACCOUNTS_DIR)))
 
-.PHONY: help account configure password rotate-password setup setup-example generate preview install install-user install-system restore restore-user restore-system link link-user check clean secrets-help secret-check keychain-add password-file-init gpg-file-init quickstart init-env render print-config update test
+.PHONY: help account configure password rotate-password setup setup-example generate preview install install-user install-system restore restore-config restore-user-config restore-system-config restore-account restore-secret link link-user check clean secrets-help secret-check keychain-add password-file-init gpg-file-init quickstart init-env render print-config update test
 
 help: ## Show the common repo commands
 	@printf "Common commands:\n"
@@ -86,14 +86,23 @@ install-user: ## Explicitly copy the rendered config into ~/.msmtprc
 install-system: ## Explicitly copy the rendered config into /etc/msmtprc
 	./scripts/install.sh --accounts-dir $(ACCOUNTS_DIR) $(DEFAULT_ACCOUNT_ARGS) --output $(SYSTEM_INSTALL_PATH) --target $(SYSTEM_INSTALL_PATH) --mode copy $(FORCE_ARG)
 
-restore: ## Guided restore flow for choosing a target and backup
-	./scripts/restore-helper.sh $(if $(strip $(BACKUP)),--backup $(BACKUP),) $(TARGET_ARG) $(FORCE_ARG)
+restore: ## Guided restore flow for choosing backup type and target
+	./scripts/restore-helper.sh --accounts-dir $(ACCOUNTS_DIR) $(if $(strip $(BACKUP)),--backup $(BACKUP),) $(TARGET_ARG) $(FORCE_ARG)
 
-restore-user: ## Restore ~/.msmtprc from BACKUP or choose one interactively
-	./scripts/restore-helper.sh $(if $(strip $(BACKUP)),--backup $(BACKUP),) --target $(USER_INSTALL_PATH) $(FORCE_ARG)
+restore-config: ## Restore a live msmtp config target from BACKUP or choose one interactively
+	./scripts/restore-config-helper.sh $(if $(strip $(BACKUP)),--backup $(BACKUP),) $(TARGET_ARG) $(FORCE_ARG)
 
-restore-system: ## Restore /etc/msmtprc from BACKUP or choose one interactively
-	./scripts/restore-helper.sh $(if $(strip $(BACKUP)),--backup $(BACKUP),) --target $(SYSTEM_INSTALL_PATH) $(FORCE_ARG)
+restore-user-config: ## Restore ~/.msmtprc from BACKUP or choose one interactively
+	./scripts/restore-config-helper.sh $(if $(strip $(BACKUP)),--backup $(BACKUP),) --target $(USER_INSTALL_PATH) $(FORCE_ARG)
+
+restore-system-config: ## Restore /etc/msmtprc from BACKUP or choose one interactively
+	./scripts/restore-config-helper.sh $(if $(strip $(BACKUP)),--backup $(BACKUP),) --target $(SYSTEM_INSTALL_PATH) $(FORCE_ARG)
+
+restore-account: ## Restore one accounts/*.env backup
+	./scripts/restore-account-helper.sh --accounts-dir $(ACCOUNTS_DIR) $(if $(filter command environment,$(ACCOUNT_NAME_ORIGIN)),--account $(ACCOUNT_NAME),) $(if $(strip $(BACKUP)),--backup $(BACKUP),) $(FORCE_ARG)
+
+restore-secret: ## Restore one password_file or gpg secret backup and validate it
+	./scripts/restore-secret-helper.sh $(ACCOUNT_SELECTION_ARG) $(if $(strip $(BACKUP)),--backup $(BACKUP),) $(FORCE_ARG)
 
 link: ## Explicitly symlink your active msmtp path to the repo-managed output file
 	./scripts/install.sh --accounts-dir $(ACCOUNTS_DIR) $(DEFAULT_ACCOUNT_ARGS) --output $(OUTPUT) --target $(if $(strip $(INSTALL_PATH)),$(INSTALL_PATH),$(USER_INSTALL_PATH)) --mode symlink $(FORCE_ARG)

@@ -127,6 +127,7 @@ write_password_file_secret() {
   local secret_value="$2"
 
   mkdir -p "$(dirname "$target_path")"
+  ensure_repo_local_passwords_dir_permissions_for_path "$target_path"
   tmp_secret_file="$(temp_path_for_destination "$target_path")"
   umask 077
   printf '%s' "$secret_value" > "$tmp_secret_file"

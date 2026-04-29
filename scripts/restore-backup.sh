@@ -11,7 +11,7 @@ Usage: scripts/restore-backup.sh --backup PATH
                                  [--target PATH]
                                  [--force]
 
-Restore a previously backed up msmtp target.
+Restore a previously backed up file or symlink target.
 
 Existing target files are backed up before replacement. Interactive runs ask
 for confirmation when a target already exists. Non-interactive runs require
@@ -65,7 +65,7 @@ backup_path_for() {
   local original_path="$1"
   local timestamp candidate_path suffix
 
-  timestamp="$(date -u '+%Y%m%dT%H%M%SZ')"
+  timestamp="$(date -u '+%Y-%m-%dT%H-%M-%SZ')"
   candidate_path="${original_path}.bak.${timestamp}"
   suffix=1
   while path_exists "$candidate_path"; do

@@ -126,6 +126,12 @@ Install the rendered config:
 make install
 ```
 
+Restore from backups through the guided umbrella:
+
+```bash
+make restore
+```
+
 ## Setup Model
 
 The primary workflow in this repository is:
@@ -294,24 +300,44 @@ make install INSTALL_PATH=$HOME/.config/msmtp/config INSTALL_MODE=copy INSTALL_F
 
 ## Restore From Backup
 
-List backups and choose one interactively:
+Start with the restore umbrella when you want the repo to ask what kind of
+backup you want to restore:
 
 ```bash
 make restore
 ```
 
-Use the explicit restore commands when you already know the backup path:
+Use the explicit config restore commands when you already know the backup path:
 
 ```bash
-make restore-user BACKUP="$HOME/.msmtprc.bak.20260427T153000Z"
+make restore-user-config BACKUP="$HOME/.msmtprc.bak.2026-04-27T15-30-00Z"
 ```
 
 ```bash
-sudo make restore-system BACKUP=/etc/msmtprc.bak.20260427T153000Z INSTALL_FORCE=yes
+sudo make restore-system-config BACKUP=/etc/msmtprc.bak.2026-04-27T15-30-00Z INSTALL_FORCE=yes
 ```
 
-Restore commands keep the chosen backup file in place. If the current target
-already exists, the restore flow backs it up before replacement.
+Restore one deleted account backup:
+
+```bash
+make restore-account ACCOUNT_NAME=work
+```
+
+Restore one file-backed secret backup and validate it afterward:
+
+```bash
+make restore-secret ACCOUNT_NAME=work
+```
+
+Config, account, and file-backed secret restore commands keep the chosen
+backup file in place. If the current target already exists, the restore flow
+backs it up before replacement.
+
+Backup names use UTC timestamps in a human-readable format such as
+`2026-04-27T15-30-00Z`.
+
+If you want a command-by-command reference for the whole `Makefile`, see
+[makefile.md](./makefile.md).
 
 ## Manual Fallback
 

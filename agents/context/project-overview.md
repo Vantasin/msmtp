@@ -15,5 +15,5 @@ account files under `accounts/`, a canonical `msmtprc` template, an optional
 interactive setup flow, executable render, account-only management, a separate
 guided human configure flow, password/install/restore helpers, safer install,
 backup-restore scripts, linear human quick-start docs, secret-helper scripts
-for supported backends, interruption-aware workflows, and smoke tests for the
-supported credential modes.
+for supported backends, a Makefile reference doc, interruption-aware
+workflows, and smoke tests for the supported credential modes.

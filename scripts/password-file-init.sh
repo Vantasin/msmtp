@@ -69,6 +69,7 @@ password_two="$(prompt_secret "Re-enter the SMTP password")"
 [ "$password_one" = "$password_two" ] || die "Passwords did not match"
 
 umask 077
+ensure_repo_local_passwords_dir_permissions_for_path "$password_file"
 atomic_write_raw_file "$password_file" 600 "$password_one"
 
 printf 'Created %s with mode 600\n' "$password_file"

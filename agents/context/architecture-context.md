@@ -14,7 +14,7 @@ Operational project assets live in focused directories:
   account-file examples
 - [`scripts/`](../../scripts/) for repeatable automation such as bootstrap,
   secret setup, interactive setup, account-only management, guided configure,
-  render, and install
+  render, install, and typed restore flows
 - [`tests/`](../../tests/) for shell-based verification logic
 
 The current implementation flow is:
@@ -33,6 +33,8 @@ The current implementation flow is:
    repository smoke tests when you want to verify the automation itself
 6. fall back to [manual docs](../../docs/manual-setup.md) when direct
    `msmtprc` setup is needed
+
+The `make` command surface is documented in [docs/makefile.md](../../docs/makefile.md).
 
 Implementation safety expectations now include:
 

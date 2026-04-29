@@ -15,8 +15,9 @@ Use this workflow after significant repository changes.
    [README.md](../../README.md) and
    [docs/getting-started.md](../../docs/getting-started.md) for linear,
    actionable quick-start drift. Keep the primary `make configure` plus live
-   test-email path clear, and describe `make check` as repo automation
-   verification rather than live SMTP verification when relevant.
+   test-email path clear, describe `make check` as repo automation
+   verification rather than live SMTP verification when relevant, and review
+   [docs/makefile.md](../../docs/makefile.md) when the command surface changes.
 6. If the change affects accounts or secret handling, explicitly review
    [accounts/README.md](../../accounts/README.md) and
    [docs/secrets.md](../../docs/secrets.md). If repo-local plaintext password

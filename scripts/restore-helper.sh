@@ -7,60 +7,57 @@ script_dir="$(cd "$(dirname "$0")" && pwd)"
 
 usage() {
   cat <<'EOF'
-Usage: scripts/restore-helper.sh [--backup PATH]
+Usage: scripts/restore-helper.sh [--type config|account|secret]
+                                 [--backup PATH]
                                  [--target PATH]
+                                 [--accounts-dir PATH]
+                                 [--env-file PATH]
+                                 [--account NAME]
                                  [--force]
 
-Interactive wrapper around scripts/restore-backup.sh. When run in a terminal
-without a backup path, it lists matching backups for the chosen target and
-prompts for a selection.
+Interactive restore umbrella. It can delegate to config, account, or file-
+backed secret restore flows.
 EOF
 }
 
+restore_type=""
 backup_path=""
 target_path=""
+accounts_dir="${repo_root}/accounts"
+env_file=""
+account_name_arg=""
 force_replace="false"
 
-choose_target_path() {
-  local choice custom_target
+choose_restore_type() {
+  local choice
 
-  choice="$(choose_from_menu "Choose the target you want to restore:" \
-    "User config (~/.msmtprc)" \
-    "System config (/etc/msmtprc)" \
-    "Custom path")"
+  choice="$(
+    choose_from_menu "Choose what you want to restore:" \
+      "Live config - restore ~/.msmtprc, /etc/msmtprc, or another live msmtp target" \
+      "Account file - restore one accounts/*.env backup" \
+      "File-backed secret - restore one password_file or gpg secret backup"
+  )"
 
   case "$choice" in
-    "User config (~/.msmtprc)")
-      target_path="${HOME}/.msmtprc"
+    "Live config - restore ~/.msmtprc, /etc/msmtprc, or another live msmtp target")
+      printf 'config\n'
       ;;
-    "System config (/etc/msmtprc)")
-      target_path="/etc/msmtprc"
+    "Account file - restore one accounts/*.env backup")
+      printf 'account\n'
       ;;
     *)
-      custom_target="$(prompt_required "Custom target path")"
-      target_path="$custom_target"
+      printf 'secret\n'
       ;;
   esac
 }
 
-choose_backup_for_target() {
-  local backups=()
-  local backup
-
-  while IFS= read -r backup; do
-    [ -n "$backup" ] || continue
-    backups+=("$backup")
-  done <<EOF
-$(find "$(dirname "$target_path")" -maxdepth 1 \( -type f -o -type l \) -name "$(basename "$target_path").bak.*" | sort -r)
-EOF
-
-  [ "${#backups[@]}" -gt 0 ] || die "No backups found for target: $target_path"
-
-  choose_from_menu "Choose a backup to restore into $target_path:" "${backups[@]}"
-}
-
 while [ $# -gt 0 ]; do
   case "$1" in
+    --type)
+      [ $# -ge 2 ] || die "--type requires a value"
+      restore_type="$2"
+      shift 2
+      ;;
     --backup)
       [ $# -ge 2 ] || die "--backup requires a value"
       backup_path="$2"
@@ -69,6 +66,21 @@ while [ $# -gt 0 ]; do
     --target)
       [ $# -ge 2 ] || die "--target requires a value"
       target_path="$2"
+      shift 2
+      ;;
+    --accounts-dir)
+      [ $# -ge 2 ] || die "--accounts-dir requires a value"
+      accounts_dir="$2"
+      shift 2
+      ;;
+    --env-file)
+      [ $# -ge 2 ] || die "--env-file requires a value"
+      env_file="$2"
+      shift 2
+      ;;
+    --account)
+      [ $# -ge 2 ] || die "--account requires a value"
+      account_name_arg="$2"
       shift 2
       ;;
     --force)
@@ -87,24 +99,63 @@ done
 
 install_interrupt_handler \
   "Cancelled. No restore changes were written." \
-  "Cancelled. Check the live config path and any adjacent .bak.* files."
+  "Cancelled. Check the affected target and any adjacent .bak.* files."
 
-if [ -z "$target_path" ]; then
+if [ -z "$restore_type" ]; then
   if [ -t 0 ]; then
-    choose_target_path
+    restore_type="$(choose_restore_type)"
   else
-    target_path="${HOME}/.msmtprc"
+    die "Non-interactive restore requires --type config|account|secret. Use the explicit typed restore command from the Makefile."
   fi
 fi
 
-if [ -z "$backup_path" ]; then
-  require_tty
-  backup_path="$(choose_backup_for_target)"
-fi
-
-restore_args=(--backup "$backup_path" --target "$target_path")
-if [ "$force_replace" = "true" ]; then
-  restore_args+=(--force)
-fi
-
-run_with_interrupt_passthrough "${repo_root}/scripts/restore-backup.sh" "${restore_args[@]}"
+case "$restore_type" in
+  config)
+    restore_args=()
+    if [ -n "$backup_path" ]; then
+      restore_args+=(--backup "$backup_path")
+    fi
+    if [ -n "$target_path" ]; then
+      restore_args+=(--target "$target_path")
+    fi
+    if [ "$force_replace" = "true" ]; then
+      restore_args+=(--force)
+    fi
+    run_with_interrupt_passthrough "${repo_root}/scripts/restore-config-helper.sh" "${restore_args[@]}"
+    ;;
+  account)
+    [ -z "$target_path" ] || die "--target is only supported for config restore"
+    [ -z "$env_file" ] || die "--env-file is only supported for secret restore"
+    restore_args=(--accounts-dir "$accounts_dir")
+    if [ -n "$account_name_arg" ]; then
+      restore_args+=(--account "$account_name_arg")
+    fi
+    if [ -n "$backup_path" ]; then
+      restore_args+=(--backup "$backup_path")
+    fi
+    if [ "$force_replace" = "true" ]; then
+      restore_args+=(--force)
+    fi
+    run_with_interrupt_passthrough "${repo_root}/scripts/restore-account-helper.sh" "${restore_args[@]}"
+    ;;
+  secret)
+    [ -z "$target_path" ] || die "--target is only supported for config restore"
+    [ -z "$account_name_arg" ] || die "--account is only supported for account restore"
+    restore_args=()
+    if [ -n "$env_file" ]; then
+      restore_args+=(--env-file "$env_file")
+    else
+      restore_args+=(--accounts-dir "$accounts_dir")
+    fi
+    if [ -n "$backup_path" ]; then
+      restore_args+=(--backup "$backup_path")
+    fi
+    if [ "$force_replace" = "true" ]; then
+      restore_args+=(--force)
+    fi
+    run_with_interrupt_passthrough "${repo_root}/scripts/restore-secret-helper.sh" "${restore_args[@]}"
+    ;;
+  *)
+    die "Unsupported restore type: $restore_type"
+    ;;
+esac

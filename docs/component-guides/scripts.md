@@ -33,10 +33,16 @@ Current files:
 - [`install.sh`](../../scripts/install.sh): render and install the generated
   config from an accounts directory, backing up existing live targets before
   replacement
-- [`restore-helper.sh`](../../scripts/restore-helper.sh): guided backup
-  selection and restore
+- [`restore-helper.sh`](../../scripts/restore-helper.sh): guided restore
+  umbrella for choosing config, account, or secret restore
+- [`restore-config-helper.sh`](../../scripts/restore-config-helper.sh): guided
+  config-backup selection and restore
+- [`restore-account-helper.sh`](../../scripts/restore-account-helper.sh):
+  guided account-backup selection and restore
+- [`restore-secret-helper.sh`](../../scripts/restore-secret-helper.sh): guided
+  file-backed secret restore with post-restore validation
 - [`restore-backup.sh`](../../scripts/restore-backup.sh): restore a chosen
-  backup into the live target path while protecting any current target first
+  backup into the target path while protecting any current target first
 - [`lib/common.sh`](../../scripts/lib/common.sh): shared helper functions
 
 The scripts assume `bash` and standard Unix utilities available on macOS and

@@ -7,6 +7,7 @@ Start here when you want explanations rather than canonical instruction files.
 Documents:
 
 - [getting-started.md](./getting-started.md): setup and day-one usage
+- [makefile.md](./makefile.md): what each `make` command is for
 - [secrets.md](./secrets.md): secret backend setup and validation
 - [manual-setup.md](./manual-setup.md): raw `msmtprc` fallback setup guide
 - [architecture.md](./architecture.md): how the repository is structured

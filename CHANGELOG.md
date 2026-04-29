@@ -22,6 +22,15 @@
   test-email path, moved `make check` into secondary repo-automation
   verification, and aligned the agent guidance with canonical repo-root path
   handling and current onboarding behavior
+- hardened the repo-local `passwords/` plaintext-secret option so password-file
+  init and rotation enforce mode `700` on the directory automatically while
+  keeping secret files at mode `600`
+- renamed the restore command surface around a new `make restore` umbrella,
+  added typed config/account/secret restore commands, documented the `Makefile`
+  command surface in `docs/makefile.md`, and tightened agent rules so quick-
+  start and command-reference docs stay in sync with workflow changes
+- changed generated backup filenames to use a more human-readable UTC timestamp
+  format such as `2026-04-27T15-30-00Z`
 
 ## 2026-04-27
 

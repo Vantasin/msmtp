@@ -30,11 +30,13 @@ Common commands:
   make account
   make password
   make rotate-password
+  make restore-secret
   make secret-check
   make keychain-add ACCOUNT_NAME=work
   make password-file-init ACCOUNT_NAME=work
   make gpg-file-init ACCOUNT_NAME=work GPG_RECIPIENT='<your key id>'
   make rotate-password ACCOUNT_NAME=work
+  make restore-secret ACCOUNT_NAME=work
 
 Accounts directory usage:
 

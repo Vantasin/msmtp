@@ -12,6 +12,8 @@ Present today:
   test email
 - canonical [`agents/`](../) guidance
 - human-readable [`docs/README.md`](../../docs/README.md)
+- a dedicated [docs/makefile.md](../../docs/makefile.md) reference for the
+  user-facing `make` command surface
 - canonical account-file guidance in [accounts/README.md](../../accounts/README.md)
 - secret-backend docs in [docs/secrets.md](../../docs/secrets.md)
 - manual fallback docs in [docs/manual-setup.md](../../docs/manual-setup.md)
@@ -37,6 +39,8 @@ Operational convention today:
 - The preferred human-facing commands are `make configure`, `make password`,
   `make install`, and `make restore`; `make account` remains the account-only
   CRUD entrypoint.
+- `make restore` is now the umbrella entrypoint; typed restore commands handle
+  config, account, and file-backed secret backups explicitly.
 - The quick-start path is `make configure` followed by a live test email;
   `make check` is secondary verification for the repo automation itself rather
   than the primary live SMTP validation step.
@@ -53,6 +57,9 @@ Operational convention today:
 - Repo-local file paths shown in prompts or written into account files resolve
   from the canonical repository root so macOS case-insensitive path spellings
   do not leak into Linux-facing configuration.
+- When the repo-local `passwords/` option is used for plaintext `password_file`
+  secrets, the helper scripts enforce mode `700` on that directory and mode
+  `600` on the password file.
 - Install, restore, and file-backed secret rotation preserve adjacent
   `.bak.*` recovery points and aim to leave either the old or new live file in
   place if interrupted.

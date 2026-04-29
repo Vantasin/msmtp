@@ -28,6 +28,9 @@ Do not silently merge contradictory instructions.
 - Prefer current repository reality over aspirational or stale documentation.
 - Do not claim files, commands, or workflows exist unless they are present.
 - Keep documentation readable to humans, not only agents.
+- Keep the quick-start guides in [README.md](../../README.md) and
+  [docs/getting-started.md](../../docs/getting-started.md) aligned with the
+  current human setup flow at all times.
 - Keep SMTP account definition in `accounts/*.env`, and keep deployment choices
   such as user vs system install targets in command-level configuration rather
   than tracked account files.

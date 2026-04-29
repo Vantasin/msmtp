@@ -32,9 +32,15 @@ Files:
 - [`install.sh`](./install.sh): render and install the generated config to a
   target path using copy or symlink mode, with backup-and-confirm protection
   for existing live targets
-- [`restore-helper.sh`](./restore-helper.sh): choose a target and backup from a
-  menu before restoring
+- [`restore-helper.sh`](./restore-helper.sh): guided restore umbrella for
+  choosing config, account, or file-backed secret restore
+- [`restore-config-helper.sh`](./restore-config-helper.sh): choose a live
+  config target and backup before restoring
+- [`restore-account-helper.sh`](./restore-account-helper.sh): choose an account
+  backup and restore it into `accounts/`
+- [`restore-secret-helper.sh`](./restore-secret-helper.sh): choose a
+  file-backed secret backup and validate it after restore
 - [`restore-backup.sh`](./restore-backup.sh): restore a previously backed up
-  live target while backing up the current target first when needed
+  file or symlink target while backing up the current target first when needed
 - [`lib/common.sh`](./lib/common.sh): shared helpers used by the executable
   scripts
