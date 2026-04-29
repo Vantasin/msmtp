@@ -41,8 +41,9 @@ sudo dnf install msmtp
 make configure
 ```
 
-This walks through account creation or editing, secret setup or rotation,
-validation, install, and an optional live test email.
+This walks through one or more account creation or editing passes, secret
+setup or rotation, validation, one install step for the full account set, and
+an optional live test email.
 
 Common choices:
 

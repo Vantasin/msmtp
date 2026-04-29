@@ -6,8 +6,9 @@ Use these commands by intent:
 
 ## Primary Guided Commands
 
-- `make configure`: end-to-end guided setup for account data, secret setup or
-  rotation, validation, install, and an optional live test email
+- `make configure`: end-to-end guided setup for one or more account files,
+  followed by secret setup or rotation, validation, a single install step,
+  and an optional live test email
 - `make account`: guided account-file CRUD only; it does not install the live
   config
 - `make restore`: guided restore umbrella that first asks what kind of backup

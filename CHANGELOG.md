@@ -35,6 +35,9 @@
 - updated `make configure` so existing file-backed secrets no longer eject the
   workflow immediately; it now offers guided rotate, validate, skip, or retry
   choices when a configured password or GPG file already exists
+- updated `make configure` so it can add or edit multiple accounts before one
+  final install step, and aligned the quick-start, command reference, and
+  agent drift guidance with that multi-account human workflow
 - hardened the repo-local `passwords/` plaintext-secret option so password-file
   init and rotation enforce mode `700` on the directory automatically while
   keeping secret files at mode `600`

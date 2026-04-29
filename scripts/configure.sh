@@ -83,6 +83,7 @@ EOF
 }
 
 choose_workflow_action() {
+  local account_processed="${1:-false}"
   local env_count=0
   local env_path action_label
 
@@ -93,19 +94,22 @@ choose_workflow_action() {
 $(list_account_env_files "$accounts_dir")
 EOF
 
-  printf 'Guided msmtp configuration\n' >&2
-  printf 'This flow can create or edit an account, set up or rotate its secret, validate it, and install the live config.\n' >&2
-  printf 'The install step applies the full account set in %s.\n\n' "$accounts_dir" >&2
-
   if [ "$env_count" -eq 0 ]; then
     action_label="$(choose_from_menu "No account files exist yet. Choose how to begin:" \
       "Add a new account - create a new accounts/<name>.env file and continue" \
       "Done")"
+  elif [ "$account_processed" = "true" ]; then
+    action_label="$(choose_from_menu "Choose the next account step, or continue to deploy the full account set:" \
+      "Add a new account - create a new accounts/<name>.env file and continue" \
+      "Edit an existing account - update one account file and continue" \
+      "Use an existing account - skip editing and continue with secret handling" \
+      "Proceed to install and verification - stop configuring accounts and continue" \
+      "Done - exit configure without install")"
   else
     action_label="$(choose_from_menu "Choose how to begin:" \
       "Add a new account - create a new accounts/<name>.env file and continue" \
       "Edit an existing account - update one account file and continue" \
-      "Use an existing account - skip editing and continue with secrets/install" \
+      "Use an existing account - skip editing and continue with secret handling" \
       "Done")"
   fi
 
@@ -116,8 +120,11 @@ EOF
     "Edit an existing account - update one account file and continue")
       printf 'edit\n'
       ;;
-    "Use an existing account - skip editing and continue with secrets/install")
+    "Use an existing account - skip editing and continue with secret handling")
       printf 'use\n'
+      ;;
+    "Proceed to install and verification - stop configuring accounts and continue")
+      printf 'deploy\n'
       ;;
     *)
       printf 'done\n'
@@ -238,6 +245,16 @@ prompt_live_test_email_decision() {
   prompt_yes_no "Send a live-config test email now" "yes"
 }
 
+print_exit_without_install_next_steps() {
+  local account_file_name="$1"
+
+  printf '\nExiting configure without install.\n' >&2
+  printf 'Next steps:\n' >&2
+  printf '  1. Run make install to deploy the current account set.\n' >&2
+  printf '  2. Run make test-email ACCOUNT_NAME=%s when you want per-account SMTP verification.\n' "$account_file_name" >&2
+  printf '  3. Run make configure again if you want to update more accounts before install.\n' >&2
+}
+
 while [ $# -gt 0 ]; do
   case "$1" in
     --accounts-dir)
@@ -281,76 +298,92 @@ install_interrupt_handler \
 require_tty
 mkdir -p "$accounts_dir"
 
-workflow_action="$(choose_workflow_action)"
-[ "$workflow_action" != "done" ] || exit 0
+printf 'Guided msmtp configuration\n' >&2
+printf 'This flow can create or edit multiple accounts, set up or rotate secrets, validate them, and then install the live config once.\n' >&2
+printf 'The install step applies the full account set in %s.\n\n' "$accounts_dir" >&2
 
 env_file=""
+account_processed="false"
 
-case "$workflow_action" in
-  create)
-    printf 'Examples for account file names: default, work, personal, server-alerts\n' >&2
-    account_file_name="$(prompt_required "Account file name" "default")"
-    validate_account_file_name "$account_file_name"
-    env_file="$(account_env_path_for_name "$account_file_name")"
-    [ ! -e "$env_file" ] || die "Account file already exists: $env_file"
-    run_with_interrupt_passthrough "${repo_root}/scripts/setup.sh" --env-file "$env_file"
-    mark_interrupt_dirty
-    ;;
-  edit)
-    env_file="$(choose_account_file)"
-    run_with_interrupt_passthrough "${repo_root}/scripts/setup.sh" --env-file "$env_file" --overwrite
-    mark_interrupt_dirty
-    ;;
-  use)
-    env_file="$(choose_account_file)"
-    ;;
-esac
-
-require_file "$env_file"
-load_env_file "$env_file"
-account_file_name="$(basename "$env_file" .env)"
-account_name="${MSMTP_ACCOUNT_NAME:-}"
-
-printf '\nSelected account file %s (msmtp account name: %s).\n' "$env_file" "$account_name" >&2
-
-secret_action_complete="false"
-while [ "$secret_action_complete" != "true" ]; do
-  secret_action="$(choose_secret_action)"
-  case "$secret_action" in
-    setup)
-      resolved_secret_action="$(resolve_setup_secret_action "$env_file")"
-      case "$resolved_secret_action" in
-        setup)
-          run_with_interrupt_passthrough "${repo_root}/scripts/password-helper.sh" --env-file "$env_file" --check
-          mark_interrupt_dirty
-          secret_action_complete="true"
-          ;;
-        rotate)
-          run_rotate_secret_action "$env_file"
-          secret_action_complete="true"
-          ;;
-        validate)
-          run_secret_validation_action "$env_file"
-          secret_action_complete="true"
-          ;;
-        skip)
-          secret_action_complete="true"
-          ;;
-        retry)
-          ;;
-      esac
-      ;;
-    rotate)
-      run_rotate_secret_action "$env_file"
-      secret_action_complete="true"
-      ;;
-    skip)
-      if [ "$(prompt_yes_no "Run secret validation now" "yes")" = "yes" ]; then
-        run_secret_validation_action "$env_file"
+while true; do
+  workflow_action="$(choose_workflow_action "$account_processed")"
+  case "$workflow_action" in
+    done)
+      if [ "$account_processed" = "true" ] && [ -n "$env_file" ]; then
+        print_exit_without_install_next_steps "$(basename "$env_file" .env)"
       fi
-      secret_action_complete="true"
+      exit 0
+      ;;
+    deploy)
+      break
+      ;;
+    create)
+      printf 'Examples for account file names: default, work, personal, server-alerts\n' >&2
+      account_file_name="$(prompt_required "Account file name" "default")"
+      validate_account_file_name "$account_file_name"
+      env_file="$(account_env_path_for_name "$account_file_name")"
+      [ ! -e "$env_file" ] || die "Account file already exists: $env_file"
+      run_with_interrupt_passthrough "${repo_root}/scripts/setup.sh" --env-file "$env_file"
+      mark_interrupt_dirty
+      ;;
+    edit)
+      env_file="$(choose_account_file)"
+      run_with_interrupt_passthrough "${repo_root}/scripts/setup.sh" --env-file "$env_file" --overwrite
+      mark_interrupt_dirty
+      ;;
+    use)
+      env_file="$(choose_account_file)"
       ;;
   esac
+
+  require_file "$env_file"
+  load_env_file "$env_file"
+  account_file_name="$(basename "$env_file" .env)"
+  account_name="${MSMTP_ACCOUNT_NAME:-}"
+
+  printf '\nSelected account file %s (msmtp account name: %s).\n' "$env_file" "$account_name" >&2
+
+  secret_action_complete="false"
+  while [ "$secret_action_complete" != "true" ]; do
+    secret_action="$(choose_secret_action)"
+    case "$secret_action" in
+      setup)
+        resolved_secret_action="$(resolve_setup_secret_action "$env_file")"
+        case "$resolved_secret_action" in
+          setup)
+            run_with_interrupt_passthrough "${repo_root}/scripts/password-helper.sh" --env-file "$env_file" --check
+            mark_interrupt_dirty
+            secret_action_complete="true"
+            ;;
+          rotate)
+            run_rotate_secret_action "$env_file"
+            secret_action_complete="true"
+            ;;
+          validate)
+            run_secret_validation_action "$env_file"
+            secret_action_complete="true"
+            ;;
+          skip)
+            secret_action_complete="true"
+            ;;
+          retry)
+            ;;
+        esac
+        ;;
+      rotate)
+        run_rotate_secret_action "$env_file"
+        secret_action_complete="true"
+        ;;
+      skip)
+        if [ "$(prompt_yes_no "Run secret validation now" "yes")" = "yes" ]; then
+          run_secret_validation_action "$env_file"
+        fi
+        secret_action_complete="true"
+        ;;
+    esac
+  done
+
+  account_processed="true"
 done
 
 install_performed="false"

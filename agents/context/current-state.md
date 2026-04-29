@@ -41,6 +41,9 @@ Operational convention today:
 - The preferred human-facing commands are `make configure`, `make password`,
   `make test-email`, `make test-live-email`, `make install`, and
   `make restore`; `make account` remains the account-only CRUD entrypoint.
+- Guided `make configure` can now add or edit multiple accounts before one
+  final install/verification step, so the common human workflow no longer
+  requires repeated configure runs just to prepare several accounts.
 - Guided `make configure` now treats pre-existing file-backed secrets as a
   recoverable decision point, offering rotate, validate, skip, or retry
   choices instead of exiting immediately on the first existing-secret conflict.
