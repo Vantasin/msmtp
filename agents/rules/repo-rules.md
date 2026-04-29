@@ -52,6 +52,9 @@ Do not silently merge contradictory instructions.
 - Keep interactive CLI prompts concise. Prefer one focused prompt or menu with
   recommendation text inline over separate guidance blocks that restate the
   same choices.
+- Keep the `Makefile` command surface explicit and documented. Do not add
+  compatibility aliases for renamed targets unless the user explicitly changes
+  the no-alias policy.
 - When showing or storing repo-local file paths, canonicalize them through the
   shared helpers so the saved path does not depend on shell-specific or
   case-insensitive filesystem spellings.

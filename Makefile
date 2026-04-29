@@ -34,7 +34,7 @@ MODE_ARG = $(if $(strip $(INSTALL_MODE)),--mode $(INSTALL_MODE),)
 TARGET_ARG = $(if $(strip $(INSTALL_PATH)),--target $(INSTALL_PATH),)
 ACCOUNT_SELECTION_ARG = $(if $(filter command environment,$(ACCOUNT_FILE_ORIGIN)),--env-file $(ACCOUNT_FILE),$(if $(filter command environment,$(ACCOUNT_NAME_ORIGIN)),--env-file $(ACCOUNT_FILE),--accounts-dir $(ACCOUNTS_DIR)))
 
-.PHONY: help account configure password rotate-password test-email test-live-email setup setup-example generate preview install install-user install-system restore restore-config restore-user-config restore-system-config restore-account restore-secret link link-user check clean secrets-help secret-check keychain-add password-file-init gpg-file-init quickstart init-env render print-config update test
+.PHONY: help account configure password rotate-password test-email test-live-email setup setup-example generate preview install install-user install-system restore restore-config restore-user-config restore-system-config restore-account restore-secret link link-user check clean secrets-help secret-check keychain-add password-file-init gpg-file-init
 
 help: ## Show the common repo commands
 	@printf "Common commands:\n"
@@ -144,17 +144,3 @@ gpg-file-init: ## Create a GPG-encrypted password file without plaintext args fo
 
 clean: ## Remove generated files from the repo root
 	rm -f $(OUTPUT)
-
-quickstart:
-	./scripts/quickstart.sh --example $(EXAMPLE) --env-file $(ACCOUNT_FILE)
-
-init-env:
-	./scripts/quickstart.sh --example default --env-file $(ACCOUNT_FILE)
-
-render: generate
-
-print-config: preview
-
-update: install
-
-test: check

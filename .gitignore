@@ -2,6 +2,7 @@
 .env.*
 !.env.example
 .msmtprc*
+.DS_Store
 accounts/*.env
 accounts/*.env.bak.*
 accounts/.default-account

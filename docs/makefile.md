@@ -140,6 +140,10 @@ sudo make restore-system-config BACKUP=/etc/msmtprc.bak.2026-04-27T15-30-00Z INS
 This command surface is intentional. The repo does not keep compatibility
 aliases for renamed make targets.
 
+Use the documented commands above directly. Old shorthand targets such as
+`quickstart`, `init-env`, `render`, `print-config`, `update`, and `test` are
+intentionally unsupported.
+
 Backup files use UTC timestamps in a human-readable format such as
 `2026-04-27T15-30-00Z`.
 

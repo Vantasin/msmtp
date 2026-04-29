@@ -45,6 +45,8 @@ Operational convention today:
 - The preferred human-facing commands are `make configure`, `make password`,
   `make test-email`, `make test-live-email`, `make install`, and
   `make restore`; `make account` remains the account-only CRUD entrypoint.
+- The Makefile command surface is intentionally explicit and does not keep
+  compatibility aliases for renamed commands.
 - A self-contained `scripts/bootstrap.sh` entrypoint now exists for optional
   clone-plus-install onboarding, and the quick-start docs now treat the public
   GitHub raw `curl` bootstrap as a supported entry point alongside the manual

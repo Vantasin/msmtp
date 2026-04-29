@@ -972,6 +972,14 @@ EOF
   assert_contains "${tmp_dir}/make-fake-msmtp-log.txt" "Subject: make live subject"
   assert_contains "${tmp_dir}/make-test-live-email-output.txt" "Live-config test email sent."
   pass_check "Makefile test-live-email sends using a live config path"
+
+  removed_make_aliases=(quickstart init-env render print-config update test)
+  for removed_target in "${removed_make_aliases[@]}"; do
+    if make -C "${repo_root}" "$removed_target" > "${tmp_dir}/make-removed-${removed_target}.txt" 2>&1; then
+      fail "Makefile compatibility alias should not exist: ${removed_target}"
+    fi
+  done
+  pass_check "Makefile compatibility aliases are absent from the command surface"
 fi
 
 printf 'All %d smoke checks passed.\n' "$checks_passed"

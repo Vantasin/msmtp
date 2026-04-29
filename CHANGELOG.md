@@ -6,6 +6,9 @@
   pass line describing what repo behavior was verified
 - aligned agent context/workflows and test documentation with the numbered
   smoke-test report behavior
+- removed leftover compatibility aliases from the Makefile command surface and
+  added smoke coverage to keep them from returning silently
+- added `.DS_Store` to the gitignore rules for macOS Finder metadata
 
 ## 2026-04-28
 
