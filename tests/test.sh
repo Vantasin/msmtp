@@ -108,7 +108,7 @@ bash -lc '. "'"${repo_root}/scripts/lib/common.sh"'"; repo_root="'"${tmp_dir}/fa
 mkdir -p "${tmp_dir}/bootstrap-accounts"
 "${repo_root}/scripts/quickstart.sh" \
   --example password-file \
-  --env-file "${tmp_dir}/bootstrap-accounts/default.env" >/dev/null
+  --env-file "${tmp_dir}/bootstrap-accounts/default.env" >/dev/null 2>&1
 assert_contains "${tmp_dir}/bootstrap-accounts/default.env" "MSMTP_SECRET_METHOD=password_file"
 assert_contains "${tmp_dir}/bootstrap-accounts/default.env" "MSMTP_ACCOUNT_NAME=primary"
 [ "$(cat "${tmp_dir}/bootstrap-accounts/.default-account")" = "primary" ] || fail "Expected quickstart to initialize the persistent default account"
@@ -568,7 +568,7 @@ EOF
 printf 'old-rotate-secret' > "${tmp_dir}/rotate-password-secret"
 printf 'new-rotate-secret\nnew-rotate-secret\n' | "${repo_root}/scripts/rotate-password.sh" \
   --accounts-dir "${tmp_dir}/rotate-password-accounts" \
-  --force > "${tmp_dir}/rotate-password-output.txt"
+  --force > "${tmp_dir}/rotate-password-output.txt" 2>&1
 
 rotated_password_contents="$(cat "${tmp_dir}/rotate-password-secret")"
 [ "$rotated_password_contents" = "new-rotate-secret" ] || fail "Unexpected rotated password contents"
@@ -687,13 +687,13 @@ cp "${tmp_dir}/multi-accounts/personal.env" "${tmp_dir}/managed-accounts/persona
 "${repo_root}/scripts/account-manager.sh" \
   --accounts-dir "${tmp_dir}/managed-accounts" \
   --action set-default \
-  --account personal >/dev/null
+  --account personal >/dev/null 2>&1
 
 [ "$(cat "${tmp_dir}/managed-accounts/.default-account")" = "personal" ] || fail "Expected account-manager set-default to write the persistent default account file"
 
 "${repo_root}/scripts/account-manager.sh" \
   --accounts-dir "${tmp_dir}/managed-accounts" \
-  --action list > "${tmp_dir}/managed-accounts-list.txt"
+  --action list > "${tmp_dir}/managed-accounts-list.txt" 2>&1
 
 assert_contains "${tmp_dir}/managed-accounts-list.txt" "personal.env (msmtp account: personal, persistent default)"
 
@@ -701,7 +701,7 @@ assert_contains "${tmp_dir}/managed-accounts-list.txt" "personal.env (msmtp acco
   --accounts-dir "${tmp_dir}/managed-accounts" \
   --action delete \
   --account work \
-  --force > "${tmp_dir}/managed-accounts-delete.txt"
+  --force > "${tmp_dir}/managed-accounts-delete.txt" 2>&1
 
 [ ! -f "${tmp_dir}/managed-accounts/work.env" ] || fail "Expected work.env to be moved away"
 deleted_account_backup="$(find "${tmp_dir}/managed-accounts" -maxdepth 1 -type f -name 'work.env.bak.*' -print -quit)"
@@ -709,7 +709,7 @@ deleted_account_backup="$(find "${tmp_dir}/managed-accounts" -maxdepth 1 -type f
 
 "${repo_root}/scripts/restore-account-helper.sh" \
   --accounts-dir "${tmp_dir}/managed-accounts" \
-  --backup "$deleted_account_backup" >/dev/null
+  --backup "$deleted_account_backup" >/dev/null 2>&1
 
 [ -f "${tmp_dir}/managed-accounts/work.env" ] || fail "Expected restore-account-helper to restore work.env"
 assert_contains "${tmp_dir}/managed-accounts/work.env" "MSMTP_ACCOUNT_NAME=work"
@@ -717,7 +717,7 @@ assert_contains "${tmp_dir}/managed-accounts/work.env" "MSMTP_ACCOUNT_NAME=work"
 "${repo_root}/scripts/restore-secret-helper.sh" \
   --env-file "${tmp_dir}/rotate-password-accounts/default.env" \
   --backup "$rotate_backup_path" \
-  --force > "${tmp_dir}/restore-secret-output.txt"
+  --force > "${tmp_dir}/restore-secret-output.txt" 2>&1
 
 assert_contains "${tmp_dir}/rotate-password-secret" "old-rotate-secret"
 assert_contains "${tmp_dir}/restore-secret-output.txt" "ok: rotator"
@@ -821,7 +821,7 @@ EOF
 
   printf 'make-password\nmake-password\n' | make -C "${repo_root}" \
     ACCOUNTS_DIR="${tmp_dir}/make-password-accounts" \
-    password >/dev/null
+    password >/dev/null 2>&1
   assert_contains "${tmp_dir}/make-password-secret" "make-password"
   rm -f "${tmp_dir}/make-password-secret"
 
@@ -844,7 +844,7 @@ EOF
   printf 'make-rotated\nmake-rotated\n' | make -C "${repo_root}" \
     ACCOUNTS_DIR="${tmp_dir}/make-rotate-accounts" \
     ROTATE_FORCE=yes \
-    rotate-password > "${tmp_dir}/make-rotate-output.txt"
+    rotate-password > "${tmp_dir}/make-rotate-output.txt" 2>&1
   assert_contains "${tmp_dir}/make-rotate-secret" "make-rotated"
   make_rotate_backup_path="$(sed -n 's/^Backed up existing secret to //p' "${tmp_dir}/make-rotate-output.txt" | head -n 1)"
   [ -n "$make_rotate_backup_path" ] || fail "Expected backup path in make rotate-password output"
@@ -854,7 +854,7 @@ EOF
     ACCOUNT_FILE="${tmp_dir}/make-rotate-accounts/default.env" \
     BACKUP="${make_rotate_backup_path}" \
     INSTALL_FORCE=yes \
-    restore-secret > "${tmp_dir}/make-restore-secret-output.txt"
+    restore-secret > "${tmp_dir}/make-restore-secret-output.txt" 2>&1
   assert_contains "${tmp_dir}/make-rotate-secret" "old-make-rotate"
   assert_contains "${tmp_dir}/make-restore-secret-output.txt" "ok: makerotate"
 
