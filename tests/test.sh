@@ -13,6 +13,13 @@ fail() {
   exit 1
 }
 
+checks_passed=0
+
+pass_check() {
+  checks_passed=$((checks_passed + 1))
+  printf 'ok %02d - %s\n' "$checks_passed" "$*"
+}
+
 assert_contains() {
   local file_path="$1"
   local expected="$2"
@@ -90,20 +97,27 @@ cleanup() {
 
 trap cleanup EXIT
 
+printf 'Running msmtp repo smoke tests...\n'
+
 run_syntax_checks
+pass_check "all shell scripts parse successfully"
 
 canonical_repo_root="$(git -C "${repo_root}" rev-parse --show-toplevel)"
 common_repo_root="$(bash -lc '. "'"${repo_root}/scripts/lib/common.sh"'"; printf "%s\n" "$repo_root"')"
 [ "$common_repo_root" = "$canonical_repo_root" ] || fail "Expected common.sh repo_root to match git rev-parse --show-toplevel"
+pass_check "shared helpers resolve the canonical repository root"
+
 friendly_backup_timestamp="$(TZ=America/Toronto bash -lc '. "'"${repo_root}/scripts/lib/common.sh"'"; human_readable_backup_timestamp_from_path "/tmp/.msmtprc.bak.2026-04-27T15-30-00Z"')"
 [ "$friendly_backup_timestamp" = "Apr 27, 2026 11:30 EDT" ] || fail "Expected human-readable backup timestamp formatter to prefer the local timezone"
 friendly_backup_timestamp_fallback="$(bash -lc '. "'"${repo_root}/scripts/lib/common.sh"'"; date() { return 1; }; human_readable_backup_timestamp_from_path "/tmp/.msmtprc.bak.2026-04-27T15-30-00Z"')"
 [ "$friendly_backup_timestamp_fallback" = "Apr 27, 2026 15:30 UTC" ] || fail "Expected human-readable backup timestamp formatter to fall back to UTC when local conversion is unavailable"
+pass_check "backup timestamps display in local time and fall back to UTC"
 
 mkdir -p "${tmp_dir}/fake-repo/passwords"
 chmod 755 "${tmp_dir}/fake-repo/passwords"
 bash -lc '. "'"${repo_root}/scripts/lib/common.sh"'"; repo_root="'"${tmp_dir}/fake-repo"'"; ensure_repo_local_passwords_dir_permissions_for_path "$repo_root/passwords/repo-local-test.password"'
 [ "$(file_mode "${tmp_dir}/fake-repo/passwords")" = "700" ] || fail "Expected repo-local passwords directory helper to enforce mode 700"
+pass_check "repo-local password storage enforces private directory permissions"
 
 mkdir -p "${tmp_dir}/bootstrap-accounts"
 "${repo_root}/scripts/quickstart.sh" \
@@ -112,12 +126,14 @@ mkdir -p "${tmp_dir}/bootstrap-accounts"
 assert_contains "${tmp_dir}/bootstrap-accounts/default.env" "MSMTP_SECRET_METHOD=password_file"
 assert_contains "${tmp_dir}/bootstrap-accounts/default.env" "MSMTP_ACCOUNT_NAME=primary"
 [ "$(cat "${tmp_dir}/bootstrap-accounts/.default-account")" = "primary" ] || fail "Expected quickstart to initialize the persistent default account"
+pass_check "quickstart creates a password-file account example with a persistent default"
 
 if "${repo_root}/scripts/quickstart.sh" \
   --example default \
   --env-file "${tmp_dir}/bootstrap-accounts/default.env" >/dev/null 2>&1; then
   fail "quickstart.sh should refuse to overwrite an existing account file"
 fi
+pass_check "quickstart refuses to overwrite an existing account file"
 
 mkdir -p "${tmp_dir}/bootstrap-bin"
 cat > "${tmp_dir}/bootstrap-bin/sudo" <<'EOF'
@@ -149,6 +165,7 @@ MSMTP_BOOTSTRAP_REPO_NAME="bootstrap-clone" \
 [ -d "${tmp_dir}/bootstrap-home/Git/bootstrap-clone/.git" ] || fail "Expected bootstrap.sh to clone the repository into the requested destination"
 assert_contains "${tmp_dir}/bootstrap-install.log" "update"
 assert_contains "${tmp_dir}/bootstrap-install.log" "install -y git make msmtp"
+pass_check "Linux bootstrap clones the repo and installs required packages"
 
 if PATH="/usr/bin:/bin" \
   MSMTP_BOOTSTRAP_OS=Darwin \
@@ -156,10 +173,12 @@ if PATH="/usr/bin:/bin" \
   fail "bootstrap.sh should require Homebrew on macOS"
 fi
 assert_contains "${tmp_dir}/bootstrap-macos-error.log" "Homebrew is required on macOS"
+pass_check "macOS bootstrap exits clearly when Homebrew is unavailable"
 
 "${repo_root}/scripts/secrets-help.sh" > "${tmp_dir}/secrets-help.txt"
 assert_contains "${tmp_dir}/secrets-help.txt" "make password"
 assert_contains "${tmp_dir}/secrets-help.txt" "ACCOUNT_NAME=work"
+pass_check "secret help documents the supported secret commands"
 
 mkdir -p "${tmp_dir}/guided-accounts"
 printf '%s\n' \
@@ -183,6 +202,7 @@ assert_contains "${tmp_dir}/guided-accounts/guided.env" "MSMTP_SECRET_METHOD='co
 assert_contains "${tmp_dir}/guided-accounts/guided.env" "MSMTP_LOGFILE='~/.msmtp.log'"
 [ "$(cat "${tmp_dir}/guided-accounts/.default-account")" = "guided" ] || fail "Expected setup.sh to initialize the persistent default account"
 [ ! -e "${tmp_dir}/guided-home/.msmtprc" ] || fail "setup.sh should not install a live config"
+pass_check "account setup creates command-backed accounts without installing live config"
 
 printf '%s\n' \
   "repofile" \
@@ -203,6 +223,7 @@ printf '%s\n' \
 
 assert_contains "${tmp_dir}/guided-accounts/repofile.env" "MSMTP_SECRET_METHOD='password_file'"
 assert_contains "${tmp_dir}/guided-accounts/repofile.env" "MSMTP_PASSWORD_FILE='${repo_root}/passwords/repofile.password'"
+pass_check "account setup offers repo-local gitignored password-file paths"
 
 printf '%s\n' \
   "gpgback" \
@@ -226,6 +247,7 @@ printf '%s\n' \
 assert_contains "${tmp_dir}/guided-accounts/gpgback.env" "MSMTP_SECRET_METHOD='command'"
 assert_contains "${tmp_dir}/guided-accounts/gpgback.env" "MSMTP_GPG_FILE=''"
 assert_contains "${tmp_dir}/guided-accounts/gpgback.env" "MSMTP_PASSWORDEVAL_COMMAND='pass show mail/gpgback'"
+pass_check "account setup can return from GPG path selection to another secret method"
 
 printf '%s\n' \
   "" \
@@ -248,6 +270,7 @@ printf '%s\n' \
 assert_contains "${tmp_dir}/guided-accounts/guided.env" "MSMTP_HOST='smtp.edited.example'"
 assert_contains "${tmp_dir}/guided-accounts/guided.env" "MSMTP_LOGFILE=''"
 [ "$(cat "${tmp_dir}/guided-accounts/.default-account")" = "guided" ] || fail "Expected setup.sh edit to preserve the persistent default account"
+pass_check "account setup edits existing files and clears optional values safely"
 
 mkdir -p "${tmp_dir}/single-account"
 cat > "${tmp_dir}/single-account/default.env" <<'EOF'
@@ -274,6 +297,7 @@ printf 'work\n' > "${tmp_dir}/single-account/.default-account"
 assert_contains "${tmp_dir}/single.msmtprc" "account work"
 assert_contains "${tmp_dir}/single.msmtprc" "passwordeval security find-generic-password -w -s 'smtp.example.com' -a 'alice@example.com'"
 assert_contains "${tmp_dir}/single.msmtprc" "account default : work"
+pass_check "renderer creates a single Keychain-backed account with default mapping"
 
 mkdir -p "${tmp_dir}/multi-accounts"
 cat > "${tmp_dir}/multi-accounts/work.env" <<'EOF'
@@ -321,6 +345,7 @@ assert_line "${tmp_dir}/multi.msmtprc" "logfile /tmp/msmtp-personal.log"
 assert_line "${tmp_dir}/multi.msmtprc" "tls_trust_file /etc/ssl/certs/ca-certificates.crt"
 assert_line "${tmp_dir}/multi.msmtprc" "tls_fingerprint AA:BB:CC:DD"
 assert_line "${tmp_dir}/multi.msmtprc" "host smtp.personal.example"
+pass_check "renderer supports multiple accounts and advanced msmtp options"
 
 mkdir -p "${tmp_dir}/persistent-defaults"
 cat > "${tmp_dir}/persistent-defaults/default.env" <<'EOF'
@@ -358,6 +383,7 @@ printf 'test\n' > "${tmp_dir}/persistent-defaults/.default-account"
   --output "${tmp_dir}/persistent-defaults.msmtprc" >/dev/null
 
 assert_line "${tmp_dir}/persistent-defaults.msmtprc" "account default : test"
+pass_check "renderer uses accounts/.default-account for persistent default selection"
 
 if "${repo_root}/scripts/render-config.sh" \
   --accounts-dir "${tmp_dir}/persistent-defaults" \
@@ -368,6 +394,7 @@ if "${repo_root}/scripts/render-config.sh" \
 fi
 
 assert_contains "${tmp_dir}/persistent-defaults.stderr" "Default account 'missing' was not found"
+pass_check "renderer rejects an explicit missing default account"
 
 printf 'missing\n' > "${tmp_dir}/persistent-defaults/.default-account"
 if "${repo_root}/scripts/render-config.sh" \
@@ -379,6 +406,7 @@ fi
 
 assert_contains "${tmp_dir}/persistent-defaults-stale.stderr" ".default-account"
 assert_contains "${tmp_dir}/persistent-defaults-stale.stderr" "was not found"
+pass_check "renderer rejects stale persistent default account files"
 
 mkdir -p "${tmp_dir}/duplicate-account-names"
 cat > "${tmp_dir}/duplicate-account-names/work.env" <<'EOF'
@@ -417,6 +445,7 @@ if "${repo_root}/scripts/render-config.sh" \
 fi
 
 assert_contains "${tmp_dir}/duplicate-account-names.stderr" "Duplicate MSMTP_ACCOUNT_NAME 'shared'"
+pass_check "renderer rejects duplicate msmtp account names"
 
 mkdir -p "${tmp_dir}/reserved-account-name"
 cat > "${tmp_dir}/reserved-account-name/default.env" <<'EOF'
@@ -441,6 +470,7 @@ if "${repo_root}/scripts/render-config.sh" \
 fi
 
 assert_contains "${tmp_dir}/reserved-account-name.stderr" "MSMTP_ACCOUNT_NAME 'default' is reserved by msmtp"
+pass_check "renderer rejects the reserved msmtp account name default"
 
 cat > "${tmp_dir}/multi-accounts/password.env" <<EOF
 MSMTP_ACCOUNT_NAME=passwordfile
@@ -461,6 +491,7 @@ printf 'mail-secret\nmail-secret\n' | "${repo_root}/scripts/password-file-init.s
 
 password_file_contents="$(cat "${tmp_dir}/password-store/secret.txt")"
 [ "$password_file_contents" = "mail-secret" ] || fail "Unexpected password-file contents"
+pass_check "password-file helper creates a local secret file from secure prompts"
 
 mkdir -p "${tmp_dir}/tilde-home"
 cat > "${tmp_dir}/multi-accounts/password-tilde.env" <<'EOF'
@@ -482,6 +513,7 @@ printf 'tilde-secret\ntilde-secret\n' | HOME="${tmp_dir}/tilde-home" "${repo_roo
 
 [ -f "${tmp_dir}/tilde-home/.local/state/msmtp/tilde-secret.txt" ] || fail "Expected ~ in password file path to expand into HOME"
 [ ! -e "${repo_root}/~/.local/state/msmtp/tilde-secret.txt" ] || fail "Expected password-file init to avoid literal ~ paths under the repo"
+pass_check "password-file helper expands leading tilde paths correctly"
 
 HOME="${tmp_dir}/tilde-home" "${repo_root}/scripts/render-config.sh" \
   --accounts-dir "${tmp_dir}/multi-accounts" \
@@ -489,6 +521,7 @@ HOME="${tmp_dir}/tilde-home" "${repo_root}/scripts/render-config.sh" \
   --output "${tmp_dir}/password-tilde.msmtprc" >/dev/null
 
 assert_contains "${tmp_dir}/password-tilde.msmtprc" "passwordeval cat '${tmp_dir}/tilde-home/.local/state/msmtp/tilde-secret.txt'"
+pass_check "renderer normalizes tilde password paths in passwordeval commands"
 
 mkdir -p "${tmp_dir}/secret-check-accounts"
 cat > "${tmp_dir}/secret-check-accounts/work.env" <<'EOF'
@@ -522,11 +555,13 @@ EOF
 "${repo_root}/scripts/secret-check.sh" \
   --env-file "${tmp_dir}/secret-check-accounts/work.env" > "${tmp_dir}/secret-check-single.txt"
 assert_contains "${tmp_dir}/secret-check-single.txt" "ok: work"
+pass_check "secret-check validates a selected account"
 
 "${repo_root}/scripts/secret-check.sh" \
   --accounts-dir "${tmp_dir}/secret-check-accounts" > "${tmp_dir}/secret-check-accounts.txt"
 assert_contains "${tmp_dir}/secret-check-accounts.txt" "ok: work"
 assert_contains "${tmp_dir}/secret-check-accounts.txt" "ok: personal"
+pass_check "secret-check validates every account in an accounts directory"
 
 mkdir -p "${tmp_dir}/password-helper-accounts"
 cat > "${tmp_dir}/password-helper-accounts/helper.env" <<EOF
@@ -549,6 +584,7 @@ printf 'helper-secret\nhelper-secret\n' | "${repo_root}/scripts/password-helper.
 password_helper_contents="$(cat "${tmp_dir}/password-helper-secret")"
 [ "$password_helper_contents" = "helper-secret" ] || fail "Unexpected password-helper output"
 rm -f "${tmp_dir}/password-helper-secret"
+pass_check "password helper chooses the configured backend for an account"
 
 mkdir -p "${tmp_dir}/rotate-password-accounts"
 cat > "${tmp_dir}/rotate-password-accounts/default.env" <<EOF
@@ -578,6 +614,7 @@ rotate_backup_path="$(sed -n 's/^Backed up existing secret to //p' "${tmp_dir}/r
 assert_matches "$rotate_backup_path" '\.bak\.[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}-[0-9]{2}-[0-9]{2}Z(\.[0-9]+)?$'
 assert_contains "$rotate_backup_path" "old-rotate-secret"
 assert_contains "${tmp_dir}/rotate-password-output.txt" "ok: rotator"
+pass_check "password rotation backs up the old secret and validates the new one"
 
 "${repo_root}/scripts/install.sh" \
   --accounts-dir "${tmp_dir}/multi-accounts" \
@@ -587,6 +624,7 @@ assert_contains "${tmp_dir}/rotate-password-output.txt" "ok: rotator"
 
 assert_contains "${tmp_dir}/installed.msmtprc" "account personal"
 assert_contains "${tmp_dir}/home/.msmtprc" "account work"
+pass_check "install copies the rendered full account set to a live target"
 
 "${repo_root}/scripts/install-helper.sh" \
   --accounts-dir "${tmp_dir}/multi-accounts" \
@@ -600,6 +638,7 @@ assert_contains "${tmp_dir}/helper-home/.msmtprc" "account personal"
 assert_contains "${tmp_dir}/helper-install-result.env" "INSTALL_TARGET_PATH='${tmp_dir}/helper-home/.msmtprc'"
 assert_contains "${tmp_dir}/helper-install-result.env" "INSTALL_MODE='copy'"
 assert_contains "${tmp_dir}/helper-install-result.env" "INSTALL_DEFAULT_ACCOUNT='personal'"
+pass_check "guided install helper records its selected target, mode, and default"
 
 mkdir -p "${tmp_dir}/existing-home"
 printf 'old-config\n' > "${tmp_dir}/existing-home/.msmtprc"
@@ -611,6 +650,7 @@ if "${repo_root}/scripts/install.sh" \
   </dev/null >/dev/null 2>&1; then
   fail "install.sh should refuse to replace an existing target without confirmation or --force"
 fi
+pass_check "install refuses to replace existing live config non-interactively without force"
 
 "${repo_root}/scripts/install.sh" \
   --accounts-dir "${tmp_dir}/multi-accounts" \
@@ -625,6 +665,7 @@ backup_path="$(sed -n 's/^Backed up existing target to //p' "${tmp_dir}/forced-i
 assert_matches "$backup_path" '\.bak\.[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}-[0-9]{2}-[0-9]{2}Z(\.[0-9]+)?$'
 assert_contains "$backup_path" "old-config"
 assert_contains "${tmp_dir}/existing-home/.msmtprc" "account personal"
+pass_check "forced install backs up and replaces an existing live config"
 
 "${repo_root}/scripts/install.sh" \
   --accounts-dir "${tmp_dir}/multi-accounts" \
@@ -638,6 +679,7 @@ link_target="$(readlink "${tmp_dir}/home-link/.msmtprc")"
 expected_link_target="$(cd "${tmp_dir}/central" && pwd -P)/generated.msmtprc"
 [ "$link_target" = "$expected_link_target" ] || fail "Unexpected symlink target: $link_target"
 assert_contains "${tmp_dir}/central/generated.msmtprc" "account work"
+pass_check "symlink install points the live config back to the repo-generated file"
 
 mkdir -p "${tmp_dir}/restore-home"
 printf 'current-config\n' > "${tmp_dir}/restore-home/.msmtprc"
@@ -648,6 +690,7 @@ if "${repo_root}/scripts/restore-backup.sh" \
   </dev/null >/dev/null 2>&1; then
   fail "restore-backup.sh should refuse to replace an existing target without confirmation or --force"
 fi
+pass_check "restore refuses to replace an existing target non-interactively without force"
 
 "${repo_root}/scripts/restore-backup.sh" \
   --backup "${tmp_dir}/restore-home/.msmtprc.bak.saved" \
@@ -660,12 +703,14 @@ restore_backup_path="$(sed -n 's/^Backed up existing target to //p' "${tmp_dir}/
 assert_contains "$restore_backup_path" "current-config"
 assert_contains "${tmp_dir}/restore-home/.msmtprc" "restored-config"
 [ -f "${tmp_dir}/restore-home/.msmtprc.bak.saved" ] || fail "Expected chosen restore backup to remain in place"
+pass_check "forced restore backs up current config and restores the selected backup"
 
 printf 'restore-helper-config\n' > "${tmp_dir}/restore-helper.bak"
 "${repo_root}/scripts/restore-config-helper.sh" \
   --backup "${tmp_dir}/restore-helper.bak" \
   --target "${tmp_dir}/restore-helper-home/.msmtprc" >/dev/null
 assert_contains "${tmp_dir}/restore-helper-home/.msmtprc" "restore-helper-config"
+pass_check "config restore helper restores a selected live config backup"
 
 printf 'restore-umbrella-config\n' > "${tmp_dir}/restore-umbrella.bak"
 "${repo_root}/scripts/restore-helper.sh" \
@@ -673,6 +718,7 @@ printf 'restore-umbrella-config\n' > "${tmp_dir}/restore-umbrella.bak"
   --backup "${tmp_dir}/restore-umbrella.bak" \
   --target "${tmp_dir}/restore-umbrella-home/.msmtprc" >/dev/null
 assert_contains "${tmp_dir}/restore-umbrella-home/.msmtprc" "restore-umbrella-config"
+pass_check "umbrella restore command dispatches to config restore"
 
 mkdir -p "${tmp_dir}/restore-links"
 printf 'linked-config\n' > "${tmp_dir}/restore-links/generated.msmtprc"
@@ -681,6 +727,7 @@ ln -s "${tmp_dir}/restore-links/generated.msmtprc" "${tmp_dir}/restore-links/sym
   --backup "${tmp_dir}/restore-links/symlink-backup" \
   --target "${tmp_dir}/restore-links/.msmtprc" >/dev/null
 [ -L "${tmp_dir}/restore-links/.msmtprc" ] || fail "Expected symlink restore target"
+pass_check "restore preserves symlink backups when restoring live config"
 
 mkdir -p "${tmp_dir}/managed-accounts"
 cp "${tmp_dir}/multi-accounts/work.env" "${tmp_dir}/managed-accounts/work.env"
@@ -692,12 +739,14 @@ cp "${tmp_dir}/multi-accounts/personal.env" "${tmp_dir}/managed-accounts/persona
   --account personal >/dev/null 2>&1
 
 [ "$(cat "${tmp_dir}/managed-accounts/.default-account")" = "personal" ] || fail "Expected account-manager set-default to write the persistent default account file"
+pass_check "account manager writes the persistent default account selection"
 
 "${repo_root}/scripts/account-manager.sh" \
   --accounts-dir "${tmp_dir}/managed-accounts" \
   --action list > "${tmp_dir}/managed-accounts-list.txt" 2>&1
 
 assert_contains "${tmp_dir}/managed-accounts-list.txt" "personal.env (msmtp account: personal, persistent default)"
+pass_check "account manager lists account files with default status"
 
 "${repo_root}/scripts/account-manager.sh" \
   --accounts-dir "${tmp_dir}/managed-accounts" \
@@ -708,6 +757,7 @@ assert_contains "${tmp_dir}/managed-accounts-list.txt" "personal.env (msmtp acco
 [ ! -f "${tmp_dir}/managed-accounts/work.env" ] || fail "Expected work.env to be moved away"
 deleted_account_backup="$(find "${tmp_dir}/managed-accounts" -maxdepth 1 -type f -name 'work.env.bak.*' -print -quit)"
 [ -n "$deleted_account_backup" ] || fail "Expected deleted account backup"
+pass_check "account manager deletes accounts by moving them to backups"
 
 "${repo_root}/scripts/restore-account-helper.sh" \
   --accounts-dir "${tmp_dir}/managed-accounts" \
@@ -715,6 +765,7 @@ deleted_account_backup="$(find "${tmp_dir}/managed-accounts" -maxdepth 1 -type f
 
 [ -f "${tmp_dir}/managed-accounts/work.env" ] || fail "Expected restore-account-helper to restore work.env"
 assert_contains "${tmp_dir}/managed-accounts/work.env" "MSMTP_ACCOUNT_NAME=work"
+pass_check "account restore helper restores a backed-up account file"
 
 "${repo_root}/scripts/restore-secret-helper.sh" \
   --env-file "${tmp_dir}/rotate-password-accounts/default.env" \
@@ -723,6 +774,7 @@ assert_contains "${tmp_dir}/managed-accounts/work.env" "MSMTP_ACCOUNT_NAME=work"
 
 assert_contains "${tmp_dir}/rotate-password-secret" "old-rotate-secret"
 assert_contains "${tmp_dir}/restore-secret-output.txt" "ok: rotator"
+pass_check "secret restore helper restores and validates a backed-up secret"
 
 mkdir -p "${tmp_dir}/test-email-accounts"
 cat > "${tmp_dir}/test-email-accounts/default.env" <<EOF
@@ -763,6 +815,7 @@ assert_contains "${tmp_dir}/fake-msmtp-log.txt" "To: recipient@example.com"
 assert_contains "${tmp_dir}/fake-msmtp-log.txt" "Subject: repo test subject"
 assert_contains "${tmp_dir}/fake-msmtp-log.txt" "repo test body"
 assert_contains "${tmp_dir}/test-email-output.txt" "Test email sent."
+pass_check "test-email sends through the selected account using a temporary config"
 
 printf 'live-config\n' > "${tmp_dir}/live-test.msmtprc"
 PATH="${tmp_dir}/fake-bin:${PATH}" "${repo_root}/scripts/test-live-email.sh" \
@@ -778,6 +831,7 @@ assert_contains "${tmp_dir}/fake-msmtp-log.txt" "ARGS:-C ${tmp_dir}/live-test.ms
 assert_contains "${tmp_dir}/fake-msmtp-log.txt" "Subject: live subject"
 assert_contains "${tmp_dir}/fake-msmtp-log.txt" "live body"
 assert_contains "${tmp_dir}/test-live-email-output.txt" "Live-config test email sent."
+pass_check "test-live-email sends through a specified installed config path"
 
 if command -v make >/dev/null 2>&1; then
   make -C "${repo_root}" \
@@ -786,12 +840,14 @@ if command -v make >/dev/null 2>&1; then
     OUTPUT="${tmp_dir}/make.msmtprc" \
     generate >/dev/null
   assert_contains "${tmp_dir}/make.msmtprc" "account default : personal"
+  pass_check "Makefile generate renders the configured default account"
 
   make -C "${repo_root}" \
     ACCOUNTS_DIR="${tmp_dir}/secret-check-accounts" \
     ACCOUNT_NAME=work \
     secret-check > "${tmp_dir}/make-secret-check-single.txt"
   assert_contains "${tmp_dir}/make-secret-check-single.txt" "ok: work"
+  pass_check "Makefile secret-check validates a selected account"
 
   make -C "${repo_root}" \
     ACCOUNTS_DIR="${tmp_dir}/multi-accounts" \
@@ -800,6 +856,7 @@ if command -v make >/dev/null 2>&1; then
     INSTALL_FORCE=yes \
     install-system >/dev/null
   assert_contains "${tmp_dir}/etc/msmtprc" "account personal"
+  pass_check "Makefile install-system writes a system-style config target"
 
   printf 'make-restored\n' > "${tmp_dir}/make-restore-user.bak"
   make -C "${repo_root}" \
@@ -807,6 +864,7 @@ if command -v make >/dev/null 2>&1; then
     BACKUP="${tmp_dir}/make-restore-user.bak" \
     restore-user-config >/dev/null
   assert_contains "${tmp_dir}/make-restore-home/.msmtprc" "make-restored"
+  pass_check "Makefile restore-user-config restores a selected user config backup"
 
   mkdir -p "${tmp_dir}/make-password-accounts"
   cat > "${tmp_dir}/make-password-accounts/default.env" <<EOF
@@ -828,6 +886,7 @@ EOF
     password >/dev/null 2>&1
   assert_contains "${tmp_dir}/make-password-secret" "make-password"
   rm -f "${tmp_dir}/make-password-secret"
+  pass_check "Makefile password dispatches to password-file setup"
 
   mkdir -p "${tmp_dir}/make-rotate-accounts"
   cat > "${tmp_dir}/make-rotate-accounts/default.env" <<EOF
@@ -853,6 +912,7 @@ EOF
   make_rotate_backup_path="$(sed -n 's/^Backed up existing secret to //p' "${tmp_dir}/make-rotate-output.txt" | head -n 1)"
   [ -n "$make_rotate_backup_path" ] || fail "Expected backup path in make rotate-password output"
   assert_contains "$make_rotate_backup_path" "old-make-rotate"
+  pass_check "Makefile rotate-password backs up and replaces an existing secret"
 
   make -C "${repo_root}" \
     ACCOUNT_FILE="${tmp_dir}/make-rotate-accounts/default.env" \
@@ -861,6 +921,7 @@ EOF
     restore-secret > "${tmp_dir}/make-restore-secret-output.txt" 2>&1
   assert_contains "${tmp_dir}/make-rotate-secret" "old-make-rotate"
   assert_contains "${tmp_dir}/make-restore-secret-output.txt" "ok: makerotate"
+  pass_check "Makefile restore-secret restores a backed-up account secret"
 
   mkdir -p "${tmp_dir}/make-test-email-accounts"
   cat > "${tmp_dir}/make-test-email-accounts/default.env" <<EOF
@@ -896,6 +957,7 @@ EOF
   assert_contains "${tmp_dir}/make-fake-msmtp-log.txt" " -a maketest verify@example.com"
   assert_contains "${tmp_dir}/make-fake-msmtp-log.txt" "Subject: make subject"
   assert_contains "${tmp_dir}/make-test-email-output.txt" "Test email sent."
+  pass_check "Makefile test-email sends a selected-account test message"
 
   printf 'live make config\n' > "${tmp_dir}/make-live-test.msmtprc"
   PATH="${tmp_dir}/make-fake-bin:${PATH}" make -C "${repo_root}" \
@@ -909,6 +971,7 @@ EOF
   assert_contains "${tmp_dir}/make-fake-msmtp-log.txt" "ARGS:-C ${tmp_dir}/make-live-test.msmtprc -a maketest deploy@example.com"
   assert_contains "${tmp_dir}/make-fake-msmtp-log.txt" "Subject: make live subject"
   assert_contains "${tmp_dir}/make-test-live-email-output.txt" "Live-config test email sent."
+  pass_check "Makefile test-live-email sends using a live config path"
 fi
 
-printf 'All tests passed.\n'
+printf 'All %d smoke checks passed.\n' "$checks_passed"

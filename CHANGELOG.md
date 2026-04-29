@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-04-29
+
+- expanded `make check` output so each logical smoke check prints a concise
+  pass line describing what repo behavior was verified
+
 ## 2026-04-28
 
 - split account-only editing from deployment, removed install prompts from
