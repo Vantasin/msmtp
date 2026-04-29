@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-default_repo_url='ssh://git@gitea.vantasin.duckdns.org:2222/Vantasin/msmtp.git'
+default_repo_url='https://github.com/Vantasin/msmtp.git'
 dest_parent="${MSMTP_BOOTSTRAP_DEST_PARENT:-${HOME}/Git}"
 repo_name="${MSMTP_BOOTSTRAP_REPO_NAME:-msmtp}"
 repo_url="${MSMTP_BOOTSTRAP_REPO_URL:-$default_repo_url}"

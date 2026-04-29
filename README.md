@@ -29,7 +29,7 @@ It also ships with:
 1. Clone the repo.
 
 ```bash
-git clone ssh://git@gitea.vantasin.duckdns.org:2222/Vantasin/msmtp.git
+git clone https://github.com/Vantasin/msmtp.git
 cd msmtp
 ```
 

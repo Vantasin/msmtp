@@ -10,7 +10,7 @@
 ### 1. Clone the Repo
 
 ```bash
-git clone ssh://git@gitea.vantasin.duckdns.org:2222/Vantasin/msmtp.git
+git clone https://github.com/Vantasin/msmtp.git
 cd msmtp
 ```
 
