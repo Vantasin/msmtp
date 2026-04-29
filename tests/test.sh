@@ -73,6 +73,7 @@ run_syntax_checks() {
   bash -n "${repo_root}/scripts/configure.sh"
   bash -n "${repo_root}/scripts/password-helper.sh"
   bash -n "${repo_root}/scripts/rotate-password.sh"
+  bash -n "${repo_root}/scripts/test-email.sh"
   bash -n "${repo_root}/scripts/setup.sh"
   bash -n "${repo_root}/scripts/quickstart.sh"
   bash -n "${repo_root}/scripts/lib/common.sh"
@@ -629,6 +630,45 @@ assert_contains "${tmp_dir}/managed-accounts/work.env" "MSMTP_ACCOUNT_NAME=work"
 assert_contains "${tmp_dir}/rotate-password-secret" "old-rotate-secret"
 assert_contains "${tmp_dir}/restore-secret-output.txt" "ok: rotator"
 
+mkdir -p "${tmp_dir}/test-email-accounts"
+cat > "${tmp_dir}/test-email-accounts/default.env" <<EOF
+MSMTP_ACCOUNT_NAME=mailtest
+MSMTP_HOST=smtp.test-email.example
+MSMTP_PORT=587
+MSMTP_FROM=mailtest@example.com
+MSMTP_USER=mailtest@example.com
+MSMTP_AUTH=on
+MSMTP_TLS=on
+MSMTP_TLS_STARTTLS=on
+MSMTP_TLS_CERTCHECK=on
+MSMTP_SECRET_METHOD=command
+MSMTP_PASSWORDEVAL_COMMAND='printf fake-test-password'
+EOF
+
+mkdir -p "${tmp_dir}/fake-bin"
+cat > "${tmp_dir}/fake-bin/msmtp" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+printf 'ARGS:%s\n' "\$*" > "${tmp_dir}/fake-msmtp-log.txt"
+cat >> "${tmp_dir}/fake-msmtp-log.txt"
+EOF
+chmod +x "${tmp_dir}/fake-bin/msmtp"
+
+PATH="${tmp_dir}/fake-bin:${PATH}" "${repo_root}/scripts/test-email.sh" \
+  --env-file "${tmp_dir}/test-email-accounts/default.env" \
+  --recipient recipient@example.com \
+  --subject "repo test subject" \
+  --body "repo test body" \
+  --yes > "${tmp_dir}/test-email-output.txt" 2>&1
+
+assert_contains "${tmp_dir}/fake-msmtp-log.txt" "ARGS:-C "
+assert_contains "${tmp_dir}/fake-msmtp-log.txt" " -a mailtest recipient@example.com"
+assert_contains "${tmp_dir}/fake-msmtp-log.txt" "From: mailtest@example.com"
+assert_contains "${tmp_dir}/fake-msmtp-log.txt" "To: recipient@example.com"
+assert_contains "${tmp_dir}/fake-msmtp-log.txt" "Subject: repo test subject"
+assert_contains "${tmp_dir}/fake-msmtp-log.txt" "repo test body"
+assert_contains "${tmp_dir}/test-email-output.txt" "Test email sent."
+
 if command -v make >/dev/null 2>&1; then
   make -C "${repo_root}" \
     ACCOUNTS_DIR="${tmp_dir}/multi-accounts" \
@@ -711,6 +751,40 @@ EOF
     restore-secret > "${tmp_dir}/make-restore-secret-output.txt"
   assert_contains "${tmp_dir}/make-rotate-secret" "old-make-rotate"
   assert_contains "${tmp_dir}/make-restore-secret-output.txt" "ok: makerotate"
+
+  mkdir -p "${tmp_dir}/make-test-email-accounts"
+  cat > "${tmp_dir}/make-test-email-accounts/default.env" <<EOF
+MSMTP_ACCOUNT_NAME=maketest
+MSMTP_HOST=smtp.make-test.example
+MSMTP_PORT=587
+MSMTP_FROM=maketest@example.com
+MSMTP_USER=maketest@example.com
+MSMTP_AUTH=on
+MSMTP_TLS=on
+MSMTP_TLS_STARTTLS=on
+MSMTP_TLS_CERTCHECK=on
+MSMTP_SECRET_METHOD=command
+MSMTP_PASSWORDEVAL_COMMAND='printf make-test-password'
+EOF
+
+  mkdir -p "${tmp_dir}/make-fake-bin"
+  cat > "${tmp_dir}/make-fake-bin/msmtp" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+printf 'ARGS:%s\n' "\$*" > "${tmp_dir}/make-fake-msmtp-log.txt"
+cat >> "${tmp_dir}/make-fake-msmtp-log.txt"
+EOF
+  chmod +x "${tmp_dir}/make-fake-bin/msmtp"
+
+  PATH="${tmp_dir}/make-fake-bin:${PATH}" make -C "${repo_root}" \
+    ACCOUNTS_DIR="${tmp_dir}/make-test-email-accounts" \
+    TEST_RECIPIENT=verify@example.com \
+    TEST_SUBJECT="make subject" \
+    TEST_BODY="make body" \
+    test-email > "${tmp_dir}/make-test-email-output.txt" 2>&1
+  assert_contains "${tmp_dir}/make-fake-msmtp-log.txt" " -a maketest verify@example.com"
+  assert_contains "${tmp_dir}/make-fake-msmtp-log.txt" "Subject: make subject"
+  assert_contains "${tmp_dir}/make-test-email-output.txt" "Test email sent."
 fi
 
 printf 'All tests passed.\n'

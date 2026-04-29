@@ -25,6 +25,10 @@
 - hardened the repo-local `passwords/` plaintext-secret option so password-file
   init and rotation enforce mode `700` on the directory automatically while
   keeping secret files at mode `600`
+- added a dedicated `make test-email` workflow that prompts for one account,
+  defaults the recipient to that account's `from` address, sends a real test
+  email from a temporary one-account render, and replaced raw `msmtp` test
+  commands in the quick-start docs with that guided path
 - renamed the restore command surface around a new `make restore` umbrella,
   added typed config/account/secret restore commands, documented the `Makefile`
   command surface in `docs/makefile.md`, and tightened agent rules so quick-

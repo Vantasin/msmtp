@@ -264,8 +264,7 @@ if [ "$(prompt_install_decision)" = "yes" ]; then
   run_with_interrupt_passthrough "${repo_root}/scripts/install-helper.sh" "${install_args[@]}"
   mark_interrupt_dirty
   printf '\nNext steps:\n' >&2
-  printf '  1. Send a test email, for example:\n' >&2
-  printf "     printf 'Subject: msmtp test\\nTo: %s\\n\\nmsmtp is working.\\n' | msmtp %s\n" "$MSMTP_FROM" "$MSMTP_FROM" >&2
+  printf '  1. Run make test-email ACCOUNT_NAME=%s to send a live test email.\n' "$account_file_name" >&2
   printf '  2. Use make rotate-password ACCOUNT_NAME=%s when this secret changes.\n' "$account_file_name" >&2
   exit 0
 fi

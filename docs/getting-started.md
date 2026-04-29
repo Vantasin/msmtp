@@ -59,12 +59,12 @@ make account
 
 ### 4. Send a Test Email
 
-Replace `you@example.com` with the mailbox that should receive the test
-message.
-
 ```bash
-printf 'Subject: msmtp test\nTo: you@example.com\n\nmsmtp is working.\n' | msmtp you@example.com
+make test-email
 ```
+
+This prompts for the account to test, defaults the recipient to that account's
+`from` address, and sends a real email using a temporary one-account render.
 
 ### Optional: Verify the Repo Automation
 
@@ -106,6 +106,12 @@ Rotate the secret for one account:
 
 ```bash
 make rotate-password ACCOUNT_NAME=work
+```
+
+Send a live test email for one account:
+
+```bash
+make test-email ACCOUNT_NAME=work TEST_RECIPIENT=you@example.com
 ```
 
 Validate the whole directory:

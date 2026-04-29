@@ -14,8 +14,8 @@ Use this workflow after significant repository changes.
    install, restore, or verification flows, explicitly review
    [README.md](../../README.md) and
    [docs/getting-started.md](../../docs/getting-started.md) for linear,
-   actionable quick-start drift. Keep the primary `make configure` plus live
-   test-email path clear, describe `make check` as repo automation
+   actionable quick-start drift. Keep the primary `make configure` plus
+   `make test-email` path clear, describe `make check` as repo automation
    verification rather than live SMTP verification when relevant, and review
    [docs/makefile.md](../../docs/makefile.md) when the command surface changes.
 6. If the change affects accounts or secret handling, explicitly review

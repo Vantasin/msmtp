@@ -24,6 +24,8 @@ Use these commands by intent:
 - `make password`: choose an account file and create the first secret for its
   configured backend
 - `make rotate-password`: rotate one existing secret safely
+- `make test-email`: send a real test email for one selected account using a
+  temporary one-account render
 - `make secret-check`: validate the configured `passwordeval` command
 - `make secrets-help`: print the supported secret backends and helper commands
 - `make keychain-add`: add or update a macOS Keychain secret for one account
@@ -79,6 +81,9 @@ Use these commands by intent:
 - `GPG_FILE`: explicit encrypted-file target path for `make gpg-file-init`
 - `GPG_RECIPIENT`: GPG recipient for `make gpg-file-init` or
   `make rotate-password`
+- `TEST_RECIPIENT`: recipient override for `make test-email`
+- `TEST_SUBJECT`: subject override for `make test-email`
+- `TEST_BODY`: body override for `make test-email`
 - `KEYCHAIN_SERVICE`: explicit macOS Keychain service override
 - `KEYCHAIN_ACCOUNT`: explicit macOS Keychain account override
 
@@ -94,6 +99,12 @@ Guide through the full human setup path:
 
 ```bash
 make configure
+```
+
+Send a live test email for the `work` account:
+
+```bash
+make test-email ACCOUNT_NAME=work TEST_RECIPIENT=you@example.com
 ```
 
 Restore a deleted account backup for `work.env`:

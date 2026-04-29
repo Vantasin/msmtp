@@ -80,17 +80,21 @@ Other direct commands remain available:
 ```bash
 make password
 make rotate-password
+make test-email
 make secret-check
 make install
 make restore
 ```
 
-4. Send a test email. Replace `you@example.com` with the mailbox that should
-receive the message.
+4. Send a test email.
 
 ```bash
-printf 'Subject: msmtp test\nTo: you@example.com\n\nmsmtp is working.\n' | msmtp you@example.com
+make test-email
 ```
+
+This command prompts for the account to test, defaults the recipient to that
+account's `from` address, and sends a real email using a temporary one-account
+render.
 
 If you want to verify the repo automation itself, run:
 
@@ -166,6 +170,8 @@ password files stay out of Git.
   account file and dispatch to the correct password helper
 - [`scripts/rotate-password.sh`](./scripts/rotate-password.sh): rotate an
   existing secret safely and validate it
+- [`scripts/test-email.sh`](./scripts/test-email.sh): send a real test email
+  for one selected account using a temporary one-account render
 - [`templates/msmtprc.template`](./templates/msmtprc.template): canonical
   config template
 - [`scripts/setup.sh`](./scripts/setup.sh): interactive setup that writes one

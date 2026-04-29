@@ -20,6 +20,9 @@ GPG_FILE ?=
 GPG_RECIPIENT ?=
 KEYCHAIN_SERVICE ?=
 KEYCHAIN_ACCOUNT ?=
+TEST_RECIPIENT ?=
+TEST_SUBJECT ?=
+TEST_BODY ?=
 
 ACCOUNT_NAME_ORIGIN := $(firstword $(origin ACCOUNT_NAME))
 ACCOUNT_FILE_ORIGIN := $(firstword $(origin ACCOUNT_FILE))
@@ -30,7 +33,7 @@ MODE_ARG = $(if $(strip $(INSTALL_MODE)),--mode $(INSTALL_MODE),)
 TARGET_ARG = $(if $(strip $(INSTALL_PATH)),--target $(INSTALL_PATH),)
 ACCOUNT_SELECTION_ARG = $(if $(filter command environment,$(ACCOUNT_FILE_ORIGIN)),--env-file $(ACCOUNT_FILE),$(if $(filter command environment,$(ACCOUNT_NAME_ORIGIN)),--env-file $(ACCOUNT_FILE),--accounts-dir $(ACCOUNTS_DIR)))
 
-.PHONY: help account configure password rotate-password setup setup-example generate preview install install-user install-system restore restore-config restore-user-config restore-system-config restore-account restore-secret link link-user check clean secrets-help secret-check keychain-add password-file-init gpg-file-init quickstart init-env render print-config update test
+.PHONY: help account configure password rotate-password test-email setup setup-example generate preview install install-user install-system restore restore-config restore-user-config restore-system-config restore-account restore-secret link link-user check clean secrets-help secret-check keychain-add password-file-init gpg-file-init quickstart init-env render print-config update test
 
 help: ## Show the common repo commands
 	@printf "Common commands:\n"
@@ -44,6 +47,9 @@ help: ## Show the common repo commands
 	@printf "  PASSWORD_FILE %s\n" "$(PASSWORD_FILE)"
 	@printf "  GPG_FILE %s\n" "$(GPG_FILE)"
 	@printf "  GPG_RECIPIENT %s\n" "$(GPG_RECIPIENT)"
+	@printf "  TEST_RECIPIENT %s\n" "$(TEST_RECIPIENT)"
+	@printf "  TEST_SUBJECT %s\n" "$(TEST_SUBJECT)"
+	@printf "  TEST_BODY    %s\n" "$(TEST_BODY)"
 	@printf "  OUTPUT       %s\n" "$(OUTPUT)"
 	@printf "  USER_INSTALL_PATH %s\n" "$(USER_INSTALL_PATH)"
 	@printf "  SYSTEM_INSTALL_PATH %s\n" "$(SYSTEM_INSTALL_PATH)"
@@ -64,6 +70,9 @@ password: ## Choose an account file and run the matching password helper
 
 rotate-password: ## Rotate the secret for one account file safely
 	./scripts/rotate-password.sh $(ACCOUNT_SELECTION_ARG) $(if $(strip $(GPG_RECIPIENT)),--recipient $(GPG_RECIPIENT),) $(ROTATE_FORCE_ARG)
+
+test-email: ## Send a real test email with one selected account
+	./scripts/test-email.sh $(ACCOUNT_SELECTION_ARG) $(if $(strip $(TEST_RECIPIENT)),--recipient "$(TEST_RECIPIENT)",) $(if $(strip $(TEST_SUBJECT)),--subject "$(TEST_SUBJECT)",) $(if $(strip $(TEST_BODY)),--body "$(TEST_BODY)",)
 
 setup: ## Run the interactive setup wizard for ACCOUNT_FILE
 	./scripts/setup.sh --env-file $(ACCOUNT_FILE)
