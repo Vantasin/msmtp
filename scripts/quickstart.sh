@@ -68,6 +68,30 @@ done
 source_file="$(resolve_example_path "$example_name")"
 require_file "$source_file"
 
+rewrite_account_name_in_env_file() {
+  local target_env_file="$1"
+  local replacement_account_name="$2"
+  local tmp_env_file
+
+  tmp_env_file="$(mktemp "${TMPDIR:-/tmp}/msmtp-quickstart-env.XXXXXX")"
+  awk -v account_name="$replacement_account_name" '
+    BEGIN { rewritten = 0 }
+    /^MSMTP_ACCOUNT_NAME=/ {
+      print "MSMTP_ACCOUNT_NAME=" account_name
+      rewritten = 1
+      next
+    }
+    { print }
+    END {
+      if (rewritten == 0) {
+        print "MSMTP_ACCOUNT_NAME=" account_name
+      }
+    }
+  ' "$target_env_file" > "$tmp_env_file"
+  chmod 600 "$tmp_env_file"
+  mv -f "$tmp_env_file" "$target_env_file"
+}
+
 if [ -e "$env_file" ]; then
   die "Refusing to overwrite existing file: $env_file"
 fi
@@ -75,6 +99,7 @@ fi
 mkdir -p "$(dirname "$env_file")"
 cp "$source_file" "$env_file"
 chmod 600 "$env_file"
+rewrite_account_name_in_env_file "$env_file" "$(recommended_msmtp_account_name_for_env_file "$env_file")"
 sync_persistent_default_account_after_write "$(dirname "$env_file")" "" "$(account_name_from_env_file "$env_file")"
 
 printf 'Created %s from %s\n' "$env_file" "$source_file"

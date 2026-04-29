@@ -198,6 +198,7 @@ require_var MSMTP_FROM
 
 account_name="$MSMTP_ACCOUNT_NAME"
 from_address="$MSMTP_FROM"
+validate_msmtp_account_name "$account_name" "$env_file"
 
 printf 'Selected account file %s (msmtp account name: %s).\n' "$env_file" "$account_name" >&2
 printf 'This sends a real email using a temporary one-account render from the selected account file.\n' >&2

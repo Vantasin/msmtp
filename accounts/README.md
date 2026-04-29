@@ -12,6 +12,8 @@ The persistent default account lives in `accounts/.default-account`. This file
 stores one `MSMTP_ACCOUNT_NAME` value and is intentionally ignored by Git.
 
 Each `accounts/*.env` file must use a unique `MSMTP_ACCOUNT_NAME`.
+`MSMTP_ACCOUNT_NAME=default` is reserved by `msmtp`, so `accounts/default.env`
+should usually use an account name like `primary` instead.
 
 Recommended workflows:
 

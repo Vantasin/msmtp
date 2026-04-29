@@ -33,7 +33,9 @@ Operational convention today:
 - The optional repo-local plaintext password-file workspace lives in the
   gitignored `passwords/` directory.
 - The simplest setup is `accounts/default.env`; multiple addresses add more
-  files in the same directory.
+  files in the same directory. The file name `default.env` is fine, but the
+  msmtp account name inside it should use a non-reserved label such as
+  `primary`.
 - User vs system install scope is selected through `make` targets and
   variables, not through account-file data.
 - The preferred human-facing commands are `make configure`, `make password`,

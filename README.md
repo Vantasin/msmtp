@@ -119,6 +119,8 @@ This repo intentionally uses `accounts/` as the only source of account truth.
 - `make secret-check` can validate the whole directory or one account when you pass `ACCOUNT_NAME=...`
 - `accounts/.default-account` stores the persistent default account when you do not pass `DEFAULT_ACCOUNT=...`
 - each account file must use a unique `MSMTP_ACCOUNT_NAME`
+- `MSMTP_ACCOUNT_NAME=default` is reserved by `msmtp`; `accounts/default.env`
+  should usually use an account name like `primary` instead
 
 When you create the first account through the guided setup flows, the repo
 initializes [`accounts/.default-account`](./accounts/) automatically. Use

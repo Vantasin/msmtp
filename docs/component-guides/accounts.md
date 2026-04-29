@@ -10,6 +10,8 @@ Use it for:
 - one ignored `accounts/.default-account` file when you want a persistent
   default without passing `DEFAULT_ACCOUNT=...`
 - unique `MSMTP_ACCOUNT_NAME` values across the directory
+- avoid `MSMTP_ACCOUNT_NAME=default`; that name is reserved by `msmtp`, even
+  when the file itself is `default.env`
 
 These files are intentionally ignored by Git because they contain private
 account details.

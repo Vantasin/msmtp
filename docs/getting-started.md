@@ -94,6 +94,10 @@ That flow can:
 
 It does not render or install the live config.
 
+`accounts/default.env` is only the file name convention. The msmtp account
+name inside it should usually be something like `primary`; `default` is
+reserved by `msmtp`.
+
 ## Direct Secret and Install Commands
 
 Set up the first secret for one account:

@@ -8,7 +8,8 @@ Files:
 - [`msmtprc.template`](./msmtprc.template): the canonical config template used
   by the renderer
 - [`examples/default.env.example`](./examples/default.env.example): starter
-  account file for the canonical `accounts/default.env` flow
+  account file for the canonical `accounts/default.env` flow; it uses
+  `MSMTP_ACCOUNT_NAME=primary` because `default` is reserved by `msmtp`
 - [`examples/macos-keychain.env.example`](./examples/macos-keychain.env.example):
   starter account file for macOS Keychain
 - [`examples/linux-gpg.env.example`](./examples/linux-gpg.env.example): starter

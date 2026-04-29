@@ -40,6 +40,9 @@ Do not silently merge contradictory instructions.
 - Keep `MSMTP_ACCOUNT_NAME` unique across `accounts/*.env`, because generated
   `msmtprc` account blocks and the persistent default pointer both depend on
   that identity being unambiguous.
+- Treat `MSMTP_ACCOUNT_NAME=default` as reserved by `msmtp`. The repo may use
+  `accounts/default.env` as a file-name convention, but the account name
+  inside that file should use another stable label such as `primary`.
 - Keep deployment-time default-account resolution in install/configure flows,
   and do not silently rewrite `accounts/*.env` or `accounts/.default-account`
   just to satisfy one deploy.

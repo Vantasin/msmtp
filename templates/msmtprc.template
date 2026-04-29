@@ -1,6 +1,6 @@
 # Managed by the msmtp repo. Edit your env file and rerender instead of editing
 # this file directly.
 
-{{DEFAULT_ACCOUNT_LINE}}
-
 {{ACCOUNT_BLOCKS}}
+
+{{DEFAULT_ACCOUNT_LINE}}

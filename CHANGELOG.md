@@ -22,6 +22,10 @@
   test-email path, moved `make check` into secondary repo-automation
   verification, and aligned the agent guidance with canonical repo-root path
   handling and current onboarding behavior
+- fixed generated `msmtprc` ordering so the default-account alias is rendered
+  after the account blocks, reserved `MSMTP_ACCOUNT_NAME=default`, and updated
+  starter examples plus guided setup to use non-reserved names such as
+  `primary` for `accounts/default.env`
 - hardened the repo-local `passwords/` plaintext-secret option so password-file
   init and rotation enforce mode `700` on the directory automatically while
   keeping secret files at mode `600`

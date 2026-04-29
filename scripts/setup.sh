@@ -66,6 +66,7 @@ validate_unique_msmtp_account_name() {
   local desired_account_name="$1"
   local accounts_dir existing_env_path existing_account_name
 
+  validate_msmtp_account_name "$desired_account_name" "$env_file"
   accounts_dir="$(dirname "$env_file")"
 
   while IFS= read -r existing_env_path; do
@@ -93,6 +94,7 @@ account_file_hint() {
   printf 'The persistent default account is managed separately in %s. Use make account to change it.\n' "$(default_account_file_for_directory "$(dirname "$env_file")")" >&2
   printf 'Keeping them aligned is usually clearer, but it is not required.\n' >&2
   if [ "$file_name" = "default.env" ]; then
+    printf 'The msmtp account name `default` is reserved by msmtp. For this file, use a name like `primary` or another descriptive label.\n' >&2
     printf 'Examples for named accounts: work.env, personal.env, server-alerts.env.\n\n' >&2
   else
     printf 'This file name becomes part of your local account inventory under accounts/.\n\n' >&2
@@ -219,9 +221,13 @@ account_file_hint
 printf 'Press Enter to accept the bracketed value. For optional fields, press Enter to skip a blank value or keep a saved one, and enter - to clear a saved optional value.\n' >&2
 printf 'For yes/no prompts, the capitalized choice is the default.\n\n' >&2
 account_file_name="$(basename "$env_file" .env)"
+suggested_account_name="$(recommended_msmtp_account_name_for_env_file "$env_file")"
+if [ "${MSMTP_ACCOUNT_NAME:-}" = "default" ]; then
+  printf "MSMTP_ACCOUNT_NAME 'default' is reserved by msmtp. Choose another account name such as %s.\n\n" "$suggested_account_name" >&2
+fi
 
 printf 'Basic account settings:\n' >&2
-MSMTP_ACCOUNT_NAME="$(prompt_required "msmtp account name (examples: default, work, personal)" "${MSMTP_ACCOUNT_NAME:-$account_file_name}")"
+MSMTP_ACCOUNT_NAME="$(prompt_required "msmtp account name (examples: primary, work, personal)" "${MSMTP_ACCOUNT_NAME:-$suggested_account_name}")"
 MSMTP_HOST="$(prompt_required "SMTP host (example: smtp.example.com)" "${MSMTP_HOST:-}")"
 MSMTP_PORT="$(prompt_required "SMTP port (common values: 587 or 465)" "${MSMTP_PORT:-587}")"
 MSMTP_FROM="$(prompt_required "From address (example: you@example.com)" "${MSMTP_FROM:-}")"

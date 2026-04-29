@@ -152,6 +152,18 @@ write_env_assignment() {
   printf '%s=%s\n' "$key" "$(shell_quote "$value")"
 }
 
+recommended_msmtp_account_name_for_env_file() {
+  local env_path="$1"
+  local account_file_name
+
+  account_file_name="$(basename "$env_path" .env)"
+  if [ "$account_file_name" = "default" ]; then
+    printf 'primary\n'
+  else
+    printf '%s\n' "$account_file_name"
+  fi
+}
+
 absolute_path() {
   local path="$1"
   local dir_path base_name
@@ -872,6 +884,19 @@ account_name_from_env_file() {
   )
 }
 
+validate_msmtp_account_name() {
+  local account_name="$1"
+  local context="${2:-}"
+
+  [ -n "$account_name" ] || die "MSMTP_ACCOUNT_NAME cannot be empty${context:+ in $context}"
+
+  case "$account_name" in
+    default)
+      die "MSMTP_ACCOUNT_NAME 'default' is reserved by msmtp${context:+ in $context}. Use another account name such as 'primary'. The file name can stay default.env."
+      ;;
+  esac
+}
+
 render_account_block() {
   local auth tls starttls certcheck passwordeval
 
@@ -962,6 +987,7 @@ render_config_from_accounts_dir() {
     account_block="$(render_account_block_from_env_file "$env_file")"
     account_name="$(account_name_from_env_file "$env_file")"
     default_candidate="$(default_account_name_from_env_file "$env_file")"
+    validate_msmtp_account_name "$account_name" "$env_file"
 
     if [ -n "${seen_account_names[$account_name]+x}" ]; then
       die "Duplicate MSMTP_ACCOUNT_NAME '$account_name' found in $accounts_dir. Each account file must use a unique msmtp account name."

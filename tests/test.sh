@@ -108,7 +108,8 @@ mkdir -p "${tmp_dir}/bootstrap-accounts"
   --example password-file \
   --env-file "${tmp_dir}/bootstrap-accounts/default.env" >/dev/null
 assert_contains "${tmp_dir}/bootstrap-accounts/default.env" "MSMTP_SECRET_METHOD=password_file"
-[ "$(cat "${tmp_dir}/bootstrap-accounts/.default-account")" = "default" ] || fail "Expected quickstart to initialize the persistent default account"
+assert_contains "${tmp_dir}/bootstrap-accounts/default.env" "MSMTP_ACCOUNT_NAME=primary"
+[ "$(cat "${tmp_dir}/bootstrap-accounts/.default-account")" = "primary" ] || fail "Expected quickstart to initialize the persistent default account"
 
 if "${repo_root}/scripts/quickstart.sh" \
   --example default \
@@ -353,6 +354,30 @@ if "${repo_root}/scripts/render-config.sh" \
 fi
 
 assert_contains "${tmp_dir}/duplicate-account-names.stderr" "Duplicate MSMTP_ACCOUNT_NAME 'shared'"
+
+mkdir -p "${tmp_dir}/reserved-account-name"
+cat > "${tmp_dir}/reserved-account-name/default.env" <<'EOF'
+MSMTP_ACCOUNT_NAME=default
+MSMTP_HOST=smtp.example.com
+MSMTP_PORT=587
+MSMTP_FROM=reserved@example.com
+MSMTP_USER=reserved@example.com
+MSMTP_AUTH=on
+MSMTP_TLS=on
+MSMTP_TLS_STARTTLS=on
+MSMTP_TLS_CERTCHECK=on
+MSMTP_SECRET_METHOD=command
+MSMTP_PASSWORDEVAL_COMMAND='printf reserved-secret'
+EOF
+
+if "${repo_root}/scripts/render-config.sh" \
+  --accounts-dir "${tmp_dir}/reserved-account-name" \
+  --output "${tmp_dir}/reserved-account-name.msmtprc" \
+  >"${tmp_dir}/reserved-account-name.stdout" 2>"${tmp_dir}/reserved-account-name.stderr"; then
+  fail "render-config.sh should refuse the reserved MSMTP_ACCOUNT_NAME=default"
+fi
+
+assert_contains "${tmp_dir}/reserved-account-name.stderr" "MSMTP_ACCOUNT_NAME 'default' is reserved by msmtp"
 
 cat > "${tmp_dir}/multi-accounts/password.env" <<EOF
 MSMTP_ACCOUNT_NAME=passwordfile
