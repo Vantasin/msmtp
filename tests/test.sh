@@ -74,6 +74,7 @@ run_syntax_checks() {
   bash -n "${repo_root}/scripts/password-helper.sh"
   bash -n "${repo_root}/scripts/rotate-password.sh"
   bash -n "${repo_root}/scripts/test-email.sh"
+  bash -n "${repo_root}/scripts/test-live-email.sh"
   bash -n "${repo_root}/scripts/setup.sh"
   bash -n "${repo_root}/scripts/quickstart.sh"
   bash -n "${repo_root}/scripts/lib/common.sh"
@@ -694,6 +695,20 @@ assert_contains "${tmp_dir}/fake-msmtp-log.txt" "Subject: repo test subject"
 assert_contains "${tmp_dir}/fake-msmtp-log.txt" "repo test body"
 assert_contains "${tmp_dir}/test-email-output.txt" "Test email sent."
 
+printf 'live-config\n' > "${tmp_dir}/live-test.msmtprc"
+PATH="${tmp_dir}/fake-bin:${PATH}" "${repo_root}/scripts/test-live-email.sh" \
+  --env-file "${tmp_dir}/test-email-accounts/default.env" \
+  --target "${tmp_dir}/live-test.msmtprc" \
+  --recipient live@example.com \
+  --subject "live subject" \
+  --body "live body" \
+  --yes > "${tmp_dir}/test-live-email-output.txt" 2>&1
+
+assert_contains "${tmp_dir}/fake-msmtp-log.txt" "ARGS:-C ${tmp_dir}/live-test.msmtprc -a mailtest live@example.com"
+assert_contains "${tmp_dir}/fake-msmtp-log.txt" "Subject: live subject"
+assert_contains "${tmp_dir}/fake-msmtp-log.txt" "live body"
+assert_contains "${tmp_dir}/test-live-email-output.txt" "Live-config test email sent."
+
 if command -v make >/dev/null 2>&1; then
   make -C "${repo_root}" \
     ACCOUNTS_DIR="${tmp_dir}/multi-accounts" \
@@ -810,6 +825,18 @@ EOF
   assert_contains "${tmp_dir}/make-fake-msmtp-log.txt" " -a maketest verify@example.com"
   assert_contains "${tmp_dir}/make-fake-msmtp-log.txt" "Subject: make subject"
   assert_contains "${tmp_dir}/make-test-email-output.txt" "Test email sent."
+
+  printf 'live make config\n' > "${tmp_dir}/make-live-test.msmtprc"
+  PATH="${tmp_dir}/make-fake-bin:${PATH}" make -C "${repo_root}" \
+    ACCOUNTS_DIR="${tmp_dir}/make-test-email-accounts" \
+    LIVE_CONFIG_PATH="${tmp_dir}/make-live-test.msmtprc" \
+    TEST_RECIPIENT=deploy@example.com \
+    TEST_SUBJECT="make live subject" \
+    TEST_BODY="make live body" \
+    test-live-email > "${tmp_dir}/make-test-live-email-output.txt" 2>&1
+  assert_contains "${tmp_dir}/make-fake-msmtp-log.txt" "ARGS:-C ${tmp_dir}/make-live-test.msmtprc -a maketest deploy@example.com"
+  assert_contains "${tmp_dir}/make-fake-msmtp-log.txt" "Subject: make live subject"
+  assert_contains "${tmp_dir}/make-test-live-email-output.txt" "Live-config test email sent."
 fi
 
 printf 'All tests passed.\n'

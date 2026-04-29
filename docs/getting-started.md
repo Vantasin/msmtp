@@ -42,7 +42,7 @@ make configure
 ```
 
 This walks through account creation or editing, secret setup or rotation,
-validation, and install.
+validation, install, and an optional live test email.
 
 Common choices:
 
@@ -57,7 +57,7 @@ If you only want account-file CRUD without deployment, use:
 make account
 ```
 
-### 4. Send a Test Email
+### 4. If You Skip the Test Email Inside `make configure`, Send One Later
 
 ```bash
 make test-email
@@ -65,6 +65,15 @@ make test-email
 
 This prompts for the account to test, defaults the recipient to that account's
 `from` address, and sends a real email using a temporary one-account render.
+
+To verify the actual installed live config path instead, use:
+
+```bash
+make test-live-email
+```
+
+That uses the selected live `msmtp` config directly and is the better
+deployment-level check after `make install`.
 
 ### Optional: Verify the Repo Automation
 
@@ -116,6 +125,12 @@ Send a live test email for one account:
 
 ```bash
 make test-email ACCOUNT_NAME=work TEST_RECIPIENT=you@example.com
+```
+
+Send a live test email using the installed config path:
+
+```bash
+make test-live-email ACCOUNT_NAME=work TEST_RECIPIENT=you@example.com
 ```
 
 Validate the whole directory:

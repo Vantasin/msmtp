@@ -60,7 +60,8 @@ make configure
 ```
 
 This guides you through account setup, secret setup or rotation, validation,
-and install. It applies the full account set in [`accounts/`](./accounts/).
+install, and an optional live test email. It applies the full account set in
+[`accounts/`](./accounts/).
 
 Common choices:
 
@@ -81,12 +82,13 @@ Other direct commands remain available:
 make password
 make rotate-password
 make test-email
+make test-live-email
 make secret-check
 make install
 make restore
 ```
 
-4. Send a test email.
+4. If you skip the test email inside `make configure`, send one later.
 
 ```bash
 make test-email
@@ -95,6 +97,15 @@ make test-email
 This command prompts for the account to test, defaults the recipient to that
 account's `from` address, and sends a real email using a temporary one-account
 render.
+
+If you want to verify the actual installed live config path instead, use:
+
+```bash
+make test-live-email
+```
+
+That command uses the selected live `msmtp` config file directly and is the
+better deployment-level check after `make install`.
 
 If you want to verify the repo automation itself, run:
 

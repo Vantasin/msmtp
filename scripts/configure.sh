@@ -151,6 +151,16 @@ prompt_install_decision() {
   prompt_yes_no "Install the live msmtp config now" "yes"
 }
 
+prompt_test_email_decision() {
+  printf 'The test-email step sends a real email using a temporary one-account render for the selected account.\n' >&2
+  prompt_yes_no "Send a live test email now" "yes"
+}
+
+prompt_live_test_email_decision() {
+  printf 'The live-config test step sends a real email using the installed live msmtp config path.\n' >&2
+  prompt_yes_no "Send a live-config test email now" "yes"
+}
+
 while [ $# -gt 0 ]; do
   case "$1" in
     --accounts-dir)
@@ -247,6 +257,7 @@ case "$secret_action" in
     ;;
 esac
 
+install_performed="false"
 if [ "$(prompt_install_decision)" = "yes" ]; then
   install_args=(--accounts-dir "$accounts_dir")
   if [ -n "$default_account" ]; then
@@ -263,13 +274,42 @@ if [ "$(prompt_install_decision)" = "yes" ]; then
   fi
   run_with_interrupt_passthrough "${repo_root}/scripts/install-helper.sh" "${install_args[@]}"
   mark_interrupt_dirty
-  printf '\nNext steps:\n' >&2
-  printf '  1. Run make test-email ACCOUNT_NAME=%s to send a live test email.\n' "$account_file_name" >&2
-  printf '  2. Use make rotate-password ACCOUNT_NAME=%s when this secret changes.\n' "$account_file_name" >&2
-  exit 0
+  install_performed="true"
+fi
+
+test_email_ran="false"
+if [ "$install_performed" = "true" ]; then
+  if [ "$(prompt_live_test_email_decision)" = "yes" ]; then
+    live_test_args=(--env-file "$env_file" --yes)
+    if [ -n "$target_path" ]; then
+      live_test_args+=(--target "$target_path")
+    fi
+    run_with_interrupt_passthrough "${repo_root}/scripts/test-live-email.sh" "${live_test_args[@]}"
+    mark_interrupt_dirty
+    test_email_ran="true"
+  fi
+elif [ "$(prompt_test_email_decision)" = "yes" ]; then
+  run_with_interrupt_passthrough "${repo_root}/scripts/test-email.sh" --env-file "$env_file" --yes
+  mark_interrupt_dirty
+  test_email_ran="true"
 fi
 
 printf '\nNext steps:\n' >&2
-printf '  1. Run make install to deploy the current account set.\n' >&2
-printf '  2. Run make secret-check ACCOUNT_NAME=%s if you want to revalidate this account later.\n' "$account_file_name" >&2
-printf '  3. Use make rotate-password ACCOUNT_NAME=%s when this secret changes.\n' "$account_file_name" >&2
+if [ "$install_performed" != "true" ]; then
+  printf '  1. Run make install to deploy the current account set.\n' >&2
+  if [ "$test_email_ran" != "true" ]; then
+    printf '  2. Run make test-email ACCOUNT_NAME=%s when you want live SMTP verification.\n' "$account_file_name" >&2
+    printf '  3. Run make secret-check ACCOUNT_NAME=%s if you want to revalidate this account later.\n' "$account_file_name" >&2
+    printf '  4. Use make rotate-password ACCOUNT_NAME=%s when this secret changes.\n' "$account_file_name" >&2
+  else
+    printf '  2. Run make secret-check ACCOUNT_NAME=%s if you want to revalidate this account later.\n' "$account_file_name" >&2
+    printf '  3. Use make rotate-password ACCOUNT_NAME=%s when this secret changes.\n' "$account_file_name" >&2
+  fi
+else
+  if [ "$test_email_ran" != "true" ]; then
+    printf '  1. Run make test-live-email ACCOUNT_NAME=%s when you want deployment-level SMTP verification.\n' "$account_file_name" >&2
+    printf '  2. Use make rotate-password ACCOUNT_NAME=%s when this secret changes.\n' "$account_file_name" >&2
+  else
+    printf '  1. Use make rotate-password ACCOUNT_NAME=%s when this secret changes.\n' "$account_file_name" >&2
+  fi
+fi

@@ -7,7 +7,7 @@ Use these commands by intent:
 ## Primary Guided Commands
 
 - `make configure`: end-to-end guided setup for account data, secret setup or
-  rotation, validation, and install
+  rotation, validation, install, and an optional live test email
 - `make account`: guided account-file CRUD only; it does not install the live
   config
 - `make restore`: guided restore umbrella that first asks what kind of backup
@@ -26,6 +26,8 @@ Use these commands by intent:
 - `make rotate-password`: rotate one existing secret safely
 - `make test-email`: send a real test email for one selected account using a
   temporary one-account render
+- `make test-live-email`: send a real test email using the installed live
+  config path for one selected account
 - `make secret-check`: validate the configured `passwordeval` command
 - `make secrets-help`: print the supported secret backends and helper commands
 - `make keychain-add`: add or update a macOS Keychain secret for one account
@@ -84,6 +86,7 @@ Use these commands by intent:
 - `TEST_RECIPIENT`: recipient override for `make test-email`
 - `TEST_SUBJECT`: subject override for `make test-email`
 - `TEST_BODY`: body override for `make test-email`
+- `LIVE_CONFIG_PATH`: explicit live config path for `make test-live-email`
 - `KEYCHAIN_SERVICE`: explicit macOS Keychain service override
 - `KEYCHAIN_ACCOUNT`: explicit macOS Keychain account override
 
@@ -105,6 +108,12 @@ Send a live test email for the `work` account:
 
 ```bash
 make test-email ACCOUNT_NAME=work TEST_RECIPIENT=you@example.com
+```
+
+Send a deployment-level test email for the installed live config:
+
+```bash
+make test-live-email ACCOUNT_NAME=work TEST_RECIPIENT=you@example.com
 ```
 
 Restore a deleted account backup for `work.env`:

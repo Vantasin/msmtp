@@ -39,13 +39,16 @@ Operational convention today:
 - User vs system install scope is selected through `make` targets and
   variables, not through account-file data.
 - The preferred human-facing commands are `make configure`, `make password`,
-  `make test-email`, `make install`, and `make restore`; `make account`
-  remains the account-only CRUD entrypoint.
+  `make test-email`, `make test-live-email`, `make install`, and
+  `make restore`; `make account` remains the account-only CRUD entrypoint.
 - `make restore` is now the umbrella entrypoint; typed restore commands handle
   config, account, and file-backed secret backups explicitly.
-- The quick-start path is `make configure` followed by `make test-email`;
-  `make check` is secondary verification for the repo automation itself rather
-  than the primary live SMTP validation step.
+- The quick-start path centers on `make configure`, which now offers an
+  optional test-email step before exit. `make test-email` remains the
+  standalone isolated-account resend/manual path, `make test-live-email`
+  verifies the installed live config path, and `make check` is secondary
+  verification for the repo automation itself rather than the primary live
+  SMTP validation step.
 - Guided install prompts stay concise and only ask for target, mode, or
   default-account choices when the deployment is ambiguous.
 - Install-time default-account choices can override a missing or stale

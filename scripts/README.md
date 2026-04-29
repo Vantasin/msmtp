@@ -15,6 +15,8 @@ Files:
   one account file and validate it when supported
 - [`test-email.sh`](./test-email.sh): send a real test email for one selected
   account using a temporary one-account render
+- [`test-live-email.sh`](./test-live-email.sh): send a real test email using
+  the installed live config path for one selected account
 - [`secret-check.sh`](./secret-check.sh): validate configured `passwordeval`
   commands without printing the secret
 - [`keychain-add.sh`](./keychain-add.sh): add or update a macOS Keychain secret

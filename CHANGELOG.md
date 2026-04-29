@@ -26,6 +26,12 @@
   after the account blocks, reserved `MSMTP_ACCOUNT_NAME=default`, and updated
   starter examples plus guided setup to use non-reserved names such as
   `primary` for `accounts/default.env`
+- updated `make configure` to offer an optional live `test-email` step before
+  exit, and clarified in the docs that standalone `make test-email` is the
+  manual resend path
+- added `make test-live-email` as a separate deployment-level verification
+  command that uses the actual installed live config path, and wired
+  `make configure` to use that path-aware test after install
 - hardened the repo-local `passwords/` plaintext-secret option so password-file
   init and rotation enforce mode `700` on the directory automatically while
   keeping secret files at mode `600`
