@@ -12,6 +12,8 @@ Present today:
   test email
 - canonical [`agents/`](../) guidance
 - human-readable [`docs/README.md`](../../docs/README.md)
+- an optional [docs/bootstrap.md](../../docs/bootstrap.md) reference for the
+  self-contained bootstrap entrypoint
 - a dedicated [docs/makefile.md](../../docs/makefile.md) reference for the
   user-facing `make` command surface
 - canonical account-file guidance in [accounts/README.md](../../accounts/README.md)
@@ -20,8 +22,9 @@ Present today:
 - [`templates/msmtprc.template`](../../templates/msmtprc.template)
 - account-file examples in [`templates/examples/`](../../templates/examples/)
 - implementation scripts in [`scripts/`](../../scripts/) for quickstart,
-  guided account/configure/password/rotation/install/restore flows,
-  interactive setup, render, guarded install, and backup restore flows
+  self-contained bootstrap, guided account/configure/password/rotation/
+  install/restore flows, interactive setup, render, guarded install, and
+  backup restore flows
 - a [`Makefile`](../../Makefile) with guided top-level commands plus explicit
   user/system install and restore targets
 - shell-based smoke tests in [`tests/test.sh`](../../tests/test.sh)
@@ -41,6 +44,9 @@ Operational convention today:
 - The preferred human-facing commands are `make configure`, `make password`,
   `make test-email`, `make test-live-email`, `make install`, and
   `make restore`; `make account` remains the account-only CRUD entrypoint.
+- A self-contained `scripts/bootstrap.sh` entrypoint now exists for optional
+  clone-plus-install onboarding, but the repo still does not publish a hosted
+  raw `curl` URL for it.
 - Guided `make configure` can now add or edit multiple accounts before one
   final install/verification step, so the common human workflow no longer
   requires repeated configure runs just to prepare several accounts.
@@ -81,8 +87,7 @@ Operational convention today:
 Not present today:
 
 - CI automation
-- package-manager bootstrap logic for installing `msmtp`
-- published release artifacts or a hosted curl entrypoint
+- published release artifacts or a hosted curl entrypoint URL
 
 Do not assume future planned tooling already exists. Any new implementation
 work should update this file if it changes the baseline repository reality.

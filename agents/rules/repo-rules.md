@@ -31,6 +31,9 @@ Do not silently merge contradictory instructions.
 - Keep the quick-start guides in [README.md](../../README.md) and
   [docs/getting-started.md](../../docs/getting-started.md) aligned with the
   current human setup flow at all times.
+- Do not claim a hosted `curl` bootstrap URL exists unless the repository
+  actually publishes one. When only a local bootstrap script exists, document
+  that distinction clearly.
 - Keep SMTP account definition in `accounts/*.env`, and keep deployment choices
   such as user vs system install targets in command-level configuration rather
   than tracked account files.

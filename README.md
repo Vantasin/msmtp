@@ -11,6 +11,7 @@ It uses one canonical model:
 
 It also ships with:
 
+- a self-contained bootstrap entrypoint for clone-plus-install onboarding
 - a template-based `msmtprc` renderer
 - an account-only management workflow plus a separate guided human configure flow
 - a dedicated password-rotation workflow for supported secret backends
@@ -120,6 +121,16 @@ If you want the longer walkthrough or backend-specific secret setup details,
 continue with [docs/getting-started.md](./docs/getting-started.md) and
 [docs/secrets.md](./docs/secrets.md).
 
+Optional bootstrap path:
+
+The repo also includes a self-contained
+[`scripts/bootstrap.sh`](./scripts/bootstrap.sh) entrypoint. It is intended
+for a future hosted `curl` bootstrap path: it clones into `~/Git/msmtp`,
+installs the basic dependencies with Homebrew, `apt-get`, or `dnf`, then runs
+`make configure`. On macOS it still expects `make` from Apple's Command Line
+Tools. This repository does not publish a hosted raw `curl` URL yet, so the
+explicit clone-based quick start above remains the primary setup path.
+
 ## Account Model
 
 This repo intentionally uses `accounts/` as the only source of account truth.
@@ -177,6 +188,9 @@ password files stay out of Git.
 - [`Makefile`](./Makefile): common repo entrypoints
 - [`scripts/account-manager.sh`](./scripts/account-manager.sh): guided account
   management without deployment
+- [`scripts/bootstrap.sh`](./scripts/bootstrap.sh): self-contained first-run
+  bootstrap for cloning the repo, installing dependencies, and starting the
+  guided configure flow
 - [`scripts/configure.sh`](./scripts/configure.sh): guided human workflow for
   account, secret, validation, and install
 - [`scripts/password-helper.sh`](./scripts/password-helper.sh): choose an

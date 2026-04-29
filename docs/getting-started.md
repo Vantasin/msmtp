@@ -85,6 +85,27 @@ make check
 `make check` validates the repository scripts and generated-config behavior. It
 does not send mail or verify your live SMTP credentials.
 
+## Optional Bootstrap Script
+
+The repository also includes a self-contained
+[`scripts/bootstrap.sh`](../scripts/bootstrap.sh) entrypoint for future hosted
+bootstrap use. It can:
+
+- clone the repo into `~/Git/msmtp`
+- create `~/Git` if it does not exist
+- install the basic dependencies with Homebrew, `apt-get`, or `dnf`
+- start `make configure` from the cloned checkout
+
+Important limits:
+
+- the repository does not publish a hosted raw `curl` URL yet
+- the script can `cd` internally before it runs `make configure`, but it
+  cannot leave your current shell in that directory after it exits
+- on macOS, the bootstrap path requires Homebrew; if Homebrew is not
+  installed, it exits with a clear error instead of guessing another path
+- on macOS, the bootstrap path still expects `make` from Apple's Command Line
+  Tools after it installs `git` and `msmtp`
+
 ## Account-Only Workflow
 
 Use this when you want to update `accounts/*.env` without changing the live

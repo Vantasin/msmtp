@@ -61,6 +61,7 @@ run_syntax_checks() {
   bash -n "${repo_root}/scripts/keychain-add.sh"
   bash -n "${repo_root}/scripts/password-file-init.sh"
   bash -n "${repo_root}/scripts/gpg-file-init.sh"
+  bash -n "${repo_root}/scripts/bootstrap.sh"
   bash -n "${repo_root}/scripts/render-config.sh"
   bash -n "${repo_root}/scripts/install.sh"
   bash -n "${repo_root}/scripts/install-helper.sh"
@@ -117,6 +118,44 @@ if "${repo_root}/scripts/quickstart.sh" \
   --env-file "${tmp_dir}/bootstrap-accounts/default.env" >/dev/null 2>&1; then
   fail "quickstart.sh should refuse to overwrite an existing account file"
 fi
+
+mkdir -p "${tmp_dir}/bootstrap-bin"
+cat > "${tmp_dir}/bootstrap-bin/sudo" <<'EOF'
+#!/usr/bin/env bash
+"$@"
+EOF
+chmod +x "${tmp_dir}/bootstrap-bin/sudo"
+
+cat > "${tmp_dir}/bootstrap-bin/apt-get" <<EOF
+#!/usr/bin/env bash
+printf '%s\n' "\$*" >> "${tmp_dir}/bootstrap-install.log"
+if [ "\$1" = "install" ]; then
+  cat > "${tmp_dir}/bootstrap-bin/msmtp" <<'INNER'
+#!/usr/bin/env bash
+exit 0
+INNER
+  chmod +x "${tmp_dir}/bootstrap-bin/msmtp"
+fi
+EOF
+chmod +x "${tmp_dir}/bootstrap-bin/apt-get"
+
+PATH="${tmp_dir}/bootstrap-bin:/usr/bin:/bin" \
+MSMTP_BOOTSTRAP_OS=Linux \
+MSMTP_BOOTSTRAP_REPO_URL="${repo_root}" \
+MSMTP_BOOTSTRAP_DEST_PARENT="${tmp_dir}/bootstrap-home/Git" \
+MSMTP_BOOTSTRAP_REPO_NAME="bootstrap-clone" \
+"${repo_root}/scripts/bootstrap.sh" --skip-configure >/dev/null 2>&1
+
+[ -d "${tmp_dir}/bootstrap-home/Git/bootstrap-clone/.git" ] || fail "Expected bootstrap.sh to clone the repository into the requested destination"
+assert_contains "${tmp_dir}/bootstrap-install.log" "update"
+assert_contains "${tmp_dir}/bootstrap-install.log" "install -y git make msmtp"
+
+if PATH="/usr/bin:/bin" \
+  MSMTP_BOOTSTRAP_OS=Darwin \
+  "${repo_root}/scripts/bootstrap.sh" --skip-configure >/dev/null 2>"${tmp_dir}/bootstrap-macos-error.log"; then
+  fail "bootstrap.sh should require Homebrew on macOS"
+fi
+assert_contains "${tmp_dir}/bootstrap-macos-error.log" "Homebrew is required on macOS"
 
 "${repo_root}/scripts/secrets-help.sh" > "${tmp_dir}/secrets-help.txt"
 assert_contains "${tmp_dir}/secrets-help.txt" "make password"

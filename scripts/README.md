@@ -4,6 +4,8 @@ This directory contains the repository's executable automation.
 
 Files:
 
+- [`bootstrap.sh`](./bootstrap.sh): self-contained first-run bootstrap for
+  cloning the repo, installing dependencies, and starting `make configure`
 - [`account-manager.sh`](./account-manager.sh): guided account-file management
 - [`configure.sh`](./configure.sh): guided human workflow for account, secret,
   validation, and install

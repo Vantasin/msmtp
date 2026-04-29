@@ -20,8 +20,10 @@ Use this workflow after significant repository changes.
    as the standalone isolated-account resend/manual path when relevant,
    describe `make test-live-email` as the deployment-level installed-config
    verification path when relevant, describe `make check` as repo automation
-   verification rather than live SMTP verification when relevant, and review
-   [docs/makefile.md](../../docs/makefile.md) when the command surface changes.
+   verification rather than live SMTP verification when relevant, review
+   [docs/makefile.md](../../docs/makefile.md) when the command surface changes,
+   and review [docs/bootstrap.md](../../docs/bootstrap.md) when onboarding or
+   first-run automation changes.
 6. If the change affects accounts or secret handling, explicitly review
    [accounts/README.md](../../accounts/README.md) and
    [docs/secrets.md](../../docs/secrets.md). If repo-local plaintext password
