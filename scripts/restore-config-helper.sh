@@ -45,18 +45,29 @@ choose_target_path() {
 
 choose_backup_for_target() {
   local backups=()
+  local labels=()
   local backup
+  local label
 
   while IFS= read -r backup; do
     [ -n "$backup" ] || continue
     backups+=("$backup")
+    labels+=("$(backup_label_for_path "$backup")")
   done <<EOF
 $(backups_for_target "$target_path")
 EOF
 
   [ "${#backups[@]}" -gt 0 ] || die "No backups found for target: $target_path"
 
-  choose_from_menu "Choose a config backup to restore into $target_path:" "${backups[@]}"
+  label="$(choose_from_menu "Choose a config backup to restore into $target_path:" "${labels[@]}")"
+  for i in "${!labels[@]}"; do
+    if [ "${labels[$i]}" = "$label" ]; then
+      printf '%s\n' "${backups[$i]}"
+      return 0
+    fi
+  done
+
+  die "Selected config backup could not be resolved"
 }
 
 while [ $# -gt 0 ]; do

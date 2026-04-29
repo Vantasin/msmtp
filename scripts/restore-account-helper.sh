@@ -60,7 +60,10 @@ account_backup_label() {
   local target_path
 
   target_path="$(restore_target_path_from_backup_path "$backup")"
-  printf '%s -> %s\n' "$(basename "$backup")" "$(basename "$target_path")"
+  printf '%s - %s (%s)\n' \
+    "$(basename "$target_path")" \
+    "$(human_readable_backup_timestamp_from_path "$backup")" \
+    "$(basename "$backup")"
 }
 
 choose_backup_in_accounts_dir() {
