@@ -47,6 +47,10 @@
 - promoted the GitHub raw bootstrap command to a supported quick-start entry
   point and aligned the bootstrap docs plus agent guidance with that public
   onboarding path
+- refined the guided configure flow so post-account menus default to deploy,
+  secret handling can return to the account menu, GPG setup can return to
+  secret-method selection, live-config tests reuse the install target, and
+  successful configuration ends with an explicit completion message
 - hardened the repo-local `passwords/` plaintext-secret option so password-file
   init and rotation enforce mode `700` on the directory automatically while
   keeping secret files at mode `600`

@@ -99,17 +99,17 @@ EOF
       "Add a new account - create a new accounts/<name>.env file and continue" \
       "Done")"
   elif [ "$account_processed" = "true" ]; then
-    action_label="$(choose_from_menu "Choose the next account step, or continue to deploy the full account set:" \
+    action_label="$(CHOOSE_DEFAULT_INDEX=4 choose_from_menu "Choose the next account step, or continue to deploy the full account set:" \
       "Add a new account - create a new accounts/<name>.env file and continue" \
       "Edit an existing account - update one account file and continue" \
-      "Use an existing account - skip editing and continue with secret handling" \
+      "Handle an existing account secret - set up, rotate, validate, or skip" \
       "Proceed to install and verification - stop configuring accounts and continue" \
       "Done - exit configure without install")"
   else
     action_label="$(choose_from_menu "Choose how to begin:" \
       "Add a new account - create a new accounts/<name>.env file and continue" \
       "Edit an existing account - update one account file and continue" \
-      "Use an existing account - skip editing and continue with secret handling" \
+      "Handle an existing account secret - set up, rotate, validate, or skip" \
       "Done")"
   fi
 
@@ -120,7 +120,7 @@ EOF
     "Edit an existing account - update one account file and continue")
       printf 'edit\n'
       ;;
-    "Use an existing account - skip editing and continue with secret handling")
+    "Handle an existing account secret - set up, rotate, validate, or skip")
       printf 'use\n'
       ;;
     "Proceed to install and verification - stop configuring accounts and continue")
@@ -138,7 +138,8 @@ choose_secret_action() {
   action_label="$(choose_from_menu "Choose what to do with the account secret next:" \
     "Set up the secret - create the first Keychain entry, GPG file, or password file and validate it" \
     "Rotate the secret - replace the existing secret and validate it" \
-    "Skip secret changes - leave the secret backend as-is")"
+    "Skip secret changes - leave the secret backend as-is" \
+    "Return to account menu - choose another account or proceed to install")"
 
   case "$action_label" in
     "Set up the secret - create the first Keychain entry, GPG file, or password file and validate it")
@@ -147,8 +148,11 @@ choose_secret_action() {
     "Rotate the secret - replace the existing secret and validate it")
       printf 'rotate\n'
       ;;
-    *)
+    "Skip secret changes - leave the secret backend as-is")
       printf 'skip\n'
+      ;;
+    *)
+      printf 'back\n'
       ;;
   esac
 }
@@ -304,6 +308,16 @@ printf 'The install step applies the full account set in %s.\n\n' "$accounts_dir
 
 env_file=""
 account_processed="false"
+configure_install_result_file=""
+installed_target_path=""
+
+cleanup_configure_tmp_files() {
+  if [ -n "$configure_install_result_file" ]; then
+    rm -f "$configure_install_result_file"
+  fi
+}
+
+trap cleanup_configure_tmp_files EXIT
 
 while true; do
   workflow_action="$(choose_workflow_action "$account_processed")"
@@ -323,12 +337,12 @@ while true; do
       validate_account_file_name "$account_file_name"
       env_file="$(account_env_path_for_name "$account_file_name")"
       [ ! -e "$env_file" ] || die "Account file already exists: $env_file"
-      run_with_interrupt_passthrough "${repo_root}/scripts/setup.sh" --env-file "$env_file"
+      run_with_interrupt_passthrough "${repo_root}/scripts/setup.sh" --env-file "$env_file" --no-next-steps
       mark_interrupt_dirty
       ;;
     edit)
       env_file="$(choose_account_file)"
-      run_with_interrupt_passthrough "${repo_root}/scripts/setup.sh" --env-file "$env_file" --overwrite
+      run_with_interrupt_passthrough "${repo_root}/scripts/setup.sh" --env-file "$env_file" --overwrite --no-next-steps
       mark_interrupt_dirty
       ;;
     use)
@@ -374,6 +388,9 @@ while true; do
         run_rotate_secret_action "$env_file"
         secret_action_complete="true"
         ;;
+      back)
+        secret_action_complete="true"
+        ;;
       skip)
         if [ "$(prompt_yes_no "Run secret validation now" "yes")" = "yes" ]; then
           run_secret_validation_action "$env_file"
@@ -388,6 +405,7 @@ done
 
 install_performed="false"
 if [ "$(prompt_install_decision)" = "yes" ]; then
+  configure_install_result_file="$(mktemp "${TMPDIR:-/tmp}/msmtp-configure-install.XXXXXX")"
   install_args=(--accounts-dir "$accounts_dir")
   if [ -n "$default_account" ]; then
     install_args+=(--default-account "$default_account")
@@ -401,8 +419,16 @@ if [ "$(prompt_install_decision)" = "yes" ]; then
   if [ "$force_replace" = "true" ]; then
     install_args+=(--force)
   fi
+  install_args+=(--result-file "$configure_install_result_file")
   run_with_interrupt_passthrough "${repo_root}/scripts/install-helper.sh" "${install_args[@]}"
   mark_interrupt_dirty
+  if [ -f "$configure_install_result_file" ]; then
+    load_env_file "$configure_install_result_file"
+    installed_target_path="${INSTALL_TARGET_PATH:-}"
+  fi
+  if [ -z "$installed_target_path" ] && [ -n "$target_path" ]; then
+    installed_target_path="$target_path"
+  fi
   install_performed="true"
 fi
 
@@ -410,8 +436,8 @@ test_email_ran="false"
 if [ "$install_performed" = "true" ]; then
   if [ "$(prompt_live_test_email_decision)" = "yes" ]; then
     live_test_args=(--env-file "$env_file" --yes)
-    if [ -n "$target_path" ]; then
-      live_test_args+=(--target "$target_path")
+    if [ -n "$installed_target_path" ]; then
+      live_test_args+=(--target "$installed_target_path")
     fi
     run_with_interrupt_passthrough "${repo_root}/scripts/test-live-email.sh" "${live_test_args[@]}"
     mark_interrupt_dirty
@@ -442,3 +468,7 @@ else
     printf '  1. Use make rotate-password ACCOUNT_NAME=%s when this secret changes.\n' "$account_file_name" >&2
   fi
 fi
+
+printf '\nConfiguration complete.\n' >&2
+clear_interrupt_handler
+exit 0

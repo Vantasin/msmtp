@@ -55,7 +55,8 @@ make configure
 
 This walks through one or more account creation or editing passes, secret
 setup or rotation, validation, one install step for the full account set, and
-an optional live test email.
+an optional live test email. After each account, pressing Enter continues
+toward install and verification.
 
 Common choices:
 
@@ -284,12 +285,12 @@ make secret-check
 
 See [secrets.md](./secrets.md) for backend-specific setup commands.
 
-When you choose `password_file` in `make account` or `make configure`, the
-setup flow offers:
+When you choose a file-backed secret backend in `make account` or
+`make configure`, the setup flow offers path presets:
 
 - a user-state path under `$HOME/.local/state/msmtp/`
 - a repo-local gitignored path under [`../passwords/`](../passwords/)
-- a system path under `/etc/msmtp/`
+- a system path under `/etc/msmtp/` for `password_file`
 - a custom path
 
 Saved file-backed secret paths are normalized to absolute paths. A leading `~`

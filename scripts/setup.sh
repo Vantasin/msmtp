@@ -7,7 +7,7 @@ script_dir="$(cd "$(dirname "$0")" && pwd)"
 
 usage() {
   cat <<'EOF'
-Usage: scripts/setup.sh [--env-file PATH] [--overwrite]
+Usage: scripts/setup.sh [--env-file PATH] [--overwrite] [--no-next-steps]
 
 Interactive setup for creating or editing one account file. This command only
 updates account data under accounts/; it does not render or install the live
@@ -17,6 +17,7 @@ EOF
 
 env_file="${repo_root}/accounts/default.env"
 allow_overwrite="false"
+show_next_steps="true"
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -27,6 +28,10 @@ while [ $# -gt 0 ]; do
       ;;
     --overwrite)
       allow_overwrite="true"
+      shift
+      ;;
+    --no-next-steps)
+      show_next_steps="false"
       shift
       ;;
     -h | --help)
@@ -203,6 +208,79 @@ prompt_password_file_path() {
   esac
 }
 
+gpg_file_user_state_path_for_account() {
+  local account_name="$1"
+
+  printf '%s/.local/state/msmtp/%s.gpg\n' "$HOME" "$account_name"
+}
+
+gpg_file_repo_local_path_for_account() {
+  local account_name="$1"
+
+  printf '%s/passwords/%s.gpg\n' "$repo_root" "$account_name"
+}
+
+prompt_gpg_file_path() {
+  local account_name="$1"
+  local existing_path="${2:-}"
+  local normalized_existing_path=""
+  local user_state_path repo_local_path
+  local default_choice choice custom_path
+  local option_user option_repo option_custom option_back
+
+  if [ -n "$existing_path" ]; then
+    normalized_existing_path="$(normalize_managed_path "$existing_path")"
+  fi
+
+  user_state_path="$(gpg_file_user_state_path_for_account "$account_name")"
+  repo_local_path="$(gpg_file_repo_local_path_for_account "$account_name")"
+
+  option_user="User state path ${user_state_path} (Recommended for Linux desktops)"
+  option_repo="Repo-local path ${repo_local_path} (Convenience only, gitignored under passwords/)"
+  option_custom="Custom path"
+  option_back="Choose a different secret method"
+
+  case "$normalized_existing_path" in
+    "$user_state_path")
+      default_choice=1
+      ;;
+    "$repo_local_path")
+      default_choice=2
+      ;;
+    *)
+      if [ -n "$normalized_existing_path" ]; then
+        default_choice=3
+      else
+        default_choice=1
+      fi
+      ;;
+  esac
+
+  choice="$(
+    CHOOSE_DEFAULT_INDEX="$default_choice" choose_from_menu "Choose where to store the GPG-encrypted password file:" \
+      "$option_user" \
+      "$option_repo" \
+      "$option_custom" \
+      "$option_back"
+  )"
+
+  case "$choice" in
+    "$option_user")
+      printf '%s\n' "$user_state_path"
+      ;;
+    "$option_repo")
+      printf '%s\n' "$repo_local_path"
+      ;;
+    "$option_custom")
+      custom_path="$(prompt_required "Custom GPG file path" "$normalized_existing_path")"
+      normalize_managed_path "$custom_path"
+      ;;
+    *)
+      printf '__choose_secret_method__\n'
+      ;;
+  esac
+}
+
 if [ -e "$env_file" ] && [ "$allow_overwrite" != "true" ]; then
   die "Refusing to overwrite existing file: $env_file"
 fi
@@ -234,36 +312,46 @@ MSMTP_FROM="$(prompt_required "From address (example: you@example.com)" "${MSMTP
 MSMTP_USER="$(prompt_required "Username (press Enter to accept the bracketed value, often the From address)" "${MSMTP_USER:-$MSMTP_FROM}")"
 
 printf '\nSecret settings:\n' >&2
-MSMTP_SECRET_METHOD="$(prompt_secret_method "${MSMTP_SECRET_METHOD:-$(default_secret_method)}")"
-
 existing_keychain_service="${MSMTP_KEYCHAIN_SERVICE:-}"
 existing_keychain_account="${MSMTP_KEYCHAIN_ACCOUNT:-}"
 existing_gpg_file="${MSMTP_GPG_FILE:-}"
 existing_password_file="${MSMTP_PASSWORD_FILE:-}"
 existing_passwordeval_command="${MSMTP_PASSWORDEVAL_COMMAND:-}"
 
-MSMTP_KEYCHAIN_SERVICE=""
-MSMTP_KEYCHAIN_ACCOUNT=""
-MSMTP_GPG_FILE=""
-MSMTP_PASSWORD_FILE=""
-MSMTP_PASSWORDEVAL_COMMAND=""
+while true; do
+  MSMTP_SECRET_METHOD="$(prompt_secret_method "${MSMTP_SECRET_METHOD:-$(default_secret_method)}")"
 
-case "$MSMTP_SECRET_METHOD" in
-  keychain)
-    MSMTP_KEYCHAIN_SERVICE="$(prompt_required "Keychain service (usually the SMTP host)" "${existing_keychain_service:-$MSMTP_HOST}")"
-    MSMTP_KEYCHAIN_ACCOUNT="$(prompt_required "Keychain account (usually the SMTP username)" "${existing_keychain_account:-$MSMTP_USER}")"
-    ;;
-  gpg)
-    MSMTP_GPG_FILE="$(normalize_managed_path "$(prompt_required "Path to the GPG-encrypted password file (example: ~/.local/state/msmtp/work.gpg)" "$existing_gpg_file")")"
-    ;;
-  password_file)
-    printf 'Password file paths are saved as absolute paths. Leading ~ expands to your home directory.\n' >&2
-    MSMTP_PASSWORD_FILE="$(prompt_password_file_path "$MSMTP_ACCOUNT_NAME" "$existing_password_file")"
-    ;;
-  command)
-    MSMTP_PASSWORDEVAL_COMMAND="$(prompt_required "Custom passwordeval command (example: pass show mail/work)" "$existing_passwordeval_command")"
-    ;;
-esac
+  MSMTP_KEYCHAIN_SERVICE=""
+  MSMTP_KEYCHAIN_ACCOUNT=""
+  MSMTP_GPG_FILE=""
+  MSMTP_PASSWORD_FILE=""
+  MSMTP_PASSWORDEVAL_COMMAND=""
+
+  case "$MSMTP_SECRET_METHOD" in
+    keychain)
+      MSMTP_KEYCHAIN_SERVICE="$(prompt_required "Keychain service (usually the SMTP host)" "${existing_keychain_service:-$MSMTP_HOST}")"
+      MSMTP_KEYCHAIN_ACCOUNT="$(prompt_required "Keychain account (usually the SMTP username)" "${existing_keychain_account:-$MSMTP_USER}")"
+      ;;
+    gpg)
+      printf 'GPG file paths are saved as absolute paths. Leading ~ expands to your home directory.\n' >&2
+      selected_gpg_file="$(prompt_gpg_file_path "$MSMTP_ACCOUNT_NAME" "$existing_gpg_file")"
+      if [ "$selected_gpg_file" = "__choose_secret_method__" ]; then
+        printf 'Returning to secret method selection.\n' >&2
+        continue
+      fi
+      MSMTP_GPG_FILE="$selected_gpg_file"
+      ;;
+    password_file)
+      printf 'Password file paths are saved as absolute paths. Leading ~ expands to your home directory.\n' >&2
+      MSMTP_PASSWORD_FILE="$(prompt_password_file_path "$MSMTP_ACCOUNT_NAME" "$existing_password_file")"
+      ;;
+    command)
+      MSMTP_PASSWORDEVAL_COMMAND="$(prompt_required "Custom passwordeval command (example: pass show mail/work)" "$existing_passwordeval_command")"
+      ;;
+  esac
+
+  break
+done
 
 printf '\nSMTP behavior:\n' >&2
 if [ "$(prompt_yes_no "Enable SMTP auth for this account" "$(yes_no_default_from_truthy "${MSMTP_AUTH:-on}")")" = "yes" ]; then
@@ -300,8 +388,10 @@ write_msmtp_env_file "$env_file"
 sync_persistent_default_account_after_write "$(dirname "$env_file")" "$existing_account_name" "$MSMTP_ACCOUNT_NAME"
 
 printf 'Saved %s\n' "$env_file"
-printf 'Next steps:\n' >&2
-printf '  1. Run make password ACCOUNT_NAME=%s to provision the secret.\n' "$account_file_name" >&2
-printf '  2. Run make secret-check ACCOUNT_NAME=%s to validate the secret lookup.\n' "$account_file_name" >&2
-printf '  3. Run make account if you need to review or change the persistent default account.\n' >&2
-printf '  4. Run make configure for the full guided flow, or make install when you are ready to deploy.\n' >&2
+if [ "$show_next_steps" = "true" ]; then
+  printf 'Next steps:\n' >&2
+  printf '  1. Run make password ACCOUNT_NAME=%s to provision the secret.\n' "$account_file_name" >&2
+  printf '  2. Run make secret-check ACCOUNT_NAME=%s to validate the secret lookup.\n' "$account_file_name" >&2
+  printf '  3. Run make account if you need to review or change the persistent default account.\n' >&2
+  printf '  4. Run make configure for the full guided flow, or make install when you are ready to deploy.\n' >&2
+fi

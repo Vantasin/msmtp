@@ -170,8 +170,10 @@ Starter examples live in [`templates/examples/`](./templates/examples/).
 
 For file-backed secrets:
 
-- `make account` and `make configure` now offer clear path choices for
-  `password_file`
+- `make account` and `make configure` now offer clear path choices for `gpg`
+  and `password_file`
+- GPG files can use a user-state path, a repo-local gitignored path, or a
+  custom path
 - user-owned password files default to `$HOME/.local/state/msmtp/<account>.password`
 - a repo-local gitignored [`passwords/`](./passwords/) option is available for
   convenience

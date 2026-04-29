@@ -77,6 +77,19 @@ Notes:
 
 Use this when `MSMTP_SECRET_METHOD=gpg`.
 
+When you choose `gpg` from `make account` or `make configure`, the guided
+setup offers these path choices:
+
+- user-state path under `$HOME/.local/state/msmtp/` for typical Linux desktop
+  use
+- repo-local gitignored path under [`../passwords/`](../passwords/) as a
+  convenience option
+- custom path for anything else
+- return to secret-method selection if you picked GPG by mistake
+
+The saved value is normalized to an absolute path. A leading `~` expands to
+your home directory before the account file is written.
+
 Create the encrypted file:
 
 ```bash

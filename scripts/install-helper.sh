@@ -12,6 +12,7 @@ Usage: scripts/install-helper.sh [--accounts-dir PATH]
                                  [--output PATH]
                                  [--target PATH]
                                  [--mode copy|symlink]
+                                 [--result-file PATH]
                                  [--force]
 
 Interactive wrapper around scripts/install.sh. When run in a terminal without
@@ -27,6 +28,7 @@ output_file=""
 target_path=""
 install_mode=""
 force_replace="false"
+result_file=""
 
 account_choice_label_for_env_file() {
   local env_path="$1"
@@ -198,6 +200,11 @@ while [ $# -gt 0 ]; do
       install_mode="$2"
       shift 2
       ;;
+    --result-file)
+      [ $# -ge 2 ] || die "--result-file requires a value"
+      result_file="$2"
+      shift 2
+      ;;
     --force)
       force_replace="true"
       shift
@@ -295,3 +302,13 @@ if [ "$force_replace" = "true" ]; then
 fi
 
 run_with_interrupt_passthrough "${repo_root}/scripts/install.sh" "${install_args[@]}"
+if [ -n "$result_file" ]; then
+  mkdir -p "$(dirname "$result_file")"
+  {
+    write_env_assignment INSTALL_TARGET_PATH "$target_path"
+    write_env_assignment INSTALL_MODE "$install_mode"
+    write_env_assignment INSTALL_OUTPUT_FILE "$output_file"
+    write_env_assignment INSTALL_DEFAULT_ACCOUNT "$default_account"
+  } > "$result_file"
+  chmod 600 "$result_file"
+fi

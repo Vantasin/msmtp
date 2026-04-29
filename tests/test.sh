@@ -205,6 +205,29 @@ assert_contains "${tmp_dir}/guided-accounts/repofile.env" "MSMTP_SECRET_METHOD='
 assert_contains "${tmp_dir}/guided-accounts/repofile.env" "MSMTP_PASSWORD_FILE='${repo_root}/passwords/repofile.password'"
 
 printf '%s\n' \
+  "gpgback" \
+  "smtp.gpgback.example" \
+  "587" \
+  "gpgback@example.com" \
+  "" \
+  "gpg" \
+  "4" \
+  "command" \
+  "pass show mail/gpgback" \
+  "" \
+  "" \
+  "" \
+  "" \
+  "" \
+  "" \
+  "" | "${repo_root}/scripts/setup.sh" \
+    --env-file "${tmp_dir}/guided-accounts/gpgback.env" >/dev/null 2>&1
+
+assert_contains "${tmp_dir}/guided-accounts/gpgback.env" "MSMTP_SECRET_METHOD='command'"
+assert_contains "${tmp_dir}/guided-accounts/gpgback.env" "MSMTP_GPG_FILE=''"
+assert_contains "${tmp_dir}/guided-accounts/gpgback.env" "MSMTP_PASSWORDEVAL_COMMAND='pass show mail/gpgback'"
+
+printf '%s\n' \
   "" \
   "smtp.edited.example" \
   "" \
@@ -570,9 +593,13 @@ assert_contains "${tmp_dir}/home/.msmtprc" "account work"
   --default-account personal \
   --output "${tmp_dir}/helper-install.msmtprc" \
   --target "${tmp_dir}/helper-home/.msmtprc" \
-  --mode copy >/dev/null
+  --mode copy \
+  --result-file "${tmp_dir}/helper-install-result.env" >/dev/null
 
 assert_contains "${tmp_dir}/helper-home/.msmtprc" "account personal"
+assert_contains "${tmp_dir}/helper-install-result.env" "INSTALL_TARGET_PATH='${tmp_dir}/helper-home/.msmtprc'"
+assert_contains "${tmp_dir}/helper-install-result.env" "INSTALL_MODE='copy'"
+assert_contains "${tmp_dir}/helper-install-result.env" "INSTALL_DEFAULT_ACCOUNT='personal'"
 
 mkdir -p "${tmp_dir}/existing-home"
 printf 'old-config\n' > "${tmp_dir}/existing-home/.msmtprc"

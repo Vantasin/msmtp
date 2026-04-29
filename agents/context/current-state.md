@@ -54,6 +54,10 @@ Operational convention today:
 - Guided `make configure` now treats pre-existing file-backed secrets as a
   recoverable decision point, offering rotate, validate, skip, or retry
   choices instead of exiting immediately on the first existing-secret conflict.
+- Guided `make configure` also preserves the install target selected during
+  install so the optional live-config email test does not ask for the same
+  target again, and it offers return paths from secret handling back to account
+  selection.
 - `make restore` is now the umbrella entrypoint; typed restore commands handle
   config, account, and file-backed secret backups explicitly.
 - The quick-start path centers on `make configure`, which now offers an
