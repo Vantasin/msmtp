@@ -29,7 +29,8 @@ The current implementation flow is:
    mode by default or symlink mode as an advanced option, while resolving the
    effective default account from `accounts/.default-account` or an explicit
    install-time override when needed
-5. validate behavior through repository smoke tests
+5. validate the live SMTP setup with a test email, and optionally run the
+   repository smoke tests when you want to verify the automation itself
 6. fall back to [manual docs](../../docs/manual-setup.md) when direct
    `msmtprc` setup is needed
 
@@ -43,5 +44,8 @@ Implementation safety expectations now include:
   cancellation and cancellation after state-changing steps
 - deployment-time default-account choices should resolve install ambiguity
   without silently rewriting account files or the persistent default pointer
+- repo-local file paths that are shown to users or saved into account files
+  should be normalized through shared helpers so they stay canonical across
+  macOS and Linux
 
 This separation keeps policy, explanation, and implementation distinct.

@@ -14,7 +14,9 @@ Use this workflow after significant repository changes.
    install, restore, or verification flows, explicitly review
    [README.md](../../README.md) and
    [docs/getting-started.md](../../docs/getting-started.md) for linear,
-   actionable quick-start drift.
+   actionable quick-start drift. Keep the primary `make configure` plus live
+   test-email path clear, and describe `make check` as repo automation
+   verification rather than live SMTP verification when relevant.
 6. If the change affects accounts or secret handling, explicitly review
    [accounts/README.md](../../accounts/README.md) and
    [docs/secrets.md](../../docs/secrets.md). If repo-local plaintext password

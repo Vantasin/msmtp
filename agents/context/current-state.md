@@ -37,6 +37,9 @@ Operational convention today:
 - The preferred human-facing commands are `make configure`, `make password`,
   `make install`, and `make restore`; `make account` remains the account-only
   CRUD entrypoint.
+- The quick-start path is `make configure` followed by a live test email;
+  `make check` is secondary verification for the repo automation itself rather
+  than the primary live SMTP validation step.
 - Guided install prompts stay concise and only ask for target, mode, or
   default-account choices when the deployment is ambiguous.
 - Install-time default-account choices can override a missing or stale
@@ -47,6 +50,9 @@ Operational convention today:
 - File-backed secret paths are normalized to absolute paths during guided
   setup, rendering, and helper execution; a leading `~` expands to the user's
   home directory instead of being treated as a literal repo-relative path.
+- Repo-local file paths shown in prompts or written into account files resolve
+  from the canonical repository root so macOS case-insensitive path spellings
+  do not leak into Linux-facing configuration.
 - Install, restore, and file-backed secret rotation preserve adjacent
   `.bak.*` recovery points and aim to leave either the old or new live file in
   place if interrupted.

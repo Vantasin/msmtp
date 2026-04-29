@@ -43,6 +43,9 @@ Do not silently merge contradictory instructions.
 - Keep interactive CLI prompts concise. Prefer one focused prompt or menu with
   recommendation text inline over separate guidance blocks that restate the
   same choices.
+- When showing or storing repo-local file paths, canonicalize them through the
+  shared helpers so the saved path does not depend on shell-specific or
+  case-insensitive filesystem spellings.
 - When modifying repo-owned file-writing or deployment scripts, preserve the
   shared atomic-replacement patterns in [`scripts/lib/common.sh`](../../scripts/lib/common.sh)
   instead of introducing ad hoc in-place mutation.

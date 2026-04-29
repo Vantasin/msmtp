@@ -62,6 +62,13 @@ make configure
 This guides you through account setup, secret setup or rotation, validation,
 and install. It applies the full account set in [`accounts/`](./accounts/).
 
+Common choices:
+
+- use `keychain` on macOS desktops, `gpg` on Linux desktops, and
+  `password_file` on unattended servers
+- use user config installs for desktops and single-user setups, and system
+  installs for root-managed servers
+
 If you only want to manage account files without deploying anything, use:
 
 ```bash
@@ -77,18 +84,21 @@ make secret-check
 make install
 ```
 
-4. Run the repo smoke tests.
-
-```bash
-make check
-```
-
-5. Send a test email. Replace `you@example.com` with the mailbox that should
+4. Send a test email. Replace `you@example.com` with the mailbox that should
 receive the message.
 
 ```bash
 printf 'Subject: msmtp test\nTo: you@example.com\n\nmsmtp is working.\n' | msmtp you@example.com
 ```
+
+If you want to verify the repo automation itself, run:
+
+```bash
+make check
+```
+
+`make check` validates the repository scripts and generated-config behavior. It
+does not send mail or verify your live SMTP credentials.
 
 If you want the longer walkthrough or backend-specific secret setup details,
 continue with [docs/getting-started.md](./docs/getting-started.md) and

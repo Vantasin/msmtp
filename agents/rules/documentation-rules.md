@@ -4,6 +4,8 @@
 - Quick-start and onboarding docs should prefer a linear end-to-end flow and
   use single-purpose copy/paste blocks instead of mixing multiple options in a
   single command block.
+- Quick-start docs should center the primary human setup path and distinguish
+  clearly between live service validation and repo-self-tests.
 - [`docs/README.md`](../../docs/README.md) contains human-readable explanatory
   documentation and should not become a duplicate of every canonical rule.
 - Major or non-obvious directories should include a local `README.md`.

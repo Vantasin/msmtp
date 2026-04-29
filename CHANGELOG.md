@@ -18,6 +18,10 @@
 - added clearer `password_file` path choices in guided account setup, plus
   absolute-path normalization, `~` expansion, and an optional gitignored
   `passwords/` convenience directory for repo-local plaintext password files
+- clarified the quick-start docs around the primary `make configure` plus live
+  test-email path, moved `make check` into secondary repo-automation
+  verification, and aligned the agent guidance with canonical repo-root path
+  handling and current onboarding behavior
 
 ## 2026-04-27
 
