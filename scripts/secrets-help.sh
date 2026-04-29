@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-script_dir="$(cd "$(dirname "$0")" && pwd)"
-repo_root="$(cd "${script_dir}/.." && pwd)"
+script_dir="$(cd "$(dirname "$0")" && pwd -P)"
+if repo_root="$(git -C "${script_dir}/.." rev-parse --show-toplevel 2>/dev/null)"; then
+  repo_root="$(cd "$repo_root" && pwd -P)"
+else
+  repo_root="$(cd "${script_dir}/.." && pwd -P)"
+fi
 
 cat <<EOF
 Supported secret backends:

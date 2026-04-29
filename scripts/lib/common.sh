@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 
-common_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-repo_root="$(cd "${common_dir}/../.." && pwd)"
+common_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+if repo_root="$(git -C "${common_dir}/../.." rev-parse --show-toplevel 2>/dev/null)"; then
+  repo_root="$(cd "$repo_root" && pwd -P)"
+else
+  repo_root="$(cd "${common_dir}/../.." && pwd -P)"
+fi
 
 die() {
   printf 'error: %s\n' "$*" >&2

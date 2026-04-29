@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-script_dir="$(cd "$(dirname "$0")" && pwd)"
-repo_root="$(cd "${script_dir}/.." && pwd)"
+script_dir="$(cd "$(dirname "$0")" && pwd -P)"
+if repo_root="$(git -C "${script_dir}/.." rev-parse --show-toplevel 2>/dev/null)"; then
+  repo_root="$(cd "$repo_root" && pwd -P)"
+else
+  repo_root="$(cd "${script_dir}/.." && pwd -P)"
+fi
 
 fail() {
   printf 'test failure: %s\n' "$*" >&2
@@ -61,6 +65,10 @@ cleanup() {
 trap cleanup EXIT
 
 run_syntax_checks
+
+canonical_repo_root="$(git -C "${repo_root}" rev-parse --show-toplevel)"
+common_repo_root="$(bash -lc '. "'"${repo_root}/scripts/lib/common.sh"'"; printf "%s\n" "$repo_root"')"
+[ "$common_repo_root" = "$canonical_repo_root" ] || fail "Expected common.sh repo_root to match git rev-parse --show-toplevel"
 
 mkdir -p "${tmp_dir}/bootstrap-accounts"
 "${repo_root}/scripts/quickstart.sh" \
