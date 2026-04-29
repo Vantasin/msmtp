@@ -27,7 +27,8 @@ Present today:
   backup restore flows
 - a [`Makefile`](../../Makefile) with guided top-level commands plus explicit
   user/system install and restore targets
-- shell-based smoke tests in [`tests/test.sh`](../../tests/test.sh)
+- shell-based smoke tests in [`tests/test.sh`](../../tests/test.sh) that print
+  numbered pass lines describing each verified behavior
 
 Operational convention today:
 
@@ -65,7 +66,9 @@ Operational convention today:
   standalone isolated-account resend/manual path, `make test-live-email`
   verifies the installed live config path, and `make check` is secondary
   verification for the repo automation itself rather than the primary live
-  SMTP validation step.
+  SMTP validation step. `make check` prints a concise numbered report of the
+  setup, render, secret, install, restore, email-test, and Makefile command
+  behaviors it verified.
 - Guided install prompts stay concise and only ask for target, mode, or
   default-account choices when the deployment is ambiguous.
 - Install-time default-account choices can override a missing or stale

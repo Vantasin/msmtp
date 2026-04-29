@@ -2,6 +2,9 @@
 
 [`test.sh`](./test.sh) is the shell smoke suite for the repo.
 
+`make check` prints a numbered pass line for each logical smoke-check area so
+the output explains which repository behaviors were verified.
+
 It validates:
 
 - quickstart and interactive account-file setup

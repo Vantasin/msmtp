@@ -59,7 +59,8 @@ Use these commands by intent:
 
 ## Verification and Cleanup
 
-- `make check`: run the repository smoke tests
+- `make check`: run the repository smoke tests and print numbered pass lines
+  describing the automation behaviors that were verified
 - `make clean`: remove generated repo-root output files such as
   `.msmtprc.generated`
 

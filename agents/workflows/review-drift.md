@@ -22,7 +22,9 @@ Use this workflow after significant repository changes.
    as the standalone isolated-account resend/manual path when relevant,
    describe `make test-live-email` as the deployment-level installed-config
    verification path when relevant, describe `make check` as repo automation
-   verification rather than live SMTP verification when relevant, review
+   verification rather than live SMTP verification when relevant, keep
+   smoke-test output descriptions aligned with the numbered pass-line report,
+   review
    [docs/makefile.md](../../docs/makefile.md) when the command surface changes,
    and review [docs/bootstrap.md](../../docs/bootstrap.md) when onboarding or
    first-run automation changes.

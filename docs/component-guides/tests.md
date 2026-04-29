@@ -7,7 +7,8 @@ Current file:
 - [`test.sh`](../../tests/test.sh): shell smoke tests for quickstart,
   interactive setup, password rotation, config/account/secret restore,
   secret validation, multi-account render, copy install, and symlink install
-  behavior
+  behavior; the suite prints numbered pass lines so maintainers can see which
+  workflow areas were verified
 
 Run them with:
 

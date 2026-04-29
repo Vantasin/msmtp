@@ -16,4 +16,5 @@ interactive setup flow, executable render, account-only management, a separate
 guided human configure flow, password/install/restore helpers, safer install,
 backup-restore scripts, linear human quick-start docs, secret-helper scripts
 for supported backends, a Makefile reference doc, interruption-aware
-workflows, and smoke tests for the supported credential modes.
+workflows, and numbered smoke-test reporting for the supported setup,
+rendering, secret, install, restore, test-email, and Makefile command paths.

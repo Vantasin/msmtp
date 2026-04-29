@@ -15,7 +15,8 @@ Operational project assets live in focused directories:
 - [`scripts/`](../../scripts/) for repeatable automation such as bootstrap,
   secret setup, interactive setup, account-only management, guided configure,
   render, install, and typed restore flows
-- [`tests/`](../../tests/) for shell-based verification logic
+- [`tests/`](../../tests/) for shell-based verification logic with
+  human-readable smoke-check output
 
 The current implementation flow is:
 
@@ -30,7 +31,8 @@ The current implementation flow is:
    effective default account from `accounts/.default-account` or an explicit
    install-time override when needed
 5. validate the live SMTP setup with a test email, and optionally run the
-   repository smoke tests when you want to verify the automation itself
+   repository smoke tests when you want a numbered report of the automation
+   behaviors that still pass
 6. fall back to [manual docs](../../docs/manual-setup.md) when direct
    `msmtprc` setup is needed
 

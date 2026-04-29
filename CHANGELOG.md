@@ -4,6 +4,8 @@
 
 - expanded `make check` output so each logical smoke check prints a concise
   pass line describing what repo behavior was verified
+- aligned agent context/workflows and test documentation with the numbered
+  smoke-test report behavior
 
 ## 2026-04-28
 
