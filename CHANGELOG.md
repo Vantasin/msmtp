@@ -51,6 +51,8 @@
   secret handling can return to the account menu, GPG setup can return to
   secret-method selection, live-config tests reuse the install target, and
   successful configuration ends with an explicit completion message
+- condensed the root README into a focused quick-start guide and moved detailed
+  command, account, secret, and layout references to the existing docs
 - hardened the repo-local `passwords/` plaintext-secret option so password-file
   init and rotation enforce mode `700` on the directory automatically while
   keeping secret files at mode `600`

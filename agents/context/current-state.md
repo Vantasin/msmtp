@@ -5,8 +5,8 @@ working implementation for managing `msmtp` configuration.
 
 Present today:
 
-- root [README.md](../../README.md), [AGENTS.md](../../AGENTS.md), and
-  [CHANGELOG.md](../../CHANGELOG.md)
+- root [README.md](../../README.md) as a concise quick-start landing page,
+  [AGENTS.md](../../AGENTS.md), and [CHANGELOG.md](../../CHANGELOG.md)
 - linear human onboarding in [README.md](../../README.md) and
   [docs/getting-started.md](../../docs/getting-started.md), from supported
   bootstrap or manual clone through test email

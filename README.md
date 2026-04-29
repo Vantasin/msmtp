@@ -1,265 +1,113 @@
 # msmtp
 
-`msmtp` is a cross-platform repository for generating, testing, and installing
-reproducible `msmtp` configuration on Linux and macOS.
+Portable `msmtp` configuration for Linux and macOS.
 
-It uses one canonical model:
-
-- account files live under [`accounts/`](./accounts/)
-- rendered `msmtprc` output is generated from that directory
-- user vs system install scope is chosen at install time, not stored in account files
-
-It also ships with:
-
-- a self-contained bootstrap entrypoint for clone-plus-install onboarding
-- a template-based `msmtprc` renderer
-- an account-only management workflow plus a separate guided human configure flow
-- a dedicated password-rotation workflow for supported secret backends
-- `passwordeval` support for macOS Keychain, Linux GPG, secure password files,
-  and custom commands
-- helper commands for secret-backend setup and validation
-- safer install flows that back up existing targets before replacement
-- absolute-path normalization for file-backed secret paths, including `~`
-  expansion and an optional gitignored [`passwords/`](./passwords/) workspace
-- smoke tests that validate the generated config without needing a live SMTP
-  account
+This repo generates an `msmtprc` from account files under
+[`accounts/`](./accounts/), helps provision secrets without committing them,
+installs the live config, and sends a real test email to verify the result.
 
 ## Quick Start
 
-1. Optional fast bootstrap.
+### 1. Fast Bootstrap
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Vantasin/msmtp/main/scripts/bootstrap.sh | bash
 ```
 
-This supported entry point clones the repo into `~/Git/msmtp`, installs the
-basic dependencies with Homebrew, `apt-get`, or `dnf`, then starts
-`make configure`. On macOS it still expects `make` from Apple's Command Line
-Tools. The script can run `make configure` interactively, but it cannot leave
-your current shell inside the repo after it exits.
+This clones the repo into `~/Git/msmtp`, installs basic dependencies with
+Homebrew, `apt-get`, or `dnf`, then starts `make configure`.
 
-2. Manual clone-based setup.
+On macOS, install Homebrew first. The script expects `make` from Apple's
+Command Line Tools.
+
+### 2. Manual Setup
+
+Use this path if you do not want to run the bootstrap script.
 
 ```bash
 git clone https://github.com/Vantasin/msmtp.git
 cd msmtp
 ```
 
-3. Install `msmtp`.
-
-macOS with Homebrew:
+Install `msmtp`.
 
 ```bash
 brew install msmtp
 ```
-
-Debian or Ubuntu:
 
 ```bash
 sudo apt update
 sudo apt install msmtp
 ```
 
-Fedora:
-
 ```bash
 sudo dnf install msmtp
 ```
 
-4. Run the guided configure flow.
+Run the guided setup.
 
 ```bash
 make configure
 ```
 
-This guides you through one or more account setup or edit passes, secret setup
-or rotation, validation, a single install step, and an optional live test
-email. It applies the full account set in [`accounts/`](./accounts/).
+`make configure` guides you through account setup, secret setup or rotation,
+validation, install, and an optional live test email.
 
-Common choices:
+## Common Commands
 
-- use `keychain` on macOS desktops, `gpg` on Linux desktops, and
-  `password_file` on unattended servers
-- use user config installs for desktops and single-user setups, and system
-  installs for root-managed servers
+```bash
+make configure
+```
 
-If you only want to manage account files without deploying anything, use:
+Guided end-to-end setup.
 
 ```bash
 make account
 ```
 
-Other direct commands remain available:
+Manage account files without installing the live config.
 
 ```bash
-make password
-make rotate-password
 make test-email
+```
+
+Test one account using a temporary config.
+
+```bash
 make test-live-email
-make secret-check
-make install
+```
+
+Test the installed live config.
+
+```bash
 make restore
 ```
 
-5. If you skip the test email inside `make configure`, send one later.
-
-```bash
-make test-email
-```
-
-This command prompts for the account to test, defaults the recipient to that
-account's `from` address, and sends a real email using a temporary one-account
-render.
-
-If you want to verify the actual installed live config path instead, use:
-
-```bash
-make test-live-email
-```
-
-That command uses the selected live `msmtp` config file directly and is the
-better deployment-level check after `make install`.
-
-If you want to verify the repo automation itself, run:
+Restore config, account, or file-backed secret backups.
 
 ```bash
 make check
 ```
 
-`make check` validates the repository scripts and generated-config behavior. It
-does not send mail or verify your live SMTP credentials.
+Run repo smoke tests. This does not send mail or verify SMTP credentials.
 
-If you want the longer walkthrough or backend-specific secret setup details,
-continue with [docs/getting-started.md](./docs/getting-started.md) and
-[docs/secrets.md](./docs/secrets.md).
+## Secrets
 
-Bootstrap details and overrides are documented in
-[docs/bootstrap.md](./docs/bootstrap.md).
+Use one secret method per account:
 
-## Account Model
+- `keychain` for macOS desktops
+- `gpg` for Linux desktops
+- `password_file` for unattended servers
+- `command` for external tools such as `pass` or Vault
 
-This repo intentionally uses `accounts/` as the only source of account truth.
+Generated account files, rendered configs, and repo-local plaintext passwords
+are gitignored. The committed repo stores templates and automation, not live
+credentials.
 
-- `accounts/default.env` is the simplest single-account setup
-- `accounts/work.env` and `accounts/personal.env` are typical multi-account files
-- `make generate` and `make install` operate on the whole directory
-- `make secret-check` can validate the whole directory or one account when you pass `ACCOUNT_NAME=...`
-- `accounts/.default-account` stores the persistent default account when you do not pass `DEFAULT_ACCOUNT=...`
-- each account file must use a unique `MSMTP_ACCOUNT_NAME`
-- `MSMTP_ACCOUNT_NAME=default` is reserved by `msmtp`; `accounts/default.env`
-  should usually use an account name like `primary` instead
+## More Docs
 
-When you create the first account through the guided setup flows, the repo
-initializes [`accounts/.default-account`](./accounts/) automatically. Use
-`make account` to review or change that persistent default later, or pass
-`DEFAULT_ACCOUNT=...` for a one-off render or install override.
-
-If the persistent default is missing or stale, guided `make install` can choose
-one for the current deploy without rewriting the stored account data.
-
-## Credential Modes
-
-Choose one `MSMTP_SECRET_METHOD` per account file:
-
-- `keychain`: macOS Keychain lookup via `security find-generic-password`
-- `gpg`: decrypt a GPG-encrypted password file
-- `password_file`: read from a secure password file
-- `command`: run a custom `passwordeval` command directly
-
-Starter examples live in [`templates/examples/`](./templates/examples/).
-
-For file-backed secrets:
-
-- `make account` and `make configure` now offer clear path choices for `gpg`
-  and `password_file`
-- GPG files can use a user-state path, a repo-local gitignored path, or a
-  custom path
-- user-owned password files default to `$HOME/.local/state/msmtp/<account>.password`
-- a repo-local gitignored [`passwords/`](./passwords/) option is available for
-  convenience
-- system installs can use `/etc/msmtp/<account>.password`
-- custom paths are normalized to absolute paths, and a leading `~` expands to
-  your home directory before the path is saved or rendered
-
-## Tracking and Safety
-
-Generated or personalized `msmtprc` files should stay untracked. The repo
-ignores `accounts/*.env` and `.msmtprc*` outputs so private account details and
-local secret paths do not get committed accidentally. The optional
-[`passwords/`](./passwords/) directory is also ignored so repo-local plaintext
-password files stay out of Git.
-
-## Main Files
-
-- [`accounts/README.md`](./accounts/README.md): canonical account-file model
-- [`Makefile`](./Makefile): common repo entrypoints
-- [`scripts/account-manager.sh`](./scripts/account-manager.sh): guided account
-  management without deployment
-- [`scripts/bootstrap.sh`](./scripts/bootstrap.sh): self-contained first-run
-  bootstrap for cloning the repo, installing dependencies, and starting the
-  guided configure flow
-- [`scripts/configure.sh`](./scripts/configure.sh): guided human workflow for
-  account, secret, validation, and install
-- [`scripts/password-helper.sh`](./scripts/password-helper.sh): choose an
-  account file and dispatch to the correct password helper
-- [`scripts/rotate-password.sh`](./scripts/rotate-password.sh): rotate an
-  existing secret safely and validate it
-- [`scripts/test-email.sh`](./scripts/test-email.sh): send a real test email
-  for one selected account using a temporary one-account render
-- [`templates/msmtprc.template`](./templates/msmtprc.template): canonical
-  config template
-- [`scripts/setup.sh`](./scripts/setup.sh): interactive setup that writes one
-  account file
-- [`scripts/render-config.sh`](./scripts/render-config.sh): generate a
-  concrete config file from `accounts/`
-- [`scripts/install-helper.sh`](./scripts/install-helper.sh): guided install
-  flow for choosing target and install mode
-- [`scripts/install.sh`](./scripts/install.sh): render and install the config
-- [`scripts/restore-helper.sh`](./scripts/restore-helper.sh): guided restore
-  umbrella for choosing backup type
-- [`scripts/restore-config-helper.sh`](./scripts/restore-config-helper.sh):
-  guided restore flow for live config targets
-- [`scripts/restore-account-helper.sh`](./scripts/restore-account-helper.sh):
-  guided restore flow for `accounts/*.env` backups
-- [`scripts/restore-secret-helper.sh`](./scripts/restore-secret-helper.sh):
-  guided restore flow for file-backed secret backups
-- [`scripts/restore-backup.sh`](./scripts/restore-backup.sh): restore a
-  backed-up live config target
-- [`scripts/quickstart.sh`](./scripts/quickstart.sh): bootstrap one account
-  file from a chosen example
-- [`tests/test.sh`](./tests/test.sh): repo smoke tests
-
-## Repo Layout
-
-```text
-.
-├── Makefile
-├── AGENTS.md
-├── CHANGELOG.md
-├── README.md
-├── accounts/
-├── agents/
-├── docs/
-├── passwords/
-├── scripts/
-├── templates/
-└── tests/
-```
-
-## Documentation
-
-- [`docs/getting-started.md`](./docs/getting-started.md): setup and usage
-  walkthrough
-- [`docs/makefile.md`](./docs/makefile.md): explanation of the `make` command
-  surface and variables
-- [`docs/secrets.md`](./docs/secrets.md): secure secret-backend setup and
-  validation
-- [`docs/manual-setup.md`](./docs/manual-setup.md): raw `msmtprc` fallback
-  guide
-- [`docs/architecture.md`](./docs/architecture.md): repository architecture
-  and boundaries
-- [`docs/repo-layout.md`](./docs/repo-layout.md): what each major directory is
-  for
-- [`docs/agent-governance.md`](./docs/agent-governance.md): source-of-truth
-  and drift-review expectations
-- [`agents/README.md`](./agents/README.md): canonical agent operating guidance
+- [docs/getting-started.md](./docs/getting-started.md): full setup walkthrough
+- [docs/bootstrap.md](./docs/bootstrap.md): bootstrap details and overrides
+- [docs/secrets.md](./docs/secrets.md): secret backend setup and rotation
+- [docs/makefile.md](./docs/makefile.md): full command reference
+- [docs/manual-setup.md](./docs/manual-setup.md): manual `msmtprc` fallback
