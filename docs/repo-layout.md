@@ -23,6 +23,8 @@
 ## Implementation Areas
 
 - [`accounts/`](../accounts/): the canonical local account-file workspace
+- [`passwords/`](../passwords/): optional gitignored local-only plaintext
+  password-file workspace
 - [`templates/`](../templates/): config templates and account-file examples
 - [`scripts/`](../scripts/): repeatable automation for quickstart, interactive
   setup, render, install, restore, and secret workflows

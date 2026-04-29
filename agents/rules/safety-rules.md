@@ -5,6 +5,10 @@
   methods.
 - Any workflow that touches credential storage or secret retrieval must document
   its security assumptions.
+- Plaintext password files should default to user-state or system paths, not
+  tracked repo paths. If a repo-local plaintext convenience path is offered, it
+  must stay gitignored and be documented as a convenience tradeoff rather than
+  the preferred secure default.
 - Scripts that replace live config or secret files should prefer atomic
   replacement and recoverable backups over destructive in-place mutation.
 - When interruption behavior can leave external state in question, document the

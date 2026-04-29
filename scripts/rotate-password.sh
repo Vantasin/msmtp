@@ -221,21 +221,23 @@ case "$secret_method" in
     ;;
   password_file)
     require_var MSMTP_PASSWORD_FILE
+    normalized_password_file="$(normalize_managed_path "$MSMTP_PASSWORD_FILE")"
     new_secret="$(prompt_new_secret)"
-    write_password_file_secret "$MSMTP_PASSWORD_FILE" "$new_secret"
-    printf 'Rotated password file secret at %s\n' "$MSMTP_PASSWORD_FILE"
+    write_password_file_secret "$normalized_password_file" "$new_secret"
+    printf 'Rotated password file secret at %s\n' "$normalized_password_file"
     "${repo_root}/scripts/secret-check.sh" --env-file "$env_file"
     ;;
   gpg)
     require_var MSMTP_GPG_FILE
+    normalized_gpg_file="$(normalize_managed_path "$MSMTP_GPG_FILE")"
     if [ -z "$gpg_recipient" ] && [ -t 0 ]; then
       gpg_recipient="$(prompt_value "GPG recipient (leave blank for symmetric encryption)" "")"
-    elif [ -z "$gpg_recipient" ] && path_exists "$MSMTP_GPG_FILE"; then
+    elif [ -z "$gpg_recipient" ] && path_exists "$normalized_gpg_file"; then
       die "Non-interactive GPG rotation requires --recipient or an interactive choice so the encryption mode is explicit"
     fi
     new_secret="$(prompt_new_secret)"
-    write_gpg_secret "$MSMTP_GPG_FILE" "$new_secret" "$gpg_recipient"
-    printf 'Rotated GPG secret at %s\n' "$MSMTP_GPG_FILE"
+    write_gpg_secret "$normalized_gpg_file" "$new_secret" "$gpg_recipient"
+    printf 'Rotated GPG secret at %s\n' "$normalized_gpg_file"
     if [ -n "$gpg_recipient" ]; then
       printf 'Encrypted to recipient %s\n' "$gpg_recipient"
     else

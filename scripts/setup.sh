@@ -136,6 +136,71 @@ prompt_secret_method() {
   done
 }
 
+prompt_password_file_path() {
+  local account_name="$1"
+  local existing_path="${2:-}"
+  local normalized_existing_path=""
+  local user_state_path repo_local_path system_path
+  local default_choice choice custom_path
+  local option_user option_repo option_system option_custom
+
+  if [ -n "$existing_path" ]; then
+    normalized_existing_path="$(normalize_managed_path "$existing_path")"
+  fi
+
+  user_state_path="$(password_file_user_state_path_for_account "$account_name")"
+  repo_local_path="$(password_file_repo_local_path_for_account "$account_name")"
+  system_path="$(password_file_system_path_for_account "$account_name")"
+
+  option_user="User state path ${user_state_path} (Recommended for user-owned local secrets)"
+  option_repo="Repo-local path ${repo_local_path} (Convenience only, gitignored under passwords/)"
+  option_system="System path ${system_path} (Typical for root-managed servers)"
+  option_custom="Custom path"
+
+  case "$normalized_existing_path" in
+    "$user_state_path")
+      default_choice=1
+      ;;
+    "$repo_local_path")
+      default_choice=2
+      ;;
+    "$system_path")
+      default_choice=3
+      ;;
+    *)
+      if [ -n "$normalized_existing_path" ]; then
+        default_choice=4
+      else
+        default_choice=1
+      fi
+      ;;
+  esac
+
+  choice="$(
+    CHOOSE_DEFAULT_INDEX="$default_choice" choose_from_menu "Choose where to store the password file:" \
+      "$option_user" \
+      "$option_repo" \
+      "$option_system" \
+      "$option_custom"
+  )"
+
+  case "$choice" in
+    "$option_user")
+      printf '%s\n' "$user_state_path"
+      ;;
+    "$option_repo")
+      printf '%s\n' "$repo_local_path"
+      ;;
+    "$option_system")
+      printf '%s\n' "$system_path"
+      ;;
+    *)
+      custom_path="$(prompt_required "Custom password file path" "$normalized_existing_path")"
+      normalize_managed_path "$custom_path"
+      ;;
+  esac
+}
+
 if [ -e "$env_file" ] && [ "$allow_overwrite" != "true" ]; then
   die "Refusing to overwrite existing file: $env_file"
 fi
@@ -183,10 +248,11 @@ case "$MSMTP_SECRET_METHOD" in
     MSMTP_KEYCHAIN_ACCOUNT="$(prompt_required "Keychain account (usually the SMTP username)" "${existing_keychain_account:-$MSMTP_USER}")"
     ;;
   gpg)
-    MSMTP_GPG_FILE="$(prompt_required "Path to the GPG-encrypted password file (example: ~/.local/state/msmtp/work.gpg)" "$existing_gpg_file")"
+    MSMTP_GPG_FILE="$(normalize_managed_path "$(prompt_required "Path to the GPG-encrypted password file (example: ~/.local/state/msmtp/work.gpg)" "$existing_gpg_file")")"
     ;;
   password_file)
-    MSMTP_PASSWORD_FILE="$(prompt_required "Path to the password file (server example: /etc/msmtp/work.password)" "$existing_password_file")"
+    printf 'Password file paths are saved as absolute paths. Leading ~ expands to your home directory.\n' >&2
+    MSMTP_PASSWORD_FILE="$(prompt_password_file_path "$MSMTP_ACCOUNT_NAME" "$existing_password_file")"
     ;;
   command)
     MSMTP_PASSWORDEVAL_COMMAND="$(prompt_required "Custom passwordeval command (example: pass show mail/work)" "$existing_passwordeval_command")"

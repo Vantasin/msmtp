@@ -15,6 +15,9 @@
 - moved the persistent default account out of `accounts/*.env` and into
   `accounts/.default-account`, updated the guided flows to manage that file,
   and kept `DEFAULT_ACCOUNT=...` as a one-off render/install override
+- added clearer `password_file` path choices in guided account setup, plus
+  absolute-path normalization, `~` expansion, and an optional gitignored
+  `passwords/` convenience directory for repo-local plaintext password files
 
 ## 2026-04-27
 

@@ -18,6 +18,8 @@ It also ships with:
   and custom commands
 - helper commands for secret-backend setup and validation
 - safer install flows that back up existing targets before replacement
+- absolute-path normalization for file-backed secret paths, including `~`
+  expansion and an optional gitignored [`passwords/`](./passwords/) workspace
 - smoke tests that validate the generated config without needing a live SMTP
   account
 
@@ -122,11 +124,24 @@ Choose one `MSMTP_SECRET_METHOD` per account file:
 
 Starter examples live in [`templates/examples/`](./templates/examples/).
 
+For file-backed secrets:
+
+- `make account` and `make configure` now offer clear path choices for
+  `password_file`
+- user-owned password files default to `$HOME/.local/state/msmtp/<account>.password`
+- a repo-local gitignored [`passwords/`](./passwords/) option is available for
+  convenience
+- system installs can use `/etc/msmtp/<account>.password`
+- custom paths are normalized to absolute paths, and a leading `~` expands to
+  your home directory before the path is saved or rendered
+
 ## Tracking and Safety
 
 Generated or personalized `msmtprc` files should stay untracked. The repo
 ignores `accounts/*.env` and `.msmtprc*` outputs so private account details and
-local secret paths do not get committed accidentally.
+local secret paths do not get committed accidentally. The optional
+[`passwords/`](./passwords/) directory is also ignored so repo-local plaintext
+password files stay out of Git.
 
 ## Main Files
 
@@ -168,6 +183,7 @@ local secret paths do not get committed accidentally.
 ├── accounts/
 ├── agents/
 ├── docs/
+├── passwords/
 ├── scripts/
 ├── templates/
 └── tests/

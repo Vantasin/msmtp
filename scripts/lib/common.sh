@@ -61,6 +61,66 @@ shell_quote() {
   printf "'%s'" "$(printf '%s' "$1" | sed "s/'/'\\\\''/g")"
 }
 
+expand_tilde_path() {
+  local raw_path="${1:-}"
+
+  case "$raw_path" in
+    "~")
+      printf '%s\n' "$HOME"
+      ;;
+    "~/"*)
+      printf '%s/%s\n' "$HOME" "${raw_path#"~/"}"
+      ;;
+    *)
+      printf '%s\n' "$raw_path"
+      ;;
+  esac
+}
+
+normalize_managed_path() {
+  local raw_path="${1:-}"
+  local base_dir="${2:-$repo_root}"
+  local expanded_path normalized_base
+
+  expanded_path="$(expand_tilde_path "$raw_path")"
+  if [ -z "$expanded_path" ]; then
+    printf '\n'
+    return 0
+  fi
+
+  case "$expanded_path" in
+    /*)
+      printf '%s\n' "$expanded_path"
+      ;;
+    ./*)
+      normalized_base="$(cd "$base_dir" && pwd -P)"
+      printf '%s/%s\n' "$normalized_base" "${expanded_path#./}"
+      ;;
+    *)
+      normalized_base="$(cd "$base_dir" && pwd -P)"
+      printf '%s/%s\n' "$normalized_base" "$expanded_path"
+      ;;
+  esac
+}
+
+password_file_user_state_path_for_account() {
+  local account_name="$1"
+
+  printf '%s/.local/state/msmtp/%s.password\n' "$HOME" "$account_name"
+}
+
+password_file_repo_local_path_for_account() {
+  local account_name="$1"
+
+  printf '%s/passwords/%s.password\n' "$repo_root" "$account_name"
+}
+
+password_file_system_path_for_account() {
+  local account_name="$1"
+
+  printf '/etc/msmtp/%s.password\n' "$account_name"
+}
+
 write_env_assignment() {
   local key="$1"
   local value="${2:-}"
@@ -625,11 +685,11 @@ passwordeval_command() {
     gpg)
       require_var MSMTP_GPG_FILE
       printf "gpg --quiet --batch --decrypt %s" \
-        "$(shell_quote "$MSMTP_GPG_FILE")"
+        "$(shell_quote "$(normalize_managed_path "$MSMTP_GPG_FILE")")"
       ;;
     password_file)
       require_var MSMTP_PASSWORD_FILE
-      printf "cat %s" "$(shell_quote "$MSMTP_PASSWORD_FILE")"
+      printf "cat %s" "$(shell_quote "$(normalize_managed_path "$MSMTP_PASSWORD_FILE")")"
       ;;
     command)
       require_var MSMTP_PASSWORDEVAL_COMMAND

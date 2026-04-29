@@ -28,4 +28,8 @@ default when that file is missing or stale, but it does not rewrite the
 account files automatically.
 
 These files are intentionally ignored by Git because they contain private
-account details and machine-local secret paths.
+account details and machine-local secret paths. File-backed secret paths should
+be saved as absolute paths. The guided setup normalizes them automatically,
+including `~` expansion. If you choose the repo-local plaintext convenience
+option, it writes into the gitignored [`../passwords/`](../passwords/)
+directory.

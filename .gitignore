@@ -4,4 +4,6 @@
 .msmtprc*
 accounts/*.env
 accounts/.default-account
+passwords/*
 !accounts/README.md
+!passwords/README.md

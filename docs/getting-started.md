@@ -204,6 +204,18 @@ make secret-check
 
 See [secrets.md](./secrets.md) for backend-specific setup commands.
 
+When you choose `password_file` in `make account` or `make configure`, the
+setup flow offers:
+
+- a user-state path under `$HOME/.local/state/msmtp/`
+- a repo-local gitignored path under [`../passwords/`](../passwords/)
+- a system path under `/etc/msmtp/`
+- a custom path
+
+Saved file-backed secret paths are normalized to absolute paths. A leading `~`
+expands to your home directory before the path is written into
+`accounts/*.env`.
+
 ## Verify and Render
 
 Render the config locally:

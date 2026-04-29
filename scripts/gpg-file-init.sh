@@ -65,6 +65,7 @@ if [ -z "$gpg_file" ]; then
   gpg_file="${MSMTP_GPG_FILE:-}"
 fi
 
+gpg_file="$(normalize_managed_path "$gpg_file")"
 [ -n "$gpg_file" ] || die "Missing GPG file path"
 [ ! -e "$gpg_file" ] || die "Refusing to overwrite existing file: $gpg_file"
 

@@ -55,6 +55,7 @@ if [ -z "$password_file" ]; then
   password_file="${MSMTP_PASSWORD_FILE:-}"
 fi
 
+password_file="$(normalize_managed_path "$password_file")"
 [ -n "$password_file" ] || die "Missing password file path"
 [ ! -e "$password_file" ] || die "Refusing to overwrite existing file: $password_file"
 

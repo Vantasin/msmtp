@@ -17,7 +17,8 @@ Use this workflow after significant repository changes.
    actionable quick-start drift.
 6. If the change affects accounts or secret handling, explicitly review
    [accounts/README.md](../../accounts/README.md) and
-   [docs/secrets.md](../../docs/secrets.md).
+   [docs/secrets.md](../../docs/secrets.md). If repo-local plaintext password
+   paths are involved, also review [passwords/README.md](../../passwords/README.md).
 7. If the change affects guided install or default-account selection, confirm
    the docs and prompts still describe install-time default resolution
    accurately, keep the account-management vs deployment boundary clear, and

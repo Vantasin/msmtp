@@ -116,6 +116,19 @@ Create the file with mode `600`:
 make password-file-init
 ```
 
+When you choose `password_file` from `make account` or `make configure`, the
+guided setup offers these path presets:
+
+- user-state path under `$HOME/.local/state/msmtp/` for typical user-owned
+  local secrets
+- repo-local gitignored path under [`../passwords/`](../passwords/) as a
+  convenience option
+- system path under `/etc/msmtp/` for root-managed server installs
+- custom path for anything else
+
+The saved value is normalized to an absolute path. A leading `~` expands to
+your home directory before the account file is written.
+
 Override the target path explicitly:
 
 ```bash
@@ -132,6 +145,10 @@ Notes:
 
 - the helper refuses to overwrite an existing file
 - it writes the password without a trailing newline
+- the recommended default for user-owned plaintext secrets is outside the repo
+  under `$HOME/.local/state/msmtp/`
+- the repo-local [`../passwords/`](../passwords/) option is intentionally a
+  convenience path, not the preferred secure default
 - if you need a root-owned file, create it in a writable location first and
   move or `chown` it in a separate step
 - rotation backs up the existing file next to it before replacement

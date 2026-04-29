@@ -103,6 +103,26 @@ assert_contains "${tmp_dir}/guided-accounts/guided.env" "MSMTP_LOGFILE='~/.msmtp
 [ ! -e "${tmp_dir}/guided-home/.msmtprc" ] || fail "setup.sh should not install a live config"
 
 printf '%s\n' \
+  "repofile" \
+  "smtp.repo.example" \
+  "587" \
+  "repo@example.com" \
+  "" \
+  "password_file" \
+  "2" \
+  "" \
+  "" \
+  "" \
+  "" \
+  "" \
+  "" \
+  "" | "${repo_root}/scripts/setup.sh" \
+    --env-file "${tmp_dir}/guided-accounts/repofile.env" >/dev/null 2>&1
+
+assert_contains "${tmp_dir}/guided-accounts/repofile.env" "MSMTP_SECRET_METHOD='password_file'"
+assert_contains "${tmp_dir}/guided-accounts/repofile.env" "MSMTP_PASSWORD_FILE='${repo_root}/passwords/repofile.password'"
+
+printf '%s\n' \
   "" \
   "smtp.edited.example" \
   "" \
@@ -312,6 +332,34 @@ printf 'mail-secret\nmail-secret\n' | "${repo_root}/scripts/password-file-init.s
 
 password_file_contents="$(cat "${tmp_dir}/password-store/secret.txt")"
 [ "$password_file_contents" = "mail-secret" ] || fail "Unexpected password-file contents"
+
+mkdir -p "${tmp_dir}/tilde-home"
+cat > "${tmp_dir}/multi-accounts/password-tilde.env" <<'EOF'
+MSMTP_ACCOUNT_NAME=passwordtilde
+MSMTP_HOST=smtp.example.net
+MSMTP_PORT=587
+MSMTP_FROM=root@example.net
+MSMTP_USER=root@example.net
+MSMTP_AUTH=on
+MSMTP_TLS=on
+MSMTP_TLS_STARTTLS=on
+MSMTP_TLS_CERTCHECK=on
+MSMTP_SECRET_METHOD=password_file
+MSMTP_PASSWORD_FILE='~/.local/state/msmtp/tilde-secret.txt'
+EOF
+
+printf 'tilde-secret\ntilde-secret\n' | HOME="${tmp_dir}/tilde-home" "${repo_root}/scripts/password-file-init.sh" \
+  --env-file "${tmp_dir}/multi-accounts/password-tilde.env" >/dev/null 2>&1
+
+[ -f "${tmp_dir}/tilde-home/.local/state/msmtp/tilde-secret.txt" ] || fail "Expected ~ in password file path to expand into HOME"
+[ ! -e "${repo_root}/~/.local/state/msmtp/tilde-secret.txt" ] || fail "Expected password-file init to avoid literal ~ paths under the repo"
+
+HOME="${tmp_dir}/tilde-home" "${repo_root}/scripts/render-config.sh" \
+  --accounts-dir "${tmp_dir}/multi-accounts" \
+  --default-account passwordtilde \
+  --output "${tmp_dir}/password-tilde.msmtprc" >/dev/null
+
+assert_contains "${tmp_dir}/password-tilde.msmtprc" "passwordeval cat '${tmp_dir}/tilde-home/.local/state/msmtp/tilde-secret.txt'"
 
 mkdir -p "${tmp_dir}/secret-check-accounts"
 cat > "${tmp_dir}/secret-check-accounts/work.env" <<'EOF'

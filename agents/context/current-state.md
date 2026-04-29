@@ -28,6 +28,8 @@ Operational convention today:
 
 - SMTP account values live in `accounts/*.env`.
 - The persistent default account lives in `accounts/.default-account`.
+- The optional repo-local plaintext password-file workspace lives in the
+  gitignored `passwords/` directory.
 - The simplest setup is `accounts/default.env`; multiple addresses add more
   files in the same directory.
 - User vs system install scope is selected through `make` targets and
@@ -42,6 +44,9 @@ Operational convention today:
   stored account data.
 - Repo-owned file writes now prefer same-directory atomic replacement semantics
   rather than in-place mutation.
+- File-backed secret paths are normalized to absolute paths during guided
+  setup, rendering, and helper execution; a leading `~` expands to the user's
+  home directory instead of being treated as a literal repo-relative path.
 - Install, restore, and file-backed secret rotation preserve adjacent
   `.bak.*` recovery points and aim to leave either the old or new live file in
   place if interrupted.
