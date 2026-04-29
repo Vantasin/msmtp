@@ -41,6 +41,9 @@ Operational convention today:
 - The preferred human-facing commands are `make configure`, `make password`,
   `make test-email`, `make test-live-email`, `make install`, and
   `make restore`; `make account` remains the account-only CRUD entrypoint.
+- Guided `make configure` now treats pre-existing file-backed secrets as a
+  recoverable decision point, offering rotate, validate, skip, or retry
+  choices instead of exiting immediately on the first existing-secret conflict.
 - `make restore` is now the umbrella entrypoint; typed restore commands handle
   config, account, and file-backed secret backups explicitly.
 - The quick-start path centers on `make configure`, which now offers an

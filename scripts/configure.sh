@@ -146,6 +146,83 @@ choose_secret_action() {
   esac
 }
 
+existing_file_backed_secret_resolution() {
+  local secret_method="$1"
+  local secret_target="$2"
+  local action_label
+
+  printf 'A %s secret is already configured at %s.\n' "$secret_method" "$secret_target" >&2
+  printf 'Choose whether to rotate it, validate it, or continue without changing it.\n' >&2
+
+  action_label="$(choose_from_menu "How should configure handle the existing secret?" \
+    "Rotate the existing secret - back it up, replace it, and validate it" \
+    "Validate the existing secret and continue" \
+    "Skip secret changes - leave the current secret as-is" \
+    "Return to the secret action menu")"
+
+  case "$action_label" in
+    "Rotate the existing secret - back it up, replace it, and validate it")
+      printf 'rotate\n'
+      ;;
+    "Validate the existing secret and continue")
+      printf 'validate\n'
+      ;;
+    "Skip secret changes - leave the current secret as-is")
+      printf 'skip\n'
+      ;;
+    *)
+      printf 'retry\n'
+      ;;
+  esac
+}
+
+resolve_setup_secret_action() {
+  local selected_env_file="$1"
+  local secret_method secret_target
+
+  secret_method="$(secret_method_from_env_file "$selected_env_file")"
+  case "$secret_method" in
+    password_file)
+      load_env_file "$selected_env_file"
+      require_var MSMTP_PASSWORD_FILE
+      secret_target="$(normalize_managed_path "$MSMTP_PASSWORD_FILE")"
+      if path_exists "$secret_target"; then
+        existing_file_backed_secret_resolution "$secret_method" "$secret_target"
+        return 0
+      fi
+      ;;
+    gpg)
+      load_env_file "$selected_env_file"
+      require_var MSMTP_GPG_FILE
+      secret_target="$(normalize_managed_path "$MSMTP_GPG_FILE")"
+      if path_exists "$secret_target"; then
+        existing_file_backed_secret_resolution "$secret_method" "$secret_target"
+        return 0
+      fi
+      ;;
+  esac
+
+  printf 'setup\n'
+}
+
+run_rotate_secret_action() {
+  local selected_env_file="$1"
+  local rotate_args
+
+  rotate_args=(--env-file "$selected_env_file")
+  if [ "$force_replace" = "true" ]; then
+    rotate_args+=(--force)
+  fi
+  run_with_interrupt_passthrough "${repo_root}/scripts/rotate-password.sh" "${rotate_args[@]}"
+  mark_interrupt_dirty
+}
+
+run_secret_validation_action() {
+  local selected_env_file="$1"
+
+  "${repo_root}/scripts/secret-check.sh" --env-file "$selected_env_file"
+}
+
 prompt_install_decision() {
   printf 'The install step renders the full config from %s and updates the live msmtp path.\n' "$accounts_dir" >&2
   prompt_yes_no "Install the live msmtp config now" "yes"
@@ -236,26 +313,45 @@ account_name="${MSMTP_ACCOUNT_NAME:-}"
 
 printf '\nSelected account file %s (msmtp account name: %s).\n' "$env_file" "$account_name" >&2
 
-secret_action="$(choose_secret_action)"
-case "$secret_action" in
-  setup)
-    run_with_interrupt_passthrough "${repo_root}/scripts/password-helper.sh" --env-file "$env_file" --check
-    mark_interrupt_dirty
-    ;;
-  rotate)
-    rotate_args=(--env-file "$env_file")
-    if [ -n "$force_replace" ]; then
-      rotate_args+=(--force)
-    fi
-    run_with_interrupt_passthrough "${repo_root}/scripts/rotate-password.sh" "${rotate_args[@]}"
-    mark_interrupt_dirty
-    ;;
-  skip)
-    if [ "$(prompt_yes_no "Run secret validation now" "yes")" = "yes" ]; then
-      "${repo_root}/scripts/secret-check.sh" --env-file "$env_file"
-    fi
-    ;;
-esac
+secret_action_complete="false"
+while [ "$secret_action_complete" != "true" ]; do
+  secret_action="$(choose_secret_action)"
+  case "$secret_action" in
+    setup)
+      resolved_secret_action="$(resolve_setup_secret_action "$env_file")"
+      case "$resolved_secret_action" in
+        setup)
+          run_with_interrupt_passthrough "${repo_root}/scripts/password-helper.sh" --env-file "$env_file" --check
+          mark_interrupt_dirty
+          secret_action_complete="true"
+          ;;
+        rotate)
+          run_rotate_secret_action "$env_file"
+          secret_action_complete="true"
+          ;;
+        validate)
+          run_secret_validation_action "$env_file"
+          secret_action_complete="true"
+          ;;
+        skip)
+          secret_action_complete="true"
+          ;;
+        retry)
+          ;;
+      esac
+      ;;
+    rotate)
+      run_rotate_secret_action "$env_file"
+      secret_action_complete="true"
+      ;;
+    skip)
+      if [ "$(prompt_yes_no "Run secret validation now" "yes")" = "yes" ]; then
+        run_secret_validation_action "$env_file"
+      fi
+      secret_action_complete="true"
+      ;;
+  esac
+done
 
 install_performed="false"
 if [ "$(prompt_install_decision)" = "yes" ]; then
