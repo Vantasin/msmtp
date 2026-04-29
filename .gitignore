@@ -3,6 +3,7 @@
 !.env.example
 .msmtprc*
 accounts/*.env
+accounts/*.env.bak.*
 accounts/.default-account
 passwords/*
 !accounts/README.md
